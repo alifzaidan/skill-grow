@@ -14,15 +14,14 @@ export default function AuthCardLayout({
     return (
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="flex w-full max-w-md flex-col gap-6">
-                <Link href={route('home')} className="flex items-center gap-2 self-center font-medium">
-                    <div className="flex h-9 w-32 items-center justify-center">
-                        <img src="/assets/images/logo-primary-2.png" alt="Logo Aksara" className="fill-current" />
-                    </div>
-                </Link>
-
                 <div className="flex flex-col gap-6">
                     <Card className="rounded-xl">
                         <CardHeader className="px-10 pt-8 pb-0 text-center">
+                            <Link href={route('home')} className="mb-6 flex items-center gap-2 self-center font-medium">
+                                <div className="flex w-36 items-center justify-center">
+                                    <img src="/assets/images/logo-primary.png" alt="Logo Skill Grow" className="fill-current" />
+                                </div>
+                            </Link>
                             <CardTitle className="text-xl">{title}</CardTitle>
                             <CardDescription>{description}</CardDescription>
                         </CardHeader>

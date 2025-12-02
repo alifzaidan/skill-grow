@@ -3,7 +3,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import UserLayout from '@/layouts/user-layout';
 import { SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -63,7 +62,12 @@ function parseList(items?: string | null): string[] {
     if (!items) return [];
     const matches = items.match(/<li>(.*?)<\/li>/g);
     if (!matches) return [];
-    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+    return matches.map((li) => {
+        const text = li.replace(/<\/?li>/g, '').trim();
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        return textarea.value;
+    });
 }
 
 export default function CheckoutCourse({
@@ -263,7 +267,6 @@ export default function CheckoutCourse({
                     body: JSON.stringify(invoiceData),
                 });
 
-                // Handle 419 error with retry
                 if (res.status === 419 && retryCount < 2) {
                     console.log(`CSRF token expired, refreshing... (attempt ${retryCount + 1})`);
                     await refreshCSRFToken();
@@ -302,7 +305,6 @@ export default function CheckoutCourse({
         return (
             <UserLayout>
                 <Head title="Login Required" />
-
                 <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                     <div className="mx-auto my-12 w-full max-w-7xl px-4">
                         <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
@@ -364,30 +366,23 @@ export default function CheckoutCourse({
     return (
         <UserLayout>
             <Head title="Checkout Kelas" />
-            <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
-                <div className="mx-auto my-12 w-full max-w-7xl px-4">
-                    <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Checkout Kelas "{course.title}"
-                    </h2>
-                    <p className="text-center text-gray-400">
-                        {isFree ? 'Lanjutkan untuk mendapatkan akses gratis ke kelas ini.' : 'Silakan selesaikan pembayaran untuk mendaftar kelas.'}
-                    </p>
-                </div>
-            </section>
-            <section className="mx-auto my-4 w-full max-w-7xl px-4">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
-                        <TabsList>
-                            <TabsTrigger value="detail">Detail Kelas</TabsTrigger>
-                            <TabsTrigger value="preview">Preview Video</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="detail">
-                            <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Yang akan kamu pelajari</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Berikut adalah beberapa poin penting yang akan kamu pelajari dalam kelas "{course.title}".
-                                </p>
-                                <ul className="space-y-2">
+            <section className="min-h-screen w-full bg-gradient-to-br from-yellow-50 via-white to-blue-50 px-2 py-8">
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 lg:flex-row">
+                    {/* Kiri: Info & Preview */}
+                    <div className="flex flex-1 flex-col gap-6">
+                        <div className="flex flex-col items-center gap-6 rounded-2xl border bg-white/80 p-6 shadow-lg md:flex-row">
+                            <div className="flex-1">
+                                <h2 className="mb-2 text-3xl font-bold text-black italic">{course.title}</h2>
+                                <p className="mb-2 line-clamp-3 text-gray-600">{course.description}</p>
+                                <div className="mb-2 flex flex-wrap gap-2">
+                                    <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 uppercase">
+                                        {course.level}
+                                    </span>
+                                    {isFree && (
+                                        <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 uppercase">Gratis</span>
+                                    )}
+                                </div>
+                                <ul className="mt-4 space-y-2">
                                     {keyPointList.map((keyPoint, idx) => (
                                         <li key={idx} className="flex items-center gap-2">
                                             <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
@@ -396,179 +391,187 @@ export default function CheckoutCourse({
                                     ))}
                                 </ul>
                             </div>
-                        </TabsContent>
-                        <TabsContent value="preview">
-                            <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Preview Video</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Berikut adalah preview video dari kelas "{course.title}". Silakan tonton untuk mendapatkan gambaran materi yang
-                                    akan dipelajari.
-                                </p>
-                                <div className="aspect-video w-full">
+                        </div>
+                        <div className="rounded-2xl border bg-white/80 p-6 shadow-lg">
+                            <h3 className="mb-2 text-xl font-bold text-black">Preview Video</h3>
+                            <div className="aspect-video w-full overflow-hidden rounded-xl bg-gray-200">
+                                {firstVideoLesson?.video_url &&
+                                (firstVideoLesson.video_url.includes('youtube.com') || firstVideoLesson.video_url.includes('youtu.be')) ? (
                                     <iframe
                                         width="100%"
                                         height="100%"
-                                        src={
-                                            firstVideoLesson?.video_url &&
-                                            (firstVideoLesson.video_url.includes('youtube.com') || firstVideoLesson.video_url.includes('youtu.be'))
-                                                ? `https://www.youtube.com/embed/${getYoutubeId(firstVideoLesson.video_url)}`
-                                                : ''
-                                        }
+                                        src={`https://www.youtube.com/embed/${getYoutubeId(firstVideoLesson.video_url)}`}
                                         title="YouTube video player"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
-                                        className="h-full w-full rounded-xl"
+                                        className="h-full w-full"
                                     ></iframe>
-                                </div>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
-
-                    {hasAccess ? (
-                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                            <BadgeCheck size={64} className="text-green-500" />
-                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
-                            <p className="text-sm text-gray-500">Anda sudah terdaftar di kelas ini. Silakan lanjutkan belajar.</p>
-                            <Button asChild className="w-full">
-                                <a href={`/profile/my-courses/${course.slug}`}>Masuk ke Kelas</a>
-                            </Button>
-                        </div>
-                    ) : pendingInvoiceUrl ? (
-                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                            <Hourglass size={64} className="text-yellow-500" />
-                            <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
-                            <p className="text-sm text-gray-500">
-                                Anda memiliki pembayaran yang belum selesai untuk kelas ini. Silakan lanjutkan untuk membayar.
-                            </p>
-                            <Button asChild className="w-full">
-                                <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
-                            </Button>
-                        </div>
-                    ) : (
-                        <form onSubmit={handleCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
-                            <div className="space-y-4 rounded-lg border p-4">
-                                {isFree ? (
-                                    <div className="flex items-center justify-between p-4 text-center">
-                                        <span className="w-full text-2xl font-bold text-green-600">KELAS GRATIS</span>
-                                    </div>
                                 ) : (
-                                    <>
-                                        {/* Promo Code Input */}
-                                        <div className="space-y-2">
-                                            <Label htmlFor="promo-code">Kode Promo (Opsional)</Label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="promo-code"
-                                                    type="text"
-                                                    placeholder="Masukkan kode promo"
-                                                    value={promoCode}
-                                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                                    className="pr-10"
+                                    <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                        <div className="text-center">
+                                            <svg className="mx-auto h-16 w-16 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                                                 />
-                                                {promoLoading && (
-                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
-                                                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
-                                                    </div>
-                                                )}
-                                                {!promoLoading && promoCode && (
-                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
-                                                        {discountData?.valid ? (
+                                            </svg>
+                                            <p className="mt-2 text-sm">Video preview tidak tersedia</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kanan: Ringkasan & Checkout */}
+                    <div className="w-full flex-shrink-0 lg:w-[400px]">
+                        <div className="sticky top-8 flex flex-col gap-4 rounded-2xl border-2 border-blue-100 bg-white/90 p-6 shadow-2xl">
+                            {hasAccess ? (
+                                <div className="flex flex-col items-center justify-center gap-4 text-center">
+                                    <BadgeCheck size={64} className="text-green-500" />
+                                    <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
+                                    <p className="text-sm text-gray-500">Anda sudah terdaftar di kelas ini. Silakan lanjutkan belajar.</p>
+                                    <Button asChild className="w-full">
+                                        <a href={`/profile/my-courses/${course.slug}`}>Masuk ke Kelas</a>
+                                    </Button>
+                                </div>
+                            ) : pendingInvoiceUrl ? (
+                                <div className="flex flex-col items-center justify-center gap-4 text-center">
+                                    <Hourglass size={64} className="text-yellow-500" />
+                                    <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
+                                    <p className="text-sm text-gray-500">
+                                        Anda memiliki pembayaran yang belum selesai untuk kelas ini. Silakan lanjutkan untuk membayar.
+                                    </p>
+                                    <Button asChild className="w-full">
+                                        <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleCheckout} className="flex flex-col gap-4">
+                                    <h2 className="text-xl font-bold text-black italic">Ringkasan Pembayaran</h2>
+                                    {isFree ? (
+                                        <div className="flex items-center justify-between p-4 text-center">
+                                            <span className="w-full text-2xl font-bold text-green-600">KELAS GRATIS</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Promo Code Input */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="promo-code">Kode Promo (Opsional)</Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        id="promo-code"
+                                                        type="text"
+                                                        placeholder="Masukkan kode promo"
+                                                        value={promoCode}
+                                                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                        className="w-full pr-10"
+                                                    />
+                                                    {promoLoading && (
+                                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                            <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                                                        </div>
+                                                    )}
+                                                    {!promoLoading && promoCode && (
+                                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                            {discountData?.valid ? (
+                                                                <Check className="h-4 w-4 text-green-600" />
+                                                            ) : promoError ? (
+                                                                <X className="h-4 w-4 text-red-600" />
+                                                            ) : null}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {promoError && <p className="text-sm text-red-600">{promoError}</p>}
+                                                {discountData?.valid && (
+                                                    <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                                                        <div className="flex items-center gap-2">
                                                             <Check className="h-4 w-4 text-green-600" />
-                                                        ) : promoError ? (
-                                                            <X className="h-4 w-4 text-red-600" />
-                                                        ) : null}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {promoError && <p className="text-sm text-red-600">{promoError}</p>}
-                                            {discountData?.valid && (
-                                                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-600" />
-                                                        <p className="text-sm font-medium text-green-800">
-                                                            Kode promo "{discountData.discount_code.code}" berhasil diterapkan!
+                                                            <p className="text-sm font-medium text-green-800">
+                                                                Kode promo "{discountData.discount_code.code}" berhasil diterapkan!
+                                                            </p>
+                                                        </div>
+                                                        <p className="mt-1 text-xs text-green-600">
+                                                            {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
                                                         </p>
                                                     </div>
-                                                    <p className="mt-1 text-xs text-green-600">
-                                                        {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2 rounded-lg border p-4">
-                                            {course.strikethrough_price > 0 && (
-                                                <>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600">Harga Asli</span>
-                                                        <span className="font-semibold text-gray-500 line-through">
-                                                            Rp {course.strikethrough_price.toLocaleString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600">Diskon</span>
-                                                        <span className="font-semibold text-red-500">
-                                                            -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <Separator className="my-2" />
-                                                </>
-                                            )}
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Harga Kelas</span>
-                                                <span className="font-semibold text-gray-500">Rp {course.price.toLocaleString('id-ID')}</span>
+                                                )}
                                             </div>
 
-                                            {/* Promo Discount */}
-                                            {discountData?.valid && (
+                                            <div className="space-y-2 rounded-lg border bg-blue-50/50 p-4">
+                                                {course.strikethrough_price > 0 && (
+                                                    <>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Harga Asli</span>
+                                                            <span className="font-semibold text-gray-500 line-through">
+                                                                Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Diskon</span>
+                                                            <span className="font-semibold text-red-500">
+                                                                -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                        <Separator className="my-2" />
+                                                    </>
+                                                )}
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
-                                                    <span className="font-semibold text-green-600">
-                                                        -Rp {discountData.discount_amount.toLocaleString('id-ID')}
-                                                    </span>
+                                                    <span className="text-gray-600">Harga Kelas</span>
+                                                    <span className="font-semibold text-gray-900">Rp {course.price.toLocaleString('id-ID')}</span>
                                                 </div>
-                                            )}
 
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Biaya Transaksi</span>
-                                                <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                {/* Promo Discount */}
+                                                {discountData?.valid && (
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                                                        <span className="font-semibold text-green-600">
+                                                            -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Biaya Transaksi</span>
+                                                    <span className="font-semibold text-gray-900">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                </div>
+                                                <Separator className="my-2" />
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-black">Total Pembayaran</span>
+                                                    <span className="text-xl font-bold text-black">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                                </div>
                                             </div>
-                                            <Separator className="my-2" />
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                                                <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
-                                            </div>
+                                        </>
+                                    )}
+                                    {!isFree && (
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="terms"
+                                                checked={termsAccepted}
+                                                onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                            />
+                                            <Label htmlFor="terms" className="text-sm">
+                                                Saya menyetujui{' '}
+                                                <a
+                                                    href="/terms-and-conditions"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-700 hover:underline"
+                                                >
+                                                    syarat dan ketentuan
+                                                </a>
+                                            </Label>
                                         </div>
-                                    </>
-                                )}
-
-                                {!isFree && (
-                                    <div className="flex items-center gap-3">
-                                        <Checkbox
-                                            id="terms"
-                                            checked={termsAccepted}
-                                            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                                        />
-                                        <Label htmlFor="terms">
-                                            Saya menyetujui{' '}
-                                            <a
-                                                href="/terms-and-conditions"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-700 hover:underline"
-                                            >
-                                                syarat dan ketentuan
-                                            </a>
-                                        </Label>
-                                    </div>
-                                )}
-                                <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
-                                    {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Lanjutkan Pembayaran'}
-                                </Button>
-                            </div>
-                        </form>
-                    )}
+                                    )}
+                                    <Button className="mt-2 w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
+                                        {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Lanjutkan Pembayaran'}
+                                    </Button>
+                                </form>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </section>
         </UserLayout>

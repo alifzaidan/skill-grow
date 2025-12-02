@@ -64,7 +64,7 @@ export default function ProfileLayout({ children }: PropsWithChildren) {
                                 </AvatarFallback>
                             </Avatar>
                             <h1 className="text-xl font-bold italic">{auth.user.name}</h1>
-                            <p className="text-muted-foreground text-sm">Lifetime Learner</p>
+                            <p className="text-muted-foreground mt-1 text-xs">"Keep learning, keep growing"</p>
                         </div>
                         <nav className="flex flex-col space-y-1 space-x-0">
                             {sidebarNavItems.map((item, index) => (

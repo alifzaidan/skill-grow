@@ -20,22 +20,22 @@ class DatabaseSeeder extends Seeder
         Role::firstOrCreate(['name' => 'user']);
 
         $admin = User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@gmail.com',
-            'phone_number' => '085142505794',
-            'bio' => 'Admin Ganteng',
-            'password' => bcrypt('M@lang2025'),
+            'name' => 'Admin SkillGrow',
+            'email' => 'skillgrow.id@gmail.com',
+            'phone_number' => '085184012430',
+            'bio' => 'Admin SkillGrow',
+            'password' => bcrypt('Batu2025@'),
         ]);
 
         $adminAffiliate = User::factory()->create([
-            'name' => 'Aksara Teknologi Mandiri',
-            'email' => 'aksarateknologimandiri@gmail.com',
-            'phone_number' => '085142505794',
-            'bio' => "Aksara Teknologi Mandiri's Affiliate",
-            'password' => bcrypt('aksara2025'),
-            'affiliate_code' => 'ATM2025',
+            'name' => 'SkillGrow Affiliate',
+            'email' => 'smartarthamuda@gmail.com',
+            'phone_number' => '085184012430',
+            'bio' => "Affiliate SkillGrow",
+            'password' => bcrypt('085184012430'),
+            'affiliate_code' => 'SGW2025',
             'affiliate_status' => 'Active',
-            'commission' => 15,
+            'commission' => 10,
         ]);
 
         $admin->assignRole('admin');

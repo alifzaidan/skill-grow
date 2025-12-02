@@ -11,7 +11,7 @@
 
 @theme {
     --font-sans:
-        'Averta', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+        'Montserrat', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
 
     --radius-lg: var(--radius);
@@ -89,8 +89,8 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: #003285;
-    --primary-foreground: oklch(0.985 0 0);
+    --primary: #fccd22;
+    --primary-foreground: #0f172a;
     --secondary: #ff7f3e;
     --secondary-foreground: #fdfbf7;
     --tertiary: #edebde;
@@ -117,9 +117,6 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.87 0 0);
-    --color-course: #3b82f6;  
-    --color-bootcamp: #10b981; 
-    --color-webinar: #f59e42;  
 }
 
 .dark {
@@ -129,7 +126,7 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.145 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: #003285;
+    --primary: #fccd22;
     --primary-foreground: #d9e5ff;
     --secondary: #ff7f3e;
     --secondary-foreground: oklch(0.985 0 0);
@@ -181,29 +178,25 @@
     }
 }
 
-/* Hide scrollbar utility */
-@layer utilities {
-    .scrollbar-hide {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
-    }
-    
-    .scrollbar-hide::-webkit-scrollbar {
-        display: none; /* Chrome, Safari and Opera */
-    }
-}
-
 @font-face {
-    font-family: 'Averta';
-    src: url('/assets/fonts/AvertaDemoPE-Regular.otf') format('opentype');
+    font-family: 'Montserrat';
+    src: url('/assets/fonts/Montserrat-Regular.ttf') format('truetype');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Averta';
-    src: url('/assets/fonts/AvertaDemoPE-ExtraboldItalic.otf') format('opentype');
+    font-family: 'Montserrat';
+    src: url('/assets/fonts/Montserrat-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/assets/fonts/Montserrat-ExtraBold.ttf') format('truetype');
     font-weight: 800;
     font-style: italic;
     font-display: swap;

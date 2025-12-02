@@ -1,12 +1,20 @@
-import { Link } from '@inertiajs/react';
-import { BadgeCheck, Star, User } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { BadgeCheck, Lock, PlayCircle } from 'lucide-react';
 
 interface Course {
     title: string;
     description?: string | null;
     key_points?: string | null;
-    user?: { id: string; name: string; bio: string | null };
-    images?: { image_url: string }[];
+    modules?: {
+        title: string;
+        description?: string | null;
+        lessons?: {
+            title: string;
+            description?: string | null;
+            type: 'text' | 'video' | 'file' | 'quiz';
+            is_free?: boolean;
+        }[];
+    }[];
 }
 
 function parseList(items?: string | null): string[] {
@@ -16,102 +24,74 @@ function parseList(items?: string | null): string[] {
     return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
 }
 
+import { useState } from 'react';
+
 export default function AboutSection({ course }: { course: Course }) {
     const keyPoints = parseList(course.key_points);
-
+    const [expanded, setExpanded] = useState<React.Key | null>('0');
     return (
-        <>
-            <section className="mx-auto w-full max-w-5xl px-4" id="about">
-                <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-5xl">
-                    Kembangkan Skillmu
-                </h2>
-                <p className="text-center text-gray-600 dark:text-gray-400">{course.description}</p>
-            </section>
-            {course.images!.length > 0 && (
-                <section className="mx-auto mt-4 w-full max-w-5xl px-4">
-                    <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Highlight Kelas
-                    </p>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {course.images?.map((image, index) => (
-                            <img
-                                key={index}
-                                src={image.image_url ? `/storage/${image.image_url}` : '/assets/images/placeholder.png'}
-                                alt={course.title}
-                                className="aspect-video rounded-lg border border-gray-200 object-cover shadow-md"
-                            />
+        <section className="mx-auto w-full max-w-7xl px-4 py-8" id="about">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                {/* Left: Deskripsi & Poin Utama */}
+                <div>
+                    <div className="mb-4 text-lg font-semibold text-black">Tentang Kelas</div>
+                    <p className="mb-6 text-justify text-gray-600 dark:text-gray-400">{course.description}</p>
+                    <div className="mb-4 text-lg font-semibold text-black">Poin Utama</div>
+                    <ul className="grid grid-cols-1 gap-4 md:grid-cols-1">
+                        {keyPoints.map((req, idx) => (
+                            <li key={idx} className="flex items-center gap-2">
+                                <BadgeCheck className="mt-1 min-w-12 text-green-600" />
+                                <p dangerouslySetInnerHTML={{ __html: req }} />
+                            </li>
                         ))}
+                    </ul>
+                </div>
+                {/* Right: Modul Scrollable */}
+                <div>
+                    <div className="mb-4 text-lg font-semibold text-black">Daftar Isi</div>
+                    <div className="custom-scrollbar max-h-[420px] overflow-y-auto pr-2">
+                        <Accordion
+                            className="flex w-full flex-col gap-2 divide-y divide-zinc-200 dark:divide-zinc-700"
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            expandedValue={expanded}
+                            onValueChange={setExpanded}
+                        >
+                            {course.modules?.map((module, idx) => (
+                                <AccordionItem key={idx} value={String(idx)} className="rounded-lg border-2 border-gray-300 p-4">
+                                    <AccordionTrigger className="w-full text-left text-zinc-950 hover:cursor-pointer dark:text-zinc-50">
+                                        <div className="flex items-center gap-2">
+                                            <div className="border-primary bg-primary/20 text-primary dark:text-primary-foreground rounded-full border px-3 py-1 text-sm font-medium dark:bg-zinc-800">
+                                                <p>{idx + 1}</p>
+                                            </div>
+                                            <p className="md:text-lg">{module.title}</p>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <ul className="mt-2 text-sm text-zinc-500 md:text-base dark:text-zinc-400">
+                                            {module.lessons?.length ? (
+                                                module.lessons.map((lesson, lidx) => (
+                                                    <li key={lidx} className="ms-8 flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            {lesson.is_free ? (
+                                                                <PlayCircle size="14" className="text-green-500" />
+                                                            ) : (
+                                                                <Lock size="14" />
+                                                            )}
+                                                            <p>{lesson.title}</p>
+                                                        </div>
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <li className="ms-8 text-zinc-400">Belum ada materi</li>
+                                            )}
+                                        </ul>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
                     </div>
-                </section>
-            )}
-            <section className="mx-auto mt-4 w-full max-w-5xl px-4">
-                <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Poin Utama
-                </p>
-                <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {keyPoints.map((req, idx) => (
-                        <li key={idx} className="flex items-center gap-2">
-                            <BadgeCheck className="mt-1 min-w-12 text-green-600" />
-                            <p>{req}</p>
-                        </li>
-                    ))}
-                </ul>
-            </section>
-            <section className="mx-auto mt-4 w-full max-w-5xl px-4">
-                <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                    Belajar dengan Ahlinya
-                </p>
-                {course.user?.name === 'Admin' ? (
-                    <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
-                        <div className="flex w-full items-center gap-4">
-                            <div className="rounded-full bg-gray-200 p-2">
-                                <User className="h-10 w-10 text-gray-500" />
-                            </div>
-                            <div className="w-full">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{course.user?.name}</h3>
-                                </div>
-                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">{course.user?.bio}</p>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <Link
-                        href={`/mentor/${course.user?.id}`}
-                        className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md transition hover:shadow-lg dark:border-zinc-700 dark:bg-zinc-800"
-                    >
-                        <div className="flex w-full items-center gap-4">
-                            <div className="rounded-full bg-gray-200 p-2">
-                                <User className="h-10 w-10 text-gray-500" />
-                            </div>
-                            <div className="w-full">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{course.user?.name}</h3>
-                                </div>
-                                <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">{course.user?.bio}</p>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                        <Star size={18} className="text-yellow-500" fill="currentColor" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-                )}
-            </section>
-        </>
+                </div>
+            </div>
+        </section>
     );
 }

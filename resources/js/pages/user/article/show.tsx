@@ -161,7 +161,7 @@ export default function ArticleShow({ article, relatedArticles }: ArticleShowPro
                                     </Avatar>
                                     <div className="flex-1">
                                         <h3 className="mb-1 font-semibold">Tentang Penulis</h3>
-                                        <p className="text-lg font-medium">{article.user.name === 'Admin' ? 'Aksademy Team' : article.user.name}</p>
+                                        <p className="text-lg font-medium">{article.user.name === 'Admin' ? 'Skill Grow Team' : article.user.name}</p>
                                         <p className="text-muted-foreground text-sm">{article.user.bio}</p>
                                     </div>
                                 </div>

@@ -1,8 +1,10 @@
 import RatingDialog from '@/components/rating-dialog';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, Star } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, PlayCircle, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -101,14 +103,18 @@ export default function DetailMyCourse({
         return (
             <UserLayout>
                 <Head title="Kelas Tidak Ditemukan" />
-                <div className="flex h-screen items-center justify-center">
-                    <p>Detail kelas tidak dapat ditemukan.</p>
-                    <Button className="mt-4 rounded-full" variant="secondary" asChild>
-                        <Link href="/profile/my-courses">
-                            <ArrowLeft /> Kembali Ke Kelas Saya
-                        </Link>
-                    </Button>
-                </div>
+                <ProfileLayout>
+                    <div className="flex h-screen items-center justify-center">
+                        <div className="text-center">
+                            <p className="mb-4">Detail kelas tidak dapat ditemukan.</p>
+                            <Button asChild>
+                                <Link href="/profile">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali Ke Dashboard
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </ProfileLayout>
             </UserLayout>
         );
     }
@@ -125,24 +131,21 @@ export default function DetailMyCourse({
 
         if (!courseRating) {
             return (
-                <div className="mb-6 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-4 dark:border-blue-700 dark:from-blue-900/20 dark:to-blue-800/20">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-blue-400 to-blue-600">
-                                <Star className="h-5 w-5 text-white" />
+                <div className="group relative overflow-hidden rounded-2xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6 shadow-lg transition hover:shadow-xl dark:border-blue-700 dark:from-blue-900/20 dark:to-blue-800/20">
+                    <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-gradient-to-bl from-blue-300 to-transparent opacity-30 transition group-hover:scale-110" />
+                    <div className="relative z-10 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#fccd22] to-[#200cf5] shadow-lg">
+                                <Star className="h-7 w-7 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Selamat! Anda telah menyelesaikan kelas ini</h3>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">🎉 Selamat! Anda telah menyelesaikan kelas ini</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                     Berikan rating dan review untuk mendapatkan sertifikat kelulusan
                                 </p>
                             </div>
                         </div>
-                        <Button
-                            size="sm"
-                            className="border-none bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-lg hover:from-blue-500 hover:to-blue-700"
-                            onClick={() => setIsRatingDialogOpen(true)}
-                        >
+                        <Button onClick={() => setIsRatingDialogOpen(true)}>
                             <Star className="mr-2 h-4 w-4" />
                             Beri Rating
                         </Button>
@@ -153,30 +156,30 @@ export default function DetailMyCourse({
 
         if (courseRating && !hasCertificate) {
             return (
-                <div className="mb-6 rounded-lg border border-yellow-200 bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 dark:border-yellow-700 dark:from-yellow-900/20 dark:to-yellow-800/20">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600">
-                                <Award className="h-5 w-5 text-white" />
+                <div className="group relative overflow-hidden rounded-2xl border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 via-white to-yellow-100 p-6 shadow-lg dark:border-yellow-700 dark:from-yellow-900/20 dark:to-yellow-800/20">
+                    <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-gradient-to-bl from-yellow-300 to-transparent opacity-30 transition group-hover:scale-110" />
+                    <div className="relative z-10 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg">
+                                <Award className="h-7 w-7 text-white" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Terima kasih atas rating Anda!</h3>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">🎉 Terima kasih atas rating Anda!</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
                                     {!certificate ? 'Sertifikat belum dibuat untuk course ini.' : 'Sertifikat sedang diproses.'}
                                 </p>
-                                <div className="mt-1 flex items-center gap-1">
-                                    <span className="text-xs text-gray-500">Rating Anda:</span>
+                                <div className="mt-2 flex items-center gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
                                         <Star
                                             key={star}
-                                            className={`h-3 w-3 ${star <= courseRating.rating ? 'fill-current text-yellow-400' : 'text-gray-300'}`}
+                                            className={`h-4 w-4 ${star <= courseRating.rating ? 'fill-current text-yellow-400' : 'text-gray-300'}`}
                                         />
                                     ))}
-                                    <span className="ml-1 text-xs text-gray-500">({courseRating.rating}/5)</span>
+                                    <span className="ml-1 text-sm text-gray-600">({courseRating.rating}/5)</span>
                                 </div>
                             </div>
                         </div>
-                        <Button size="sm" disabled>
+                        <Button disabled variant="outline">
                             <Download className="mr-2 h-4 w-4" />
                             {!certificate ? 'Sertifikat Belum Tersedia' : 'Menunggu Sertifikat'}
                         </Button>
@@ -187,51 +190,54 @@ export default function DetailMyCourse({
 
         if (hasCertificate) {
             return (
-                <div className="mb-6 rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-green-100 p-6 dark:border-green-700 dark:from-green-900/20 dark:to-green-800/20">
-                    <div className="mb-4 flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-600">
-                            <Award className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100">🎉 Sertifikat Kelulusan Tersedia!</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Anda telah berhasil menyelesaikan kelas ini dan sertifikat sudah siap diunduh
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between">
-                        {certificateParticipant && (
-                            <div className="mt-4">
-                                <p className="text-sm text-gray-700 dark:text-gray-300">
-                                    No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                    {certificate.certificate_number}
-                                </p>
-                                <Link
-                                    href={route('certificate.participant.detail', {
-                                        code: certificateParticipant.certificate_code,
-                                    })}
-                                    className="text-sm text-green-600 underline hover:text-green-800 dark:text-green-400"
-                                >
-                                    Lihat Detail Sertifikat
-                                </Link>
+                <div className="group relative overflow-hidden rounded-2xl border-2 border-green-200 bg-gradient-to-br from-green-50 via-white to-emerald-100 p-6 shadow-lg dark:border-green-700 dark:from-green-900/20 dark:to-emerald-800/20">
+                    <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-gradient-to-bl from-green-300 to-transparent opacity-30 transition group-hover:scale-110" />
+                    <div className="relative z-10">
+                        <div className="mb-4 flex items-center gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-green-400 to-emerald-600 shadow-lg">
+                                <Award className="h-7 w-7 text-white" />
                             </div>
-                        )}
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">🎉 Sertifikat Kelulusan Tersedia!</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    Anda telah berhasil menyelesaikan kelas ini dan sertifikat sudah siap diunduh
+                                </p>
+                            </div>
+                        </div>
 
-                        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            <Button className="w-full" asChild>
-                                <a href={route('profile.course.certificate', { course: courseData.slug })} target="_blank">
-                                    <Download size={16} className="mr-2" />
-                                    Unduh Sertifikat
-                                </a>
-                            </Button>
+                        <div className="flex items-center justify-between">
+                            {certificateParticipant && (
+                                <div>
+                                    <p className="text-sm text-gray-700 dark:text-gray-300">
+                                        No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
+                                        {certificate.certificate_number}
+                                    </p>
+                                    <Link
+                                        href={route('certificate.participant.detail', {
+                                            code: certificateParticipant.certificate_code,
+                                        })}
+                                        className="text-sm text-green-600 underline hover:text-green-800 dark:text-green-400"
+                                    >
+                                        Lihat Detail Sertifikat
+                                    </Link>
+                                </div>
+                            )}
 
-                            <Button variant="outline" className="w-full" asChild>
-                                <a href={route('profile.course.certificate.preview', { course: courseData.slug })} target="_blank">
-                                    <Eye size={16} className="mr-2" />
-                                    Lihat Preview
-                                </a>
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button asChild>
+                                    <a href={route('profile.course.certificate', { course: courseData.slug })} target="_blank">
+                                        <Download size={16} className="mr-2" />
+                                        Unduh
+                                    </a>
+                                </Button>
+
+                                <Button variant="outline" asChild>
+                                    <a href={route('profile.course.certificate.preview', { course: courseData.slug })} target="_blank">
+                                        <Eye size={16} className="mr-2" />
+                                        Preview
+                                    </a>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -244,164 +250,178 @@ export default function DetailMyCourse({
     return (
         <UserLayout>
             <Head title={courseData?.title || 'Detail Kelas'} />
-            {!courseData ? (
-                <div className="flex h-screen items-center justify-center">
-                    <div className="text-center">
-                        <p className="mb-4">Detail kelas tidak dapat ditemukan.</p>
-                        <Button className="rounded-full" variant="secondary" asChild>
-                            <Link href="/profile/my-courses">
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Kembali Ke Kelas Saya
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white">
-                        <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
-                            <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
-                            <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
-                        </div>
-                        <div className="relative mx-auto max-w-7xl px-4 text-center">
-                            <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
-                                <Link href="/profile/my-courses">
-                                    <ArrowLeft /> Kembali Ke Kelas Saya
+            <ProfileLayout>
+                {!courseData ? (
+                    <div className="flex h-screen items-center justify-center">
+                        <div className="text-center">
+                            <p className="mb-4">Detail kelas tidak dapat ditemukan.</p>
+                            <Button asChild>
+                                <Link href="/profile">
+                                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali Ke Dashboard
                                 </Link>
                             </Button>
-                            <div className="col-span-2">
-                                <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
-                                    <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                                        📌 Enrolled in{' '}
-                                        {courseItem &&
-                                            new Date(courseItem.created_at).toLocaleDateString('id-ID', {
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}
-                                    </span>
-                                    <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
-                                        🎮 Level <span className="capitalize">{courseData.level}</span>
-                                    </span>
-                                    {hasCertificate ? (
-                                        <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
-                                            <Award size={16} />
-                                            Sertifikat Tersedia
-                                        </span>
-                                    ) : null}
-                                </div>
-
-                                <h1 className="mx-auto mb-4 max-w-2xl text-4xl leading-tight font-bold italic sm:text-5xl">{courseData.title}</h1>
-
-                                <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">{courseData.description}</p>
-
-                                <div className="flex items-center justify-center gap-4">
-                                    <span className={`font-semibold ${courseInvoiceStatus === 'paid' ? 'text-green-600' : 'text-red-600'}`}>
-                                        {courseInvoiceStatus !== 'paid' && (
-                                            <>
-                                                <span className="block text-red-600">⚠️ Status Pembayaran: {courseInvoiceStatus.toUpperCase()}</span>
-                                                <span className="block text-sm text-gray-600">
-                                                    {courseInvoiceStatus === 'failed'
-                                                        ? 'Pembayaran gagal atau dibatalkan. Silakan lakukan pembelian ulang.'
-                                                        : 'Selesaikan pembayaran untuk mengakses kelas.'}
-                                                </span>
-                                            </>
-                                        )}
-                                    </span>
-                                </div>
-                            </div>
                         </div>
-                    </section>
-                    <section className="mx-auto mb-12 w-full max-w-7xl px-4">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                            <div className="col-span-2 flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                {renderCertificateSection()}
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="mb-2 text-3xl font-bold italic">{courseData.title}</h1>
+                                <p className="text-muted-foreground">Detail progres dan sertifikat kelas Anda</p>
+                            </div>
+                            <Button variant="outline" asChild>
+                                <Link href="/profile">
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Kembali
+                                </Link>
+                            </Button>
+                        </div>
 
-                                <h1 className="text-lg font-semibold">Progres Kamu</h1>
-
-                                <div className="mt-4 mb-6">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progres Pembelajaran</span>
-                                        <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{courseItem?.progress || 0}%</span>
+                        {/* Payment Warning */}
+                        {courseInvoiceStatus !== 'paid' && (
+                            <div className="rounded-2xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50 p-6 shadow-lg dark:border-red-700 dark:from-red-900/20 dark:to-pink-900/20">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-800">
+                                        <span className="text-2xl">⚠️</span>
                                     </div>
-                                    <div className="h-3 w-full rounded-full bg-gray-200 shadow-inner dark:bg-gray-700">
-                                        <div
-                                            className={`relative h-3 rounded-full transition-all duration-500 ease-out ${
-                                                (courseItem?.progress || 0) === 100
-                                                    ? 'bg-gradient-to-r from-green-400 via-green-500 to-green-600 shadow-lg'
-                                                    : 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600'
-                                            }`}
-                                            style={{ width: `${courseItem?.progress || 0}%` }}
-                                        >
-                                            {(courseItem?.progress || 0) > 10 && (
-                                                <div className="absolute inset-0 animate-pulse rounded-full bg-white/20"></div>
-                                            )}
+                                    <div>
+                                        <h3 className="font-semibold text-red-900 dark:text-red-100">
+                                            Status Pembayaran: {courseInvoiceStatus.toUpperCase()}
+                                        </h3>
+                                        <p className="text-sm text-red-700 dark:text-red-300">
+                                            {courseInvoiceStatus === 'failed'
+                                                ? 'Pembayaran gagal atau dibatalkan. Silakan lakukan pembelian ulang.'
+                                                : 'Selesaikan pembayaran untuk mengakses kelas.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Certificate Section */}
+                        {renderCertificateSection()}
+
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                            {/* Main Content */}
+                            <div className="space-y-6 lg:col-span-2">
+                                {/* Progress Card */}
+                                <div className="rounded-2xl border bg-white p-6 shadow-lg dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <div className="rounded-full bg-gradient-to-br from-[#fccd22] to-[#200cf5] p-2">
+                                            <PlayCircle className="h-5 w-5 text-white" />
                                         </div>
+                                        <h2 className="text-xl font-bold italic">Progres Pembelajaran</h2>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="mb-2 flex items-center justify-between">
+                                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Progres Kamu</span>
+                                                <span className="text-lg font-bold">{courseItem?.progress || 0}%</span>
+                                            </div>
+                                            <Progress value={courseItem?.progress || 0} className="h-3" />
+                                        </div>
+
+                                        <div className="flex items-center justify-between rounded-lg border bg-gray-50 p-4 dark:bg-zinc-700">
+                                            <span className="text-sm font-medium">Status Penyelesaian:</span>
+                                            <div className="flex items-center gap-2">
+                                                {courseItem?.completed_at ? (
+                                                    <>
+                                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                                        <span className="font-semibold text-green-600">Selesai</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="h-5 w-5 rounded-full border-2 border-gray-400"></div>
+                                                        <span className="font-semibold text-gray-600">Sedang Berlangsung</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {courseItem?.completed_at && (
+                                            <p className="text-xs text-gray-500">
+                                                Diselesaikan pada:{' '}
+                                                {new Date(courseItem.completed_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                })}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Status Penyelesaian:</span>
-                                        <div className="flex items-center gap-2">
-                                            {courseItem?.completed_at ? (
-                                                <>
-                                                    <CheckCircle className="h-5 w-5 text-green-500" />
-                                                    <span className="text-sm font-semibold text-green-700 dark:text-green-400">Selesai</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="h-5 w-5 rounded-full border-2 border-gray-300 dark:border-gray-600"></div>
-                                                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Sedang Berlangsung</span>
-                                                </>
-                                            )}
+                                {/* Key Points Card */}
+                                <div className="rounded-2xl border bg-white p-6 shadow-lg dark:bg-zinc-800">
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <div className="rounded-full bg-gradient-to-br from-green-400 to-emerald-600 p-2">
+                                            <BadgeCheck className="h-5 w-5 text-white" />
                                         </div>
+                                        <h2 className="text-xl font-bold italic">Poin Utama</h2>
                                     </div>
-                                    {courseItem?.completed_at && (
-                                        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                                            Diselesaikan pada:{' '}
-                                            {new Date(courseItem.completed_at).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                            })}
-                                        </div>
-                                    )}
+                                    <ul className="space-y-3">
+                                        {keyPointList.map((keyPoint, idx) => (
+                                            <li key={idx} className="flex items-start gap-3 rounded-lg bg-green-50 p-3 dark:bg-green-900/20">
+                                                <BadgeCheck size={18} className="mt-0.5 min-w-5 flex-shrink-0 text-green-600" />
+                                                <p className="text-sm text-gray-700 dark:text-gray-300">{keyPoint}</p>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
-
-                                <h1 className="text-lg font-semibold">Poin Utama</h1>
-                                <ul className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                    {keyPointList.map((keyPoint, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
-                                            <p>{keyPoint}</p>
-                                        </li>
-                                    ))}
-                                </ul>
                             </div>
 
-                            <div className="col-span-1 space-y-4">
-                                <div className="flex h-full flex-col rounded-xl bg-white p-6 shadow dark:bg-zinc-800">
-                                    <h2 className="mb-4 text-center font-semibold">{courseData.title}</h2>
-                                    <img
-                                        src={courseData.thumbnail ? `/storage/${courseData.thumbnail}` : '/assets/images/placeholder.png'}
-                                        alt={courseData.title}
-                                        className="aspect-video rounded-xl object-cover shadow-lg"
-                                    />
+                            {/* Sidebar */}
+                            <div className="lg:col-span-1">
+                                <div className="sticky top-6 rounded-2xl border bg-white p-6 shadow-lg dark:bg-zinc-800">
+                                    <h3 className="mb-4 text-center font-semibold">{courseData.title}</h3>
+                                    <div className="group relative overflow-hidden rounded-xl">
+                                        <img
+                                            src={courseData.thumbnail ? `/storage/${courseData.thumbnail}` : '/assets/images/placeholder.png'}
+                                            alt={courseData.title}
+                                            className="aspect-video w-full object-cover shadow-lg transition-transform group-hover:scale-105"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
+                                    </div>
                                     <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">{courseData.short_description}</p>
 
                                     <Button
-                                        className="mt-2 w-full"
+                                        className="mt-4 w-full"
                                         onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
                                     >
+                                        <PlayCircle className="mr-2 h-4 w-4" />
                                         {isCompleted ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar'}
                                     </Button>
+
+                                    <div className="mt-4 space-y-2 text-sm">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Level:</span>
+                                            <span className="font-semibold capitalize">{courseData.level}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Kategori:</span>
+                                            <span className="font-semibold">{courseData.category.name}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-600">Terdaftar:</span>
+                                            <span className="font-semibold">
+                                                {new Date(courseItem.created_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric',
+                                                })}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </section>
-                </>
-            )}
+                    </div>
+                )}
+            </ProfileLayout>
 
             {courseData && (
                 <RatingDialog

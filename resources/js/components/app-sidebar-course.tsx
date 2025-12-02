@@ -1,15 +1,22 @@
 import { NavUser } from '@/components/nav-user';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { FileDown, FileText, LogOut, PlayCircle, HelpCircle, CheckCircle, Circle } from 'lucide-react';
+import { CheckCircle, Circle, FileDown, FileText, HelpCircle, LogOut, PlayCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavFooter } from './nav-footer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Button } from './ui/button';
 import { Progress } from './ui/progress';
-import { useMemo, useState, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { useSidebar } from '@/components/ui/sidebar';
 
 interface Lesson {
     id: string;
@@ -33,7 +40,14 @@ interface AppSidebarCourseProps {
     onProgressUpdate?: (progress: number) => void;
 }
 
-export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelectedLesson, onLessonComplete, onProgressUpdate }: AppSidebarCourseProps) {
+export function AppSidebarCourse({
+    courseSlug,
+    modules,
+    selectedLesson,
+    setSelectedLesson,
+    onLessonComplete,
+    onProgressUpdate,
+}: AppSidebarCourseProps) {
     const [expandedModule, setExpandedModule] = useState<React.Key | null>(null);
     const { state } = useSidebar(); // Ambil state sidebar (expanded/collapsed)
 
@@ -62,15 +76,13 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
     // Calculate progress
     const progressData = useMemo(() => {
         const totalLessons = modules.reduce((total, module) => total + module.lessons.length, 0);
-        const completedLessons = modules.reduce((total, module) => 
-            total + module.lessons.filter(lesson => lesson.isCompleted).length, 0
-        );
+        const completedLessons = modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.isCompleted).length, 0);
         const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
-        
+
         return {
             totalLessons,
             completedLessons,
-            progressPercentage
+            progressPercentage,
         };
     }, [modules]);
 
@@ -82,11 +94,11 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
                     },
                     body: JSON.stringify({
-                        progress: Math.round(progressData.progressPercentage)
-                    })
+                        progress: Math.round(progressData.progressPercentage),
+                    }),
                 });
 
                 if (response.ok && onProgressUpdate) {
@@ -104,14 +116,14 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
 
     // Check if all lessons in a module are completed
     const isModuleCompleted = (module: Module) => {
-        return module.lessons.length > 0 && module.lessons.every(lesson => lesson.isCompleted);
+        return module.lessons.length > 0 && module.lessons.every((lesson) => lesson.isCompleted);
     };
 
     // Helper: check if a lesson is accessible (all previous lessons are completed)
     const isLessonAccessible = (moduleIdx: number, lessonIdx: number) => {
         // All previous lessons in previous modules
         for (let m = 0; m < moduleIdx; m++) {
-            if (modules[m].lessons.some(l => !l.isCompleted)) return false;
+            if (modules[m].lessons.some((l) => !l.isCompleted)) return false;
         }
         // All previous lessons in this module
         for (let l = 0; l < lessonIdx; l++) {
@@ -128,9 +140,9 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                         <SidebarMenuItem>
                             <SidebarMenuButton size="lg" asChild>
                                 <Link href="/admin/dashboard" prefetch>
-                                    <img src="/assets/images/logo-primary.png" alt="Aksademy" className="block w-32 fill-current dark:hidden" />
+                                    <img src="/assets/images/logo-primary.png" alt="Skill Grow" className="block w-32 fill-current dark:hidden" />
                                     {/* Logo untuk dark mode */}
-                                    <img src="/assets/images/logo-secondary.png" alt="Aksademy" className="hidden w-32 fill-current dark:block" />
+                                    <img src="/assets/images/logo-secondary.png" alt="Skill Grow" className="hidden w-32 fill-current dark:block" />
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -141,7 +153,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
             <SidebarContent>
                 {/* Progress Bar Section */}
                 {state === 'expanded' && (
-                    <div className="px-4 py-3 border-b">
+                    <div className="border-b px-4 py-3">
                         <div className="mb-2">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="font-medium">Progress Pembelajaran</span>
@@ -150,26 +162,20 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                                 </span>
                             </div>
                             <div className="mt-2">
-                                <Progress value={progressData.progressPercentage} className="h-2 bg-white border border-gray-200" />
+                                <Progress value={progressData.progressPercentage} className="h-2 border border-gray-200 bg-white" />
                             </div>
                             <div className="mt-1 text-right">
-                                <span className="text-xs text-muted-foreground">
-                                    {Math.round(progressData.progressPercentage)}% selesai
-                                </span>
+                                <span className="text-muted-foreground text-xs">{Math.round(progressData.progressPercentage)}% selesai</span>
                             </div>
                         </div>
                     </div>
                 )}
 
-                <Accordion 
-                    className="w-full" 
-                    expandedValue={expandedModule}
-                    onValueChange={setExpandedModule}
-                >
+                <Accordion className="w-full" expandedValue={expandedModule} onValueChange={setExpandedModule}>
                     {modules.map((module, moduleIdx) => (
                         <AccordionItem key={module.id} value={module.id}>
                             <AccordionTrigger className="px-2 text-left text-sm font-semibold hover:no-underline">
-                                <div className="flex items-center gap-2 w-full">
+                                <div className="flex w-full items-center gap-2">
                                     {state === 'collapsed' ? (
                                         <span className="flex-1 truncate">
                                             {module.title.length > 4 ? module.title.slice(0, 4) + '...' : module.title}
@@ -177,9 +183,7 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                                     ) : (
                                         <span className="flex-1">{module.title}</span>
                                     )}
-                                    {isModuleCompleted(module) && (
-                                        <CheckCircle className="h-4 w-4 text-green-600" />
-                                    )}
+                                    {isModuleCompleted(module) && <CheckCircle className="h-4 w-4 text-green-600" />}
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
@@ -196,14 +200,14 @@ export function AppSidebarCourse({ courseSlug, modules, selectedLesson, setSelec
                                                                     onClick={() => accessible && setSelectedLesson(lesson)}
                                                                     className={`rounded-md p-2 text-left text-sm transition-colors ${
                                                                         state === 'collapsed'
-                                                                            ? 'flex items-center justify-center w-10 h-10'
+                                                                            ? 'flex h-10 w-10 items-center justify-center'
                                                                             : 'flex flex-1 items-center gap-2'
                                                                     } ${
                                                                         selectedLesson?.id === lesson.id
                                                                             ? 'bg-accent text-accent-foreground'
                                                                             : accessible
-                                                                                ? 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                                                                                : 'text-gray-400 cursor-not-allowed opacity-60'
+                                                                              ? 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                                                              : 'cursor-not-allowed text-gray-400 opacity-60'
                                                                     }`}
                                                                     disabled={!accessible}
                                                                     tabIndex={accessible ? 0 : -1}

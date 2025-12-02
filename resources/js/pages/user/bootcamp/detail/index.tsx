@@ -2,11 +2,10 @@ import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
 import AboutSection from './about-section';
+import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
-import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
 import RelatedProduct from './related-product';
-import RequirementSection from './requirement-section';
 import TimelineSection from './timeline-section';
 import ToolsSection from './tools-section';
 
@@ -88,11 +87,10 @@ export default function Bootcamp({
             <Head title={`${bootcamp.title} - Bootcamp`} />
 
             <HeroSection bootcamp={bootcamp} />
+            <BenefitsSection bootcamp={bootcamp} />
             <AboutSection />
             <TimelineSection bootcamp={bootcamp} />
-            <RequirementSection bootcamp={bootcamp} />
             <ToolsSection bootcamp={bootcamp} />
-            <MentorSection bootcamp={bootcamp} />
             <RegisterSection bootcamp={bootcamp} />
             <RelatedProduct relatedBootcamps={relatedBootcamps} myBootcampIds={myBootcampIds} />
         </UserLayout>

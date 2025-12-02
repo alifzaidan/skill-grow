@@ -44,6 +44,12 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/contact', function () {
+    return Inertia::render('user/contact/index');
+})->name('contact');
+Route::get('/about', function () {
+    return Inertia::render('user/about/index');
+})->name('about');
 Route::get('/terms-and-conditions', [LegalController::class, 'termsAndConditions'])->name('terms-and-conditions');
 Route::get('/privacy-policy', [LegalController::class, 'privacyPolicy'])->name('privacy-policy');
 Route::get('/course', [UserCourseController::class, 'index'])->name('course.index');
@@ -224,6 +230,8 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
     });
 });
+
+Route::get('/doku/callback', [InvoiceController::class, 'dokuReturn'])->name('doku.callback.web');
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

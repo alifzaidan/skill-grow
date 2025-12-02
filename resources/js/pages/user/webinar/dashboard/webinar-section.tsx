@@ -1,9 +1,17 @@
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Magnetic } from '@/components/ui/magnetic';
-import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
-import { Calendar, GalleryVerticalEnd } from 'lucide-react';
+import { GalleryVerticalEnd, Star } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 type Category = {
@@ -30,6 +38,7 @@ interface WebinarProps {
 }
 
 export default function WebinarSection({ categories, webinars, myWebinarIds }: WebinarProps) {
+    const [level, setLevel] = useState('all');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
@@ -60,24 +69,42 @@ export default function WebinarSection({ categories, webinars, myWebinarIds }: W
         categoryRef.current.scrollLeft = scrollLeft.current - walk;
     };
 
-    const filteredWebinar = webinars.filter((webinar) => {
+    const filteredWebinars = webinars.filter((webinar) => {
         const matchSearch = webinar.title.toLowerCase().includes(search.toLowerCase());
         const matchCategory = selectedCategory === null ? true : webinar.category.id === selectedCategory;
         return matchSearch && matchCategory;
     });
 
-    const visibleWebinars = filteredWebinar.slice(0, visibleCount);
-
+    const visibleWebinars = filteredWebinars.slice(0, visibleCount);
     return (
         <section className="mx-auto w-full max-w-7xl px-4" id="webinar">
-            <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Siap upgrade skill dan jadi lebih siap di dunia kerja digital.
-            </h2>
-            <p className="mx-auto mb-8 text-center text-gray-600 dark:text-gray-400">
-                Tingkatkan wawasan dan koneksi agar lebih siap dalam dunia kerja.
-            </p>
-            <div className="mb-4 flex">
-                <Input type="search" placeholder="Cari webinar..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <div className="bg-primary my-10 rounded-lg p-8 shadow-lg">
+                <h2 className="mx-auto mb-4 max-w-4xl text-center text-xl font-bold sm:text-2xl md:text-3xl lg:text-4xl">
+                    Pilih Webinar yang Tepat untuk Kamu
+                </h2>
+                <p className="mx-auto max-w-4xl text-center text-sm text-gray-600 md:text-base">
+                    Di Skill Grow, kamu bisa pilih webinar yang paling cocok buat kamu. Belajar jadi lebih seru karena sesuai dengan apa yang kamu
+                    suka!
+                </p>
+            </div>
+
+            <div className="mb-4 flex justify-between gap-2">
+                <Input type="search" placeholder="Cari kelas..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline">Filter Tingkat Kesulitan</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56">
+                        <DropdownMenuLabel>Pilih Tingkat Kesulitan</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuRadioGroup value={level} onValueChange={setLevel}>
+                            <DropdownMenuRadioItem value="all">Semua</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="beginner">Beginner</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="intermediate">Intermediate</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="advanced">Advanced</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
             <div
                 className="mb-4 overflow-x-auto"
@@ -94,7 +121,7 @@ export default function WebinarSection({ categories, webinars, myWebinarIds }: W
                         onClick={() => setSelectedCategory(null)}
                         className={`rounded-xl border px-4 py-2 text-sm transition hover:cursor-pointer ${
                             selectedCategory === null
-                                ? 'to-primary text-primary-foreground border-primary bg-gradient-to-br from-black'
+                                ? 'bg-primary text-primary-foreground border-primary'
                                 : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                         } `}
                     >
@@ -107,7 +134,7 @@ export default function WebinarSection({ categories, webinars, myWebinarIds }: W
                             onClick={() => setSelectedCategory(category.id)}
                             className={`rounded-xl border px-4 py-2 text-sm transition hover:cursor-pointer ${
                                 selectedCategory === category.id
-                                    ? 'to-primary text-primary-foreground border-primary bg-gradient-to-br from-black'
+                                    ? 'bg-primary text-primary-foreground border-primary'
                                     : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                             } `}
                         >
@@ -116,73 +143,86 @@ export default function WebinarSection({ categories, webinars, myWebinarIds }: W
                     ))}
                 </div>
             </div>
-            <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleWebinars.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                        <img src="/assets/images/not-found.webp" alt="Webinar Belum Tersedia" className="w-48" />
-                        <div className="text-center text-gray-500">Belum ada webinar yang tersedia saat ini.</div>
+                        <img src="/assets/images/not-found.webp" alt="Kelas Belum Tersedia" className="w-48" />
+                        <div className="text-center text-gray-500">Belum ada kelas yang tersedia saat ini.</div>
                     </div>
                 ) : (
                     visibleWebinars.map((webinar) => {
                         const hasAccess = myWebinarIds.includes(webinar.id);
-
                         return (
                             <Link
                                 key={webinar.id}
                                 href={hasAccess ? `profile/my-webinars/${webinar.slug}` : `/webinar/${webinar.slug}`}
-                                className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
+                                className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl transition-transform hover:-translate-y-1 hover:shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
                             >
-                                <Spotlight className="bg-primary blur-2xl" size={284} />
-                                <div
-                                    className={`relative flex h-full w-full flex-col items-center justify-between rounded-lg transition-colors ${
-                                        hasAccess ? 'bg-zinc-100 dark:bg-zinc-900' : 'bg-sidebar dark:bg-zinc-800'
-                                    }`}
-                                >
-                                    <div className="w-full overflow-hidden rounded-t-lg">
-                                        <img
-                                            src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
-                                            alt={webinar.title}
-                                            className="h-48 w-full rounded-t-lg object-cover"
-                                        />
-                                        <h2 className="mx-4 mt-2 text-lg font-semibold">{webinar.title}</h2>
+                                <div className="relative h-48 w-full overflow-hidden">
+                                    <img
+                                        src={webinar.thumbnail ? `/storage/${webinar.thumbnail}` : '/assets/images/placeholder.png'}
+                                        alt={webinar.title}
+                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                    <div className="absolute top-3 left-3 flex gap-2">
+                                        {/* <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold shadow ${
+                                                webinar.level === 'beginner'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : webinar.level === 'intermediate'
+                                                      ? 'bg-yellow-100 text-yellow-700'
+                                                      : 'bg-red-100 text-red-700'
+                                            }`}
+                                        >
+                                            {webinar.level.charAt(0).toUpperCase() + webinar.level.slice(1)}
+                                        </span> */}
+                                        <span className="bg-primary rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
+                                            {webinar.category.name}
+                                        </span>
                                     </div>
-                                    <div className="w-full p-4 text-left">
-                                        {hasAccess ? (
-                                            <p className="text-primary text-sm font-medium">Anda sudah memiliki akses</p>
-                                        ) : webinar.price === 0 ? (
-                                            <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
-                                        ) : (
-                                            <div className="">
-                                                {webinar.strikethrough_price > 0 && (
-                                                    <p className="text-sm text-red-500 line-through">
-                                                        Rp {webinar.strikethrough_price.toLocaleString('id-ID')}
-                                                    </p>
-                                                )}
-                                                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                                                    Rp {webinar.price.toLocaleString('id-ID')}
-                                                </p>
-                                            </div>
-                                        )}
-                                        <div className="mt-2 flex justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar size="18" />
-                                                <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                    {new Date(webinar.start_time).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                    })}
-                                                </p>
-                                            </div>
+                                    {hasAccess && (
+                                        <span className="bg-primary absolute top-3 right-3 rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
+                                            Sudah Diambil
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex flex-1 flex-col justify-between p-5">
+                                    <div>
+                                        <h2 className="mb-2 line-clamp-2 text-lg font-bold text-gray-900 dark:text-white">{webinar.title}</h2>
+                                        <p className="mb-4 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">{webinar.description}</p>
+                                    </div>
+                                    <div className="mt-auto flex items-center justify-between">
+                                        <div>
+                                            {hasAccess ? (
+                                                <span className="text-primary text-sm font-semibold">Akses Dimiliki</span>
+                                            ) : webinar.price === 0 ? (
+                                                <span className="font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                            ) : (
+                                                <div>
+                                                    {webinar.strikethrough_price > 0 && (
+                                                        <span className="mr-1 text-xs text-red-400 line-through">
+                                                            Rp {webinar.strikethrough_price.toLocaleString('id-ID')}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-base font-bold text-gray-800 dark:text-gray-200">
+                                                        Rp {webinar.price.toLocaleString('id-ID')}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Star size={16} className="text-yellow-400" fill="currentColor" />
+                                            <span className="text-xs text-gray-500">5.0</span>
                                         </div>
                                     </div>
                                 </div>
+                                <div className="ring-primary pointer-events-none absolute inset-0 rounded-2xl opacity-0 ring-2 transition-opacity group-hover:opacity-100"></div>
                             </Link>
                         );
                     })
                 )}
             </div>
-            {visibleCount < filteredWebinar.length && (
+            {visibleCount < filteredWebinars.length && (
                 <div className="mb-8 flex justify-center">
                     <Magnetic>
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>

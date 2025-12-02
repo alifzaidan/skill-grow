@@ -418,362 +418,332 @@ export default function RegisterBootcamp({
     return (
         <UserLayout>
             <Head title="Daftar Bootcamp" />
-            <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
-                <div className="mx-auto my-12 w-full max-w-7xl px-4">
-                    <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Daftar Bootcamp "{bootcamp.title}"
-                    </h2>
-                    <p className="text-center text-gray-400">
-                        {isFree
-                            ? 'Silahkan lengkapi persyaratan berikut untuk mendaftar bootcamp.'
-                            : 'Silakan selesaikan pembayaran untuk mendaftar bootcamp.'}
-                    </p>
-                </div>
-            </section>
-            <section className="mx-auto my-4 w-full max-w-7xl px-4">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
-                        <TabsList>
-                            <TabsTrigger value="detail">Detail Bootcamp</TabsTrigger>
-                            <TabsTrigger value="curriculum">Kurikulum Bootcamp</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="detail">
-                            <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Yang akan kamu dapatkan</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">Manfaat yang akan kamu peroleh setelah mengikuti bootcamp ini.</p>
-                                <ul className="space-y-2">
+            <section className="min-h-screen w-full bg-gradient-to-br from-yellow-50 via-white to-blue-50 px-2 py-8">
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 lg:flex-row">
+                    {/* Kiri: Info & Detail */}
+                    <div className="flex flex-1 flex-col gap-6">
+                        <div className="flex flex-col items-center gap-6 rounded-2xl border bg-white/80 p-6 shadow-lg md:flex-row">
+                            <img
+                                src={bootcamp.thumbnail ? `/storage/${bootcamp.thumbnail}` : '/assets/images/placeholder.png'}
+                                alt={bootcamp.title}
+                                className="aspect-video w-full rounded-xl object-cover shadow-md md:w-64"
+                            />
+                            <div className="flex-1">
+                                <h2 className="mb-2 text-3xl font-bold text-black italic">{bootcamp.title}</h2>
+                                <p className="mb-4 line-clamp-3 text-gray-600">{bootcamp.description}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 uppercase">
+                                        Batch {bootcamp.batch}
+                                    </span>
+                                    {isFree && (
+                                        <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-700 uppercase">Gratis</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <Tabs defaultValue="benefits" className="rounded-2xl border bg-white/80 shadow-lg">
+                            <TabsList className="w-full">
+                                <TabsTrigger value="benefits" className="flex-1">
+                                    Manfaat
+                                </TabsTrigger>
+                                <TabsTrigger value="requirements" className="flex-1">
+                                    Persyaratan
+                                </TabsTrigger>
+                                <TabsTrigger value="curriculum" className="flex-1">
+                                    Kurikulum
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="benefits" className="p-6">
+                                <h3 className="mb-4 text-xl font-bold text-black italic">Yang akan kamu dapatkan</h3>
+                                <ul className="space-y-3">
                                     {benefitList.map((benefit, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
+                                        <li key={idx} className="flex items-start gap-3">
+                                            <BadgeCheck size={20} className="mt-1 min-w-5 flex-shrink-0 text-green-600" />
                                             <p className="text-sm md:text-base">{benefit}</p>
                                         </li>
                                     ))}
                                 </ul>
-                                <h2 className="mt-6 text-3xl font-bold italic">Persyaratan Peserta</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Pastikan kamu memenuhi persyaratan berikut sebelum mendaftar bootcamp ini.
-                                </p>
-                                <ul className="space-y-2">
+                            </TabsContent>
+                            <TabsContent value="requirements" className="p-6">
+                                <h3 className="mb-4 text-xl font-bold text-black italic">Persyaratan Peserta</h3>
+                                <ul className="space-y-3">
                                     {requirementList.map((requirement, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            <BadgeCheck size={18} className="mt-1 min-w-6 text-green-600" />
+                                        <li key={idx} className="flex items-start gap-3">
+                                            <BadgeCheck size={20} className="mt-1 min-w-5 flex-shrink-0 text-green-600" />
                                             <p className="text-sm md:text-base">{requirement}</p>
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="curriculum">
-                            <div className="h-full rounded-lg border p-4">
-                                <h2 className="text-3xl font-bold italic">Kurikulum</h2>
-                                <p className="mt-2 mb-4 text-sm text-gray-600">
-                                    Berikut adalah daftar materi yang akan dipelajari selama bootcamp ini.
-                                </p>
-                                <ul className="space-y-2">
+                            </TabsContent>
+                            <TabsContent value="curriculum" className="p-6">
+                                <h3 className="mb-4 text-xl font-bold text-black italic">Kurikulum Bootcamp</h3>
+                                <ul className="space-y-3">
                                     {curriculumList.map((curriculum, idx) => (
-                                        <li key={idx} className="flex items-center gap-2">
-                                            <p className="font-semibold">{idx + 1}.</p>
+                                        <li key={idx} className="flex items-start gap-3">
+                                            <span className="mt-1 min-w-6 flex-shrink-0 font-semibold text-blue-600">{idx + 1}.</span>
                                             <p className="text-sm md:text-base">{curriculum}</p>
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                            </TabsContent>
+                        </Tabs>
+                    </div>
 
-                    {hasAccess ? (
-                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                            <BadgeCheck size={64} className="text-green-500" />
-                            <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
-                            <p className="text-sm text-gray-500">Anda sudah terdaftar di bootcamp ini. Silakan masuk ke dalam grup.</p>
-                            <Button asChild className="w-full">
-                                <a href={bootcamp.group_url ?? ''} target="_blank" rel="noopener noreferrer">
-                                    Masuk Group Bootcamp
-                                </a>
-                            </Button>
-                        </div>
-                    ) : pendingInvoiceUrl ? (
-                        <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                            <Hourglass size={64} className="text-yellow-500" />
-                            <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
-                            <p className="text-sm text-gray-500">
-                                Anda memiliki pembayaran yang belum selesai untuk bootcamp ini. Silakan lanjutkan untuk membayar.
-                            </p>
-                            <Button asChild className="w-full">
-                                <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
-                            </Button>
-                        </div>
-                    ) : !showFreeForm ? (
-                        <form onSubmit={handleCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Detail {isFree ? 'Pendaftaran' : 'Pembayaran'}</h2>
-                            <div className="space-y-4 rounded-lg border p-4">
-                                {isFree ? (
-                                    <div className="space-y-2 text-center">
-                                        <div className="flex items-center justify-between p-4">
+                    {/* Kanan: Ringkasan & Checkout */}
+                    <div className="w-full flex-shrink-0 lg:w-[400px]">
+                        <div className="sticky top-8 flex flex-col gap-4 rounded-2xl border-2 border-blue-100 bg-white/90 p-6 shadow-2xl">
+                            {hasAccess ? (
+                                <div className="flex flex-col items-center justify-center gap-4 text-center">
+                                    <BadgeCheck size={64} className="text-green-500" />
+                                    <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
+                                    <p className="text-sm text-gray-500">Anda sudah terdaftar di bootcamp ini. Silakan masuk ke dalam grup.</p>
+                                    <Button asChild className="w-full">
+                                        <a href={bootcamp.group_url ?? ''} target="_blank" rel="noopener noreferrer">
+                                            Masuk Group Bootcamp
+                                        </a>
+                                    </Button>
+                                </div>
+                            ) : pendingInvoiceUrl ? (
+                                <div className="flex flex-col items-center justify-center gap-4 text-center">
+                                    <Hourglass size={64} className="text-yellow-500" />
+                                    <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
+                                    <p className="text-sm text-gray-500">
+                                        Anda memiliki pembayaran yang belum selesai untuk bootcamp ini. Silakan lanjutkan untuk membayar.
+                                    </p>
+                                    <Button asChild className="w-full">
+                                        <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
+                                    </Button>
+                                </div>
+                            ) : !showFreeForm ? (
+                                <form onSubmit={handleCheckout} className="flex flex-col gap-4">
+                                    <h2 className="text-xl font-bold text-black italic">Ringkasan Pembayaran</h2>
+                                    {isFree ? (
+                                        <div className="flex items-center justify-center p-4 text-center">
                                             <span className="w-full text-2xl font-bold text-green-600">BOOTCAMP GRATIS</span>
                                         </div>
-                                        <p className="text-sm text-gray-600">Untuk mendapatkan akses gratis, Anda perlu:</p>
-                                        <ul className="space-y-1 text-left text-sm">
-                                            <li>
-                                                • Follow Instagram kami{' '}
-                                                <a
-                                                    href="https://www.instagram.com/aksarateknologi/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    @aksarateknologi
-                                                </a>{' '}
-                                                <a
-                                                    href="https://www.instagram.com/aksademy/"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    @aksademy
-                                                </a>
-                                            </li>
-                                            <li>
-                                                • Follow TikTok kami{' '}
-                                                <a
-                                                    href="https://www.tiktok.com/@aksarateknologimandiri"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    @aksarateknologi
-                                                </a>
-                                            </li>
-                                            <li>• Tag 3 teman di postingan Instagram kami</li>
-                                        </ul>
-                                        <p className="text-xs text-gray-500">Upload bukti follow dan tag untuk mendapatkan akses</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="promo-code">Kode Promo (Opsional)</Label>
-                                            <div className="relative">
-                                                <Input
-                                                    id="promo-code"
-                                                    type="text"
-                                                    placeholder="Masukkan kode promo"
-                                                    value={promoCode}
-                                                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                                                    className="pr-10"
-                                                />
-                                                {promoLoading && (
-                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
-                                                        <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
-                                                    </div>
-                                                )}
-                                                {!promoLoading && promoCode && (
-                                                    <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
-                                                        {discountData?.valid ? (
+                                    ) : (
+                                        <>
+                                            {/* Promo Code Input */}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="promo-code">Kode Promo (Opsional)</Label>
+                                                <div className="relative">
+                                                    <Input
+                                                        id="promo-code"
+                                                        type="text"
+                                                        placeholder="Masukkan kode promo"
+                                                        value={promoCode}
+                                                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                        className="w-full pr-10"
+                                                    />
+                                                    {promoLoading && (
+                                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                            <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
+                                                        </div>
+                                                    )}
+                                                    {!promoLoading && promoCode && (
+                                                        <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                            {discountData?.valid ? (
+                                                                <Check className="h-4 w-4 text-green-600" />
+                                                            ) : promoError ? (
+                                                                <X className="h-4 w-4 text-red-600" />
+                                                            ) : null}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {promoError && <p className="text-sm text-red-600">{promoError}</p>}
+                                                {discountData?.valid && (
+                                                    <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                                                        <div className="flex items-center gap-2">
                                                             <Check className="h-4 w-4 text-green-600" />
-                                                        ) : promoError ? (
-                                                            <X className="h-4 w-4 text-red-600" />
-                                                        ) : null}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {promoError && <p className="text-sm text-red-600">{promoError}</p>}
-                                            {discountData?.valid && (
-                                                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <Check className="h-4 w-4 text-green-600" />
-                                                        <p className="text-sm font-medium text-green-800">
-                                                            Kode promo "{discountData.discount_code.code}" berhasil diterapkan!
+                                                            <p className="text-sm font-medium text-green-800">
+                                                                Kode promo "{discountData.discount_code.code}" berhasil diterapkan!
+                                                            </p>
+                                                        </div>
+                                                        <p className="mt-1 text-xs text-green-600">
+                                                            {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
                                                         </p>
                                                     </div>
-                                                    <p className="mt-1 text-xs text-green-600">
-                                                        {discountData.discount_code.name} - Diskon {discountData.discount_code.formatted_value}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2 rounded-lg border p-4">
-                                            {bootcamp.strikethrough_price > 0 && (
-                                                <>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600">Harga Asli</span>
-                                                        <span className="font-semibold text-gray-500 line-through">
-                                                            Rp {bootcamp.strikethrough_price.toLocaleString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600">Diskon</span>
-                                                        <span className="font-semibold text-red-500">
-                                                            -Rp {(bootcamp.strikethrough_price - bootcamp.price).toLocaleString('id-ID')}
-                                                        </span>
-                                                    </div>
-                                                    <Separator className="my-2" />
-                                                </>
-                                            )}
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Harga Bootcamp</span>
-                                                <span className="font-semibold text-gray-500">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
+                                                )}
                                             </div>
 
-                                            {/* Promo Discount */}
-                                            {discountData?.valid && (
+                                            <div className="space-y-2 rounded-lg border bg-blue-50/50 p-4">
+                                                {bootcamp.strikethrough_price > 0 && (
+                                                    <>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Harga Asli</span>
+                                                            <span className="font-semibold text-gray-500 line-through">
+                                                                Rp {bootcamp.strikethrough_price.toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Diskon</span>
+                                                            <span className="font-semibold text-red-500">
+                                                                -Rp {(bootcamp.strikethrough_price - bootcamp.price).toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                        <Separator className="my-2" />
+                                                    </>
+                                                )}
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
-                                                    <span className="font-semibold text-green-600">
-                                                        -Rp {discountData.discount_amount.toLocaleString('id-ID')}
-                                                    </span>
+                                                    <span className="text-gray-600">Harga Bootcamp</span>
+                                                    <span className="font-semibold text-gray-900">Rp {bootcamp.price.toLocaleString('id-ID')}</span>
                                                 </div>
-                                            )}
 
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-gray-600">Biaya Transaksi</span>
-                                                <span className="font-semibold text-gray-500">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                {/* Promo Discount */}
+                                                {discountData?.valid && (
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                                                        <span className="font-semibold text-green-600">
+                                                            -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Biaya Transaksi</span>
+                                                    <span className="font-semibold text-gray-900">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                </div>
+                                                <Separator className="my-2" />
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-semibold text-black">Total Pembayaran</span>
+                                                    <span className="text-xl font-bold text-black">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                                </div>
                                             </div>
-                                            <Separator className="my-2" />
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-semibold text-gray-900">Total Pembayaran</span>
-                                                <span className="text-primary text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
-                                            </div>
+                                        </>
+                                    )}
+                                    {!isFree && (
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                id="terms"
+                                                checked={termsAccepted}
+                                                onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                            />
+                                            <Label htmlFor="terms" className="text-sm">
+                                                Saya menyetujui{' '}
+                                                <a
+                                                    href="/terms-and-conditions"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-700 hover:underline"
+                                                >
+                                                    syarat dan ketentuan
+                                                </a>
+                                            </Label>
                                         </div>
-                                    </>
-                                )}
-
-                                {!isFree && (
-                                    <div className="flex items-center gap-3">
-                                        <Checkbox
-                                            id="terms"
-                                            checked={termsAccepted}
-                                            onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                    )}
+                                    <Button className="mt-2 w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
+                                        {loading ? 'Memproses...' : isFree ? 'Upload Bukti Follow' : 'Lanjutkan Pembayaran'}
+                                    </Button>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleFreeCheckout} className="flex flex-col gap-4">
+                                    <h2 className="text-xl font-bold text-black italic">Upload Bukti Follow & Tag</h2>
+                                    {/* ...existing free form code... */}
+                                    <div>
+                                        <Label htmlFor="ig_follow_proof">Bukti Follow Instagram</Label>
+                                        <Input
+                                            id="ig_follow_proof"
+                                            data-field="ig_follow_proof"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleFileChange('ig_follow_proof', e.target.files?.[0] || null)}
+                                            className={fileErrors.ig_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
+                                            required
                                         />
-                                        <Label htmlFor="terms">
-                                            Saya menyetujui{' '}
-                                            <a
-                                                href="/terms-and-conditions"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-700 hover:underline"
-                                            >
-                                                syarat dan ketentuan
-                                            </a>
-                                        </Label>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Screenshot halaman profil Instagram kami yang menunjukkan Anda sudah follow (Maks. 2MB)
+                                        </p>
+                                        {fileErrors.ig_follow_proof && (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                                <Button className="w-full" type="submit" disabled={(isFree ? false : !termsAccepted) || loading}>
-                                    {loading ? 'Memproses...' : isFree ? 'Upload Bukti Follow' : 'Lanjutkan Pembayaran'}
-                                </Button>
-                            </div>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleFreeCheckout}>
-                            <h2 className="my-2 text-xl font-bold italic">Upload Bukti Follow & Tag</h2>
-                            <div className="space-y-4 rounded-lg border p-4">
-                                {/* Bukti Follow Instagram */}
-                                <div>
-                                    <Label htmlFor="ig_follow_proof">Bukti Follow Instagram</Label>
-                                    <Input
-                                        id="ig_follow_proof"
-                                        data-field="ig_follow_proof"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileChange('ig_follow_proof', e.target.files?.[0] || null)}
-                                        className={fileErrors.ig_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
-                                        required
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot halaman profil Instagram kami yang menunjukkan Anda sudah follow (Maks. 2MB)
-                                    </p>
-                                    {fileErrors.ig_follow_proof && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
-                                        </p>
-                                    )}
-                                </div>
 
-                                {/* Bukti Follow TikTok */}
-                                <div>
-                                    <Label htmlFor="tiktok_follow_proof">Bukti Follow TikTok</Label>
-                                    <Input
-                                        id="tiktok_follow_proof"
-                                        data-field="tiktok_follow_proof"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileChange('tiktok_follow_proof', e.target.files?.[0] || null)}
-                                        className={fileErrors.tiktok_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
-                                        required
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot halaman profil TikTok kami yang menunjukkan Anda sudah follow (Maks. 2MB)
-                                    </p>
-                                    {fileErrors.tiktok_follow_proof && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                    <div>
+                                        <Label htmlFor="tiktok_follow_proof">Bukti Follow TikTok</Label>
+                                        <Input
+                                            id="tiktok_follow_proof"
+                                            data-field="tiktok_follow_proof"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleFileChange('tiktok_follow_proof', e.target.files?.[0] || null)}
+                                            className={fileErrors.tiktok_follow_proof ? 'border-red-500 focus:ring-red-500' : ''}
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Screenshot halaman profil TikTok kami yang menunjukkan Anda sudah follow (Maks. 2MB)
                                         </p>
-                                    )}
-                                </div>
+                                        {fileErrors.tiktok_follow_proof && (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                            </p>
+                                        )}
+                                    </div>
 
-                                {/* Bukti Tag 3 Teman */}
-                                <div>
-                                    <Label htmlFor="tag_friend_proof">Bukti Tag 3 Teman di Instagram</Label>
-                                    <Input
-                                        id="tag_friend_proof"
-                                        data-field="tag_friend_proof"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileChange('tag_friend_proof', e.target.files?.[0] || null)}
-                                        className={fileErrors.tag_friend_proof ? 'border-red-500 focus:ring-red-500' : ''}
-                                        required
-                                    />
-                                    <p className="mt-1 text-xs text-gray-500">
-                                        Screenshot postingan Instagram kami yang menunjukkan Anda sudah tag 3 teman di komentar (Maks. 2MB)
-                                    </p>
-                                    {fileErrors.tag_friend_proof && (
-                                        <p className="mt-1 text-xs text-red-600">
-                                            File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                    <div>
+                                        <Label htmlFor="tag_friend_proof">Bukti Tag 3 Teman di Instagram</Label>
+                                        <Input
+                                            id="tag_friend_proof"
+                                            data-field="tag_friend_proof"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleFileChange('tag_friend_proof', e.target.files?.[0] || null)}
+                                            className={fileErrors.tag_friend_proof ? 'border-red-500 focus:ring-red-500' : ''}
+                                            required
+                                        />
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Screenshot postingan Instagram kami yang menunjukkan Anda sudah tag 3 teman di komentar (Maks. 2MB)
                                         </p>
-                                    )}
-                                </div>
+                                        {fileErrors.tag_friend_proof && (
+                                            <p className="mt-1 text-xs text-red-600">
+                                                File tidak valid. Pastikan ukuran tidak melebihi 2MB dan format gambar.
+                                            </p>
+                                        )}
+                                    </div>
 
-                                <div className="flex gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            setShowFreeForm(false);
-                                            // Reset file errors ketika kembali
-                                            setFileErrors({
-                                                ig_follow_proof: false,
-                                                tiktok_follow_proof: false,
-                                                tag_friend_proof: false,
-                                            });
-                                            setFreeFormData({
-                                                ig_follow_proof: null,
-                                                tiktok_follow_proof: null,
-                                                tag_friend_proof: null,
-                                            });
-                                        }}
-                                        className="flex-1"
-                                    >
-                                        Kembali
-                                    </Button>
-                                    <Button
-                                        type="submit"
-                                        disabled={
-                                            loading ||
-                                            !freeFormData.ig_follow_proof ||
-                                            !freeFormData.tiktok_follow_proof ||
-                                            !freeFormData.tag_friend_proof ||
-                                            fileErrors.ig_follow_proof ||
-                                            fileErrors.tiktok_follow_proof ||
-                                            fileErrors.tag_friend_proof
-                                        }
-                                        className="flex-1"
-                                    >
-                                        {loading ? 'Memproses...' : 'Dapatkan Akses Gratis'}
-                                    </Button>
-                                </div>
-                            </div>
-                        </form>
-                    )}
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setShowFreeForm(false);
+                                                setFileErrors({
+                                                    ig_follow_proof: false,
+                                                    tiktok_follow_proof: false,
+                                                    tag_friend_proof: false,
+                                                });
+                                                setFreeFormData({
+                                                    ig_follow_proof: null,
+                                                    tiktok_follow_proof: null,
+                                                    tag_friend_proof: null,
+                                                });
+                                            }}
+                                            className="flex-1"
+                                        >
+                                            Kembali
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            disabled={
+                                                loading ||
+                                                !freeFormData.ig_follow_proof ||
+                                                !freeFormData.tiktok_follow_proof ||
+                                                !freeFormData.tag_friend_proof ||
+                                                fileErrors.ig_follow_proof ||
+                                                fileErrors.tiktok_follow_proof ||
+                                                fileErrors.tag_friend_proof
+                                            }
+                                            className="flex-1"
+                                        >
+                                            {loading ? 'Memproses...' : 'Dapatkan Akses Gratis'}
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </section>
         </UserLayout>

@@ -25,7 +25,7 @@ export function AppContent({ variant = 'header', children, ...props }: AppConten
 
     return (
         <main
-            className={`${isAdmin || isAffiliate || isMentor ? 'pt-34' : 'pt-18'} mx-auto flex h-full w-full flex-1 flex-col gap-4 overflow-x-hidden`}
+            className={`${isAdmin || isAffiliate || isMentor ? 'pt-34' : 'pt-16'} mx-auto flex h-full w-full flex-1 flex-col gap-4 overflow-x-hidden`}
             {...props}
         >
             {(isAdmin || isAffiliate || isMentor) && (

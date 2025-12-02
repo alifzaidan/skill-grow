@@ -147,7 +147,7 @@ export default function MentorShow({ mentor, courses, articles, webinars, bootca
                             <div className="flex-1">
                                 <h1 className="mb-2 text-2xl font-bold italic md:text-3xl">{mentor.name}</h1>
 
-                                <p className="text-muted-foreground mb-4 text-sm md:text-base">{mentor.bio || 'Mentor profesional di Aksademy'}</p>
+                                <p className="text-muted-foreground mb-4 text-sm md:text-base">{mentor.bio || 'Mentor profesional di Skill Grow'}</p>
 
                                 {/* Contact Info */}
                                 <div className="mb-4 flex flex-wrap gap-4 text-sm">

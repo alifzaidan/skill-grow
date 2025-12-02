@@ -54,7 +54,7 @@ export default function MentorIndex({ mentors }: MentorIndexProps) {
                                                     {mentor.name}
                                                 </h3>
                                                 <Badge variant="secondary" className="text-xs">
-                                                    {mentor.bio || 'Mentor profesional di Aksademy'}
+                                                    {mentor.bio || 'Mentor profesional di Skill Grow'}
                                                 </Badge>
                                             </div>
                                         </div>

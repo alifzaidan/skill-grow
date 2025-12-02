@@ -33,12 +33,10 @@
             width: 100%;
             position: relative;
             padding: 14mm;
-            margin-left: 66mm;
         }
 
         .certificate-content {
             width: 100%;
-            max-width: 260mm;
             padding: 20px;
             position: relative;
             display: flex;
@@ -47,34 +45,14 @@
         }
 
         .header {
-            margin-bottom: 15px;
-        }
-
-        .header-top {
-            font-size: 38px;
-            color: #6b7280;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-
-        .header-bottom {
-            font-size: 38px;
-            color: #6b7280;
-            margin-bottom: 52px;
+            margin-top: 420px;
+            margin-bottom: 0;
         }
 
         .certificate-title {
             font-size: 130px;
-            font-weight: bold;
-            color: #1e40af;
+            font-weight: 500;
             text-transform: uppercase;
-        }
-
-        .certificate-subtitle {
-            font-size: 72px;
-            color: #1e40af;
-            font-weight: 600;
-            margin-bottom: 46px;
         }
 
         .content {
@@ -82,27 +60,24 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            margin: 32px 0;
+            margin: 0;
         }
 
         .content-text {
             font-size: 38px;
-            color: #1e40af;
             margin-top: 32px;
-            margin-bottom: 24px;
+            margin-bottom: 5px;
         }
 
         .participant-name {
             font-size: 100px;
-            font-weight: bold;
-            color: #1e40af;
+            font-weight: 500;
             margin: 52px 0;
             display: inline-block;
             min-width: 250px;
         }
 
         .program-name {
-            color: #1e40af;
             font-style: italic;
             display: block;
             margin-top: 24px;
@@ -116,7 +91,7 @@
 
         .description {
             font-size: 38px;
-            max-width: 920px;
+            max-width: 1520px;
         }
 
         .period {
@@ -128,7 +103,7 @@
 
         .footer {
             position: relative;
-            margin-top: 150px;
+            margin-top: 120px;
             height: 120px;
             clear: both;
         }
@@ -143,19 +118,19 @@
             float: right;
             width: 50%;
             text-align: right;
-            margin-top: 150px;
-            margin-right: 600px;
+            margin-top: 100px;
+            margin-right: 350px;
         }
 
         .qr-container {
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             position: relative;
             text-align: right;
         }
 
         .qr-code {
-            width: 150px;
-            height: 150px;
+            width: 200px;
+            height: 200px;
             margin: 0 0 16px auto;
             border: 2px solid #e5e7eb;
             border-radius: 8px;
@@ -188,8 +163,8 @@
 
         .signature-space {
             width: 150px;
-            height: 250px;
-            margin-bottom: 8px;
+            height: 200px;
+            margin-top: 36px;
             position: relative;
         }
 
@@ -201,7 +176,6 @@
 
         .signature-name {
             font-size: 46px;
-            color: #1e40af;
             font-weight: bold;
             margin-bottom: 2px;
             text-decoration: underline;
@@ -234,40 +208,17 @@
         <div class="certificate-content">
             {{-- Header --}}
             <div class="header">
-                @if ($certificate->header_top)
-                    <div class="header-top">{{ $certificate->header_top }}</div>
-                @endif
-
-                @if ($certificate->header_bottom)
-                    <div class="header-bottom">{{ $certificate->header_bottom }}</div>
-                @endif
-
                 <div class="certificate-title">Sertifikat</div>
-                <div class="certificate-subtitle">
-                    @if ($certificate->webinar_id)
-                        Partisipasi
-                    @else
-                        Kompetensi Kelulusan
-                    @endif
-                </div>
             </div>
 
             {{-- Content --}}
             <div class="content">
                 <div class="content-text">
-                    {{ sprintf('%04d', $data['certificate_number']) }}/{{ $certificate->certificate_number }}
+                    No. {{ sprintf('%04d', $data['certificate_number']) }}/{{ $certificate->certificate_number }}
                 </div>
 
                 <div class="participant-name">
                     {{ $data['participant_name'] }}
-                </div>
-
-                <div class="program-description">
-                    @if ($certificate->webinar_id)
-                        TELAH BERPARTISIPASI PADA
-                    @else
-                        TELAH MENGIKUTI DAN DINYATAKAN LULUS
-                    @endif
                 </div>
 
                 @if ($certificate->description)
@@ -276,11 +227,14 @@
                     </div>
                 @endif
             </div>
+
             {{-- Footer --}}
             <div class="footer">
                 <div class="signature-container">
                     <div class="signature-date">
-                        {{ \Carbon\Carbon::parse($data['participant_issued_at'])->locale('id')->translatedFormat('d F Y') }}
+                        Batu,
+                        {{ \Carbon\Carbon::parse($certificate->issued_date)->locale('id')->translatedFormat('d F
+                                                Y') }}
                     </div>
                     <div class="signature-space">
                         @if ($certificate->sign && $certificate->sign->image)
@@ -324,7 +278,7 @@
                             <div class="certificate-url">{{ $certificateUrl }}</div>
                         @else
                             <div class="certificate-url">
-                                https://aksademy.id/certificate/{{ $data['certificate_code'] }}
+                                https://skillgrow.id/certificate/{{ $data['certificate_code'] }}
                             </div>
                         @endif
                     </div>

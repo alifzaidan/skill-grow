@@ -32,7 +32,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
             return storedReferral;
         }
 
-        return 'ATM2025';
+        return 'SGW2025';
     };
 
     const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
@@ -70,7 +70,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
     };
 
     return (
-        <AuthLayout title="Buat Akun Aksademy" description="Silahkan isi form untuk mendaftar.">
+        <AuthLayout title="Buat Akun Skill Grow" description="Silahkan isi form untuk mendaftar.">
             <Head title="Daftar" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">

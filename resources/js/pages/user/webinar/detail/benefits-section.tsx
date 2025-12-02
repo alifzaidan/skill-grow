@@ -15,23 +15,18 @@ export default function BenefitsSection({ webinar }: { webinar: Webinar }) {
     const benefitList = parseList(webinar.benefits);
 
     return (
-        <section className="mx-auto w-full max-w-5xl px-4">
-            <div className="mt-6 w-full">
-                <div>
-                    <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                        Manfaat yang Didapatkan
-                    </p>
-                    <ul className="space-y-2">
-                        {benefitList.map((benefit, idx) => (
-                            <li key={idx} className="flex gap-2">
-                                <BadgeCheck className="mt-1 min-w-12 text-green-600" />
-                                <div>
-                                    <h4 className="text-lg font-semibold">{benefit}</h4>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+        <section className="mx-auto mt-8 w-full max-w-7xl px-4">
+            <div className="mb-4 text-lg font-semibold text-black">Manfaat yang Didapatkan</div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {benefitList.map((benefit, idx) => (
+                    <div
+                        key={idx}
+                        className="flex gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
+                    >
+                        <BadgeCheck className="mt-1 min-w-6 text-green-600" size={24} />
+                        <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
+                    </div>
+                ))}
             </div>
         </section>
     );

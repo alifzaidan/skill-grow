@@ -77,12 +77,12 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title="Masuk ke Aksademy" description="Silahkan masukkan informasi akun kamu.">
+        <AuthLayout title="Masuk ke SkillGrow" description="Silahkan masukkan informasi akun kamu.">
             <Head title="Masuk" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 {/* Tampilkan referral info jika ada */}
-                {referralCode && referralCode !== 'ATM2025' && (
+                {referralCode && referralCode !== 'SGW2025' && (
                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                         <div className="flex items-center gap-2">
                             <div className="h-2 w-2 rounded-full bg-blue-500"></div>
@@ -163,7 +163,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                     <Button variant="outline" asChild>
                         <a href={route('auth.google.redirect')}>
                             <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
@@ -187,7 +187,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             Google
                         </a>
                     </Button>
-                    <Button variant="outline" asChild>
+                    {/* <Button variant="outline" asChild>
                         <a href={route('auth.github.redirect')}>
                             <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <title>GitHub</title>
@@ -195,7 +195,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                             </svg>
                             GitHub
                         </a>
-                    </Button>
+                    </Button> */}
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">

@@ -128,7 +128,7 @@ class CertificateController extends Controller
                 $prefilledData['program_type'] = 'course';
                 $prefilledData['course_id'] = $courseId;
                 $prefilledData['title'] = "Sertifikat {$course->title}";
-                $prefilledData['description'] = "Sertifikat {$course->title} yang diselenggarakan oleh Aksademy";
+                $prefilledData['description'] = "Sertifikat {$course->title} yang diselenggarakan oleh Skillgrow";
 
                 if (!$courses->contains('id', $courseId)) {
                     $courses->push((object)[
@@ -147,7 +147,7 @@ class CertificateController extends Controller
                 $prefilledData['program_type'] = 'bootcamp';
                 $prefilledData['bootcamp_id'] = $bootcampId;
                 $prefilledData['title'] = "Sertifikat {$bootcamp->title}";
-                $prefilledData['description'] = "Sertifikat {$bootcamp->title} yang diselenggarakan oleh Aksademy";
+                $prefilledData['description'] = "Sertifikat {$bootcamp->title} yang diselenggarakan oleh Skillgrow";
 
                 if (!$bootcamps->contains('id', $bootcampId)) {
                     $bootcamps->push((object)[
@@ -166,7 +166,7 @@ class CertificateController extends Controller
                 $prefilledData['program_type'] = 'webinar';
                 $prefilledData['webinar_id'] = $webinarId;
                 $prefilledData['title'] = "Sertifikat {$webinar->title}";
-                $prefilledData['description'] = "Sertifikat {$webinar->title} yang diselenggarakan oleh Aksademy";
+                $prefilledData['description'] = "Sertifikat {$webinar->title} yang diselenggarakan oleh Skillgrow";
 
                 if (!$webinars->contains('id', $webinarId)) {
                     $webinars->push((object)[

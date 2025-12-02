@@ -276,7 +276,7 @@ class BundleController extends Controller
     {
         return [
             'code' => session('referral_code'),
-            'hasActive' => session('referral_code') && session('referral_code') !== 'ATM2025',
+            'hasActive' => session('referral_code') && session('referral_code') !== 'SGW2025',
         ];
     }
 }

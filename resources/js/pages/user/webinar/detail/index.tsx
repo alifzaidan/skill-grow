@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import AboutSection from './about-section';
 import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
-import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
 import RelatedProduct from './related-product';
 import ToolsSection from './tools-section';
@@ -83,10 +82,9 @@ export default function Webinar({
             <Head title={`${webinar.title} - Webinar`} />
 
             <HeroSection webinar={webinar} />
-            <AboutSection />
             <BenefitsSection webinar={webinar} />
+            <AboutSection />
             <ToolsSection webinar={webinar} />
-            <MentorSection webinar={webinar} />
             <RegisterSection webinar={webinar} />
             <RelatedProduct relatedWebinars={relatedWebinars} myWebinarIds={myWebinarIds} />
         </UserLayout>

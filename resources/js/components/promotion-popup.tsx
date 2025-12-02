@@ -103,7 +103,7 @@ export default function PromotionPopup({ promotion, suppressDuration = 24 }: Pro
                     >
                         <img
                             src={promotion.promotion_flyer}
-                            alt="Promosi Aksademy"
+                            alt="Promosi Skill Grow"
                             className={`max-h-full max-w-full rounded-2xl object-contain transition-all duration-300 ${
                                 isHovered ? 'brightness-90' : ''
                             }`}

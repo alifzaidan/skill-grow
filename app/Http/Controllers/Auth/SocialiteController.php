@@ -74,11 +74,11 @@ class SocialiteController extends Controller
                     throw new \Exception('Akun dengan provider ini sudah terhubung ke user lain.');
                 }
             } else {
-                $referralCode = session('referral_code', 'ATM2025');
+                $referralCode = session('referral_code', 'SGW2025');
                 $referrer = User::where('affiliate_code', $referralCode)->first();
 
                 if (!$referrer) {
-                    $referrer = User::where('affiliate_code', 'ATM2025')->first();
+                    $referrer = User::where('affiliate_code', 'SGW2025')->first();
                 }
 
                 $user = User::create([

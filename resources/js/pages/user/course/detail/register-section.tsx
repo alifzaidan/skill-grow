@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BadgeCheck, InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
+import { InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
 
 interface Course {
     title: string;
@@ -48,71 +48,63 @@ export default function RegisterSection({ course }: { course: Course }) {
     }
 
     return (
-        <section className="mx-auto mt-8 w-full max-w-5xl px-4" id="register">
+        <section className="mx-auto mt-8 w-full max-w-7xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Daftar & Dapatkan Promo Diskon Special Launching!
+                Daftar & Mulai Explore Wawasanmu!
             </h2>
             <p className="text-center text-gray-600 dark:text-gray-400">Jangan sampai kelewatan ya!</p>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="mt-4 flex flex-col items-stretch gap-6 md:flex-row">
+                <div className="flex h-full w-full flex-col items-center gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-md md:flex-row dark:border-zinc-700 dark:bg-zinc-800">
                     <img
                         src={course.thumbnail ? `/storage/${course.thumbnail}` : '/assets/images/placeholder.png'}
                         alt={course.title}
-                        className="rounded-lg border border-gray-200 shadow-md"
+                        className="mb-4 h-72 w-full rounded-lg border border-gray-200 object-cover shadow-md md:mb-0 md:w-64"
                     />
-                    <ul className="space-y-2">
-                        <li className="flex items-center gap-2 text-sm">
-                            <BadgeCheck size="16" className="text-green-600" />
-                            <p>Akses Selamanya</p>
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                            <BadgeCheck size="16" className="text-green-600" />
-                            <p>Materi Update</p>
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                            <BadgeCheck size="16" className="text-green-600" />
-                            <p>Waktu Belajar Fleksibel</p>
-                        </li>
-                    </ul>
-                </div>
-                <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-4 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
-                    <h5 className="mb-4 text-sm">Miliki kelas Premium secara permanen dan bangun sebuah projek nyata</h5>
-
-                    {course.strikethrough_price > 0 && (
-                        <span className="text-right text-sm text-red-500 line-through">Rp {course.strikethrough_price.toLocaleString('id-ID')}</span>
-                    )}
-                    {course.price > 0 ? (
-                        <span className="text-right text-3xl font-bold text-gray-900 italic dark:text-gray-100">
-                            Rp {course.price.toLocaleString('id-ID')}
-                        </span>
-                    ) : (
-                        <span className="text-left text-3xl font-bold text-gray-900 italic dark:text-gray-100">GRATIS</span>
-                    )}
-
-                    <Separator className="my-4" />
-                    <ul className="space-y-2">
-                        <li className="flex items-center gap-2 text-sm">
-                            <TvMinimalPlay size="16" className="text-primary dark:text-secondary" />
-                            <p>{totalLessons} Materi</p>
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                            <Presentation size="16" className="text-primary dark:text-secondary" />
-                            <p>Free Konsultasi</p>
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                            <InfinityIcon size="16" className="text-primary dark:text-secondary" />
-                            <p>Akses Selamanya</p>
-                        </li>
-                        <li className="flex items-center gap-2 text-sm">
-                            <Smartphone size="16" className="text-primary dark:text-secondary" />
-                            <p>Materi On Demand</p>
-                        </li>
-                    </ul>
-                    <div className="mt-auto">
-                        {warningMessage && <p className="mb-2 text-center text-sm text-red-500">{warningMessage}</p>}
-                        <Button className="w-full" asChild>
-                            <Link href={registrationUrl}>{buttonText}</Link>
-                        </Button>
+                    <div className="flex flex-1 flex-col justify-between">
+                        <div>
+                            <h5 className="mb-4 text-base font-semibold text-black">
+                                Miliki kelas Premium secara permanen dan bangun sebuah projek nyata
+                            </h5>
+                            <div className="mb-2 flex flex-col items-end">
+                                {course.strikethrough_price > 0 && (
+                                    <span className="mb-1 text-sm text-red-500 line-through">
+                                        Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                    </span>
+                                )}
+                                {course.price > 0 ? (
+                                    <span className="text-3xl font-bold text-gray-900 italic dark:text-gray-100">
+                                        Rp {course.price.toLocaleString('id-ID')}
+                                    </span>
+                                ) : (
+                                    <span className="text-3xl font-bold text-gray-900 italic dark:text-gray-100">GRATIS</span>
+                                )}
+                            </div>
+                            <Separator className="my-4" />
+                            <ul className="mb-4 space-y-2">
+                                <li className="flex items-center gap-2 text-sm">
+                                    <TvMinimalPlay size="16" className="text-primary dark:text-secondary" />
+                                    <p>{totalLessons} Materi</p>
+                                </li>
+                                <li className="flex items-center gap-2 text-sm">
+                                    <Presentation size="16" className="text-primary dark:text-secondary" />
+                                    <p>Free Konsultasi</p>
+                                </li>
+                                <li className="flex items-center gap-2 text-sm">
+                                    <InfinityIcon size="16" className="text-primary dark:text-secondary" />
+                                    <p>Akses Selamanya</p>
+                                </li>
+                                <li className="flex items-center gap-2 text-sm">
+                                    <Smartphone size="16" className="text-primary dark:text-secondary" />
+                                    <p>Materi On Demand</p>
+                                </li>
+                            </ul>
+                        </div>
+                        <div className="mt-auto">
+                            {warningMessage && <p className="mb-2 text-center text-sm text-red-500">{warningMessage}</p>}
+                            <Button className="w-full" asChild>
+                                <Link href={registrationUrl}>{buttonText}</Link>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

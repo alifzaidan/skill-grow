@@ -33,7 +33,7 @@ export default function FeatureSection() {
     return (
         <section className="mx-auto w-full max-w-7xl px-4">
             <p className="text-primary border-primary bg-background mx-auto mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Sertifikasi Kerjasama Aksademy
+                Sertifikasi Kerjasama
             </p>
             <h2 className="dark:text-primary-foreground mx-auto mb-4 max-w-2xl text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
                 Solusi #1 Tingkatkan Kompetensi & Kredibilitas Profesional

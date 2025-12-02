@@ -50,7 +50,7 @@ class RegisteredUserController extends Controller
 
         $affiliateCode = $request->affiliate_code
             ?? session('referral_code')
-            ?? 'ATM2025';
+            ?? 'SGW2025';
 
         $referred_by_user_id = null;
         if ($affiliateCode) {

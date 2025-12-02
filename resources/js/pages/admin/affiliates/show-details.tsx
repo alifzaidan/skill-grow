@@ -14,7 +14,7 @@ export default function AffiliateDetail({ affiliate }: { affiliate: Affiliate })
             <div className="flex flex-col gap-4 md:flex-row">
                 <Input
                     type="text"
-                    value={`https://aksademy.com/register?ref=${affiliate.affiliate_code}`}
+                    value={`https://skillgrow.id/register?ref=${affiliate.affiliate_code}`}
                     readOnly
                     className="rounded border p-2"
                     placeholder="Link Pembelian"
@@ -22,7 +22,7 @@ export default function AffiliateDetail({ affiliate }: { affiliate: Affiliate })
                 <Button
                     type="button"
                     onClick={() => {
-                        navigator.clipboard.writeText(`https://aksademy.com/register?ref=${affiliate.affiliate_code}`);
+                        navigator.clipboard.writeText(`https://skillgrow.id/register?ref=${affiliate.affiliate_code}`);
                         toast.success('Link afiliasi berhasil disalin!');
                     }}
                     className="w-full hover:cursor-pointer"

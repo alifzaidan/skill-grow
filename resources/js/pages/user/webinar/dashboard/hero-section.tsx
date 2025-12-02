@@ -1,87 +1,33 @@
-import { Button } from '@/components/ui/button';
-import { motion } from 'motion/react';
-
 export default function HeroSection() {
     return (
-        <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-20 text-gray-900 dark:text-white">
-            <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
-                <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
-                <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
-            </div>
-            <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-3">
-                <div className="col-span-1 hidden lg:block">
-                    <div className="relative flex justify-center">
-                        <div className="relative h-[480px] w-[360px]">
-                            <motion.img
-                                src="assets/images/animated/4.webp"
-                                alt="Animasi Course 1"
-                                width={360}
-                                className="absolute top-12 left-12 z-10 rotate-3 transform"
-                                animate={{
-                                    y: [0, -20, 0],
-                                }}
-                                transition={{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut',
-                                }}
-                            />
-                            <motion.img
-                                src="assets/images/animated/5.webp"
-                                alt="Animasi Course 2"
-                                width={360}
-                                className="absolute top-6 left-4 z-20 scale-110 rotate-3 transform"
-                                animate={{
-                                    y: [0, 25, 0],
-                                }}
-                                transition={{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut',
-                                    delay: 0.5,
-                                }}
-                            />
-                            <motion.img
-                                src="assets/images/animated/6.webp"
-                                alt="Animasi Course 3"
-                                width={360}
-                                className="absolute top-24 left-0 z-30 rotate-3 transform"
-                                animate={{
-                                    y: [0, -20, 0],
-                                }}
-                                transition={{
-                                    duration: 3,
-                                    repeat: Infinity,
-                                    ease: 'easeInOut',
-                                    delay: 1,
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div className="col-span-2">
-                    <span className="text-secondary border-secondary bg-background mb-4 inline-block rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
-                        ✨ Dibimbing para Expert!
-                    </span>
-
-                    <h1 className="mb-6 text-4xl leading-tight font-bold italic sm:text-5xl">
-                        Belajar Langsung dari Praktisi. Terjangkau & Relevan dengan Industri.
-                    </h1>
-
-                    <p className="mb-6 max-w-xl text-lg text-gray-600 dark:text-gray-400">
-                        Dirancang untuk membantumu memahami tren terbaru, tools, dan strategi praktis yang dibutuhkan di dunia kerja dan industri
-                        digital.
-                    </p>
-
-                    <div className="flex flex-wrap gap-4">
-                        <a href="#webinar">
-                            <Button>Lihat Webinar</Button>
-                        </a>
-                        <a href="https://wa.me/+6285142505794" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline">Konsultasi Gratis</Button>
-                        </a>
-                    </div>
-                </div>
+        <section className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-gray-900">
+            <img
+                src="/assets/images/hero-webinar.png"
+                alt="Hero Background"
+                className="absolute inset-0 h-full w-full object-cover object-center opacity-70"
+            />
+            <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-start px-8 md:px-16">
+                <h1 className="mb-4 text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl">
+                    Bergabunglah dalam Webinar Interaktif Bersama Expert!
+                </h1>
+                <p className="md:text-md mb-6 text-sm text-white sm:text-sm lg:text-lg">
+                    Dapatkan insight terbaru, tips praktis, dan kesempatan networking dengan profesional di bidangnya.
+                </p>
+                <a
+                    href="#webinar"
+                    className="bg-primary hover:bg-tertiary hover:text-primary group mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                >
+                    <span>Lihat Webinar</span>
+                    <svg
+                        className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                    </svg>
+                </a>
             </div>
         </section>
     );

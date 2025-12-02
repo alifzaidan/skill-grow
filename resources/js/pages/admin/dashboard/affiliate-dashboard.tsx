@@ -157,7 +157,7 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
 
     const handleCopyAffiliateLink = async () => {
         try {
-            const affiliateLink = `https://aksademy.id/register?ref=${user.affiliate_code}`;
+            const affiliateLink = `https://skillgrow.id/register?ref=${user.affiliate_code}`;
             await navigator.clipboard.writeText(affiliateLink);
             toast.success('Link afiliasi berhasil disalin!');
         } catch {
@@ -363,7 +363,7 @@ export default function AffiliateDashboard({ user, stats, filters }: AffiliateSt
                             <p className="text-muted-foreground mb-4 text-sm">Gunakan link ini untuk promosi.</p>
                             <div className="bg-muted flex items-center space-x-2 rounded-lg border p-3">
                                 <p className="text-muted-foreground flex-1 overflow-hidden text-sm text-ellipsis whitespace-nowrap">
-                                    {`aksademy.id/register?ref=${user.affiliate_code}`}
+                                    {`skillgrow.id/register?ref=${user.affiliate_code}`}
                                 </p>
                                 <button
                                     onClick={handleCopyAffiliateLink}
