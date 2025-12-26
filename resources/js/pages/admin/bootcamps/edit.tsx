@@ -582,6 +582,7 @@ export default function EditBootcamp({
                                                                     mode="single"
                                                                     selected={field.value ? new Date(field.value) : undefined}
                                                                     defaultMonth={field.value ? new Date(field.value) : undefined}
+                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                                     disabled={(date) =>
                                                                         !!endDateObj &&
                                                                         date >
@@ -649,6 +650,7 @@ export default function EditBootcamp({
                                                                 <Calendar
                                                                     mode="single"
                                                                     selected={field.value ? new Date(field.value) : undefined}
+                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                                     captionLayout="dropdown"
                                                                     disabled={(date) =>
                                                                         !!startDateObj &&
@@ -719,6 +721,7 @@ export default function EditBootcamp({
                                                             mode="single"
                                                             selected={field.value ? new Date(field.value) : undefined}
                                                             captionLayout="dropdown"
+                                                            endMonth={new Date(new Date().getFullYear() + 10, 11)}
                                                             onSelect={(date) => {
                                                                 const prev = field.value ? new Date(field.value) : new Date();
                                                                 const time = prev.toTimeString().split(' ')[0];
