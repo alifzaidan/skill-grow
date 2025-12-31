@@ -61,8 +61,6 @@ export type Earning = {
     amount: number;
     rate: number;
     status: 'pending' | 'approved' | 'paid' | 'rejected';
-    partial_amount?: number;
-    paid_at: string | null;
     created_at: string;
 };
 

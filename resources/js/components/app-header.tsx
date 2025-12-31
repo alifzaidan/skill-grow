@@ -36,6 +36,10 @@ const mainNavItems: NavItem[] = [
         href: '/bootcamp',
     },
     {
+        title: 'Bundling',
+        href: '/bundle',
+    },
+    {
         title: 'Artikel',
         href: '/article',
     },
@@ -60,6 +64,11 @@ const mobileNavItems = [
     {
         title: 'Bootcamp',
         href: '/bootcamp',
+        icon: Presentation,
+    },
+    {
+        title: 'Bundling',
+        href: '/bundle',
         icon: Presentation,
     },
 ];
@@ -197,7 +206,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
 
             <div className="fixed right-0 bottom-0 left-0 z-50 lg:hidden">
                 <div className="bg-background/95 border-border border-t pb-2 shadow-lg backdrop-blur-md">
-                    <div className={`grid gap-1 px-2 py-2 ${auth.user ? 'grid-cols-5' : 'grid-cols-4'}`}>
+                    <div className={`grid gap-1 px-2 py-2 ${auth.user ? 'grid-cols-6' : 'grid-cols-5'}`}>
                         {mobileNavItems.map((item) => {
                             const isActive = item.href === '/' ? page.url === '/' : page.url.startsWith(item.href);
                             return (
