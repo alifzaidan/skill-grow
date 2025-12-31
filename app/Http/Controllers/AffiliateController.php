@@ -109,14 +109,33 @@ class AffiliateController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $paidCommission = $earnings
+            ->where('status', 'paid')
+            ->sum(function ($earning) {
+                return $earning->partial_amount ?? $earning->amount;
+            });
+
+        $availableCommission = $earnings
+            ->where('status', 'approved')
+            ->sum('amount')
+            + $earnings
+            ->where('status', 'paid')
+            ->sum(function ($earning) {
+                return $earning->amount - ($earning->partial_amount ?? 0);
+            });
+
         $stats = [
             'total_products' => $earnings->count(),
             'total_commission' => $earnings->sum('amount'),
-            'paid_commission' => $earnings->where('status', 'paid')->sum('amount'),
-            'available_commission' => $earnings->where('status', 'approved')->sum('amount'),
+            'paid_commission' => $paidCommission,
+            'available_commission' => $availableCommission,
         ];
 
-        return Inertia::render('admin/affiliates/show', ['affiliate' => $affiliate, 'earnings' => $earnings, 'stats' => $stats]);
+        return Inertia::render('admin/affiliates/show', [
+            'affiliate' => $affiliate,
+            'earnings' => $earnings,
+            'stats' => $stats,
+        ]);
     }
 
     public function edit(string $id)
@@ -171,15 +190,30 @@ class AffiliateController extends Controller
         $affiliate = User::findOrFail($id);
         $withdrawAmount = (int) $request->amount;
 
-        $availableCommission = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
-            ->where('status', 'approved')
-            ->sum('amount');
+        $earnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
+            ->where(function ($query) {
+                $query->where('status', 'approved')
+                    ->orWhere(function ($q) {
+                        $q->where('status', 'paid')
+                            ->whereRaw('amount > COALESCE(partial_amount, 0)');
+                    });
+            })
+            ->get();
+
+        $availableCommission = $earnings->sum(function ($earning) {
+            if ($earning->status === 'paid') {
+                return $earning->amount - ($earning->partial_amount ?? 0);
+            }
+            return $earning->amount;
+        });
 
         if ($withdrawAmount > $availableCommission) {
             return back()->with('error', 'Nominal penarikan melebihi komisi yang tersedia.');
         }
 
         $remainingAmount = $withdrawAmount;
+
+        // Ambil approved earnings terlebih dahulu
         $approvedEarnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
             ->where('status', 'approved')
             ->orderBy('created_at', 'asc')
@@ -202,6 +236,34 @@ class AffiliateController extends Controller
                     'partial_amount' => $remainingAmount,
                 ]);
                 $remainingAmount = 0;
+                break;
+            }
+        }
+
+        if ($remainingAmount > 0) {
+            $paidWithRemainder = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
+                ->where('status', 'paid')
+                ->whereRaw('amount > COALESCE(partial_amount, 0)')
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            foreach ($paidWithRemainder as $earning) {
+                if ($remainingAmount <= 0) break;
+
+                $currentPartial = $earning->partial_amount ?? 0;
+                $remainingInEarning = $earning->amount - $currentPartial;
+
+                if ($remainingInEarning <= $remainingAmount) {
+                    $earning->update([
+                        'partial_amount' => $earning->amount,
+                    ]);
+                    $remainingAmount -= $remainingInEarning;
+                } else {
+                    $earning->update([
+                        'partial_amount' => $currentPartial + $remainingAmount,
+                    ]);
+                    $remainingAmount = 0;
+                }
             }
         }
 
