@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('affiliate_earnings', function (Blueprint $table) {
+        Schema::create('affiliate_withdrawals', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('affiliate_user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignUuid('invoice_id')->constrained('invoices')->onDelete('cascade');
-            $table->foreignUuid('course_id')->nullable()->constrained('courses')->onDelete('set null');
             $table->bigInteger('amount');
-            $table->tinyInteger('rate');
-            $table->enum('status', ['pending', 'approved', 'paid', 'rejected'])->default('pending');
+            $table->timestamp('withdrawn_at');
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('affiliate_earnings');
+        Schema::dropIfExists('affiliate_withdrawals');
     }
 };

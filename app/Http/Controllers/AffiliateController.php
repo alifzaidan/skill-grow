@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AffiliateEarning;
+use App\Models\AffiliateWithdrawal;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -98,30 +99,11 @@ class AffiliateController extends Controller
     public function show(string $id)
     {
         $affiliate = User::findOrFail($id);
-        $earnings = AffiliateEarning::with([
-            'invoice.user',
-            'invoice.courseItems.course',
-            'invoice.bootcampItems.bootcamp',
-            'invoice.webinarItems.webinar',
-            'invoice.bundleEnrollments.bundle',
-        ])
-            ->where('affiliate_user_id', $affiliate->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $earnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)->get();
+        $withdrawals = AffiliateWithdrawal::where('affiliate_user_id', $affiliate->id)->orderBy('withdrawn_at', 'desc')->get();
 
-        // Total komisi dari semua earnings
         $totalCommission = $earnings->sum('amount');
-
-        // Komisi terbayar: gunakan partial_amount jika ada
-        $paidCommission = $earnings
-            ->filter(function ($earning) {
-                return $earning->status === 'paid';
-            })
-            ->sum(function ($earning) {
-                return $earning->partial_amount ?? $earning->amount;
-            });
-
-        // Komisi tersedia: total komisi - komisi terbayar
+        $paidCommission = $withdrawals->sum('amount');
         $availableCommission = $totalCommission - $paidCommission;
 
         $stats = [
@@ -134,6 +116,7 @@ class AffiliateController extends Controller
         return Inertia::render('admin/affiliates/show', [
             'affiliate' => $affiliate,
             'earnings' => $earnings,
+            'withdrawals' => $withdrawals,
             'stats' => $stats,
         ]);
     }
@@ -190,82 +173,20 @@ class AffiliateController extends Controller
         $affiliate = User::findOrFail($id);
         $withdrawAmount = (int) $request->amount;
 
-        $earnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
-            ->where(function ($query) {
-                $query->where('status', 'approved')
-                    ->orWhere(function ($q) {
-                        $q->where('status', 'paid')
-                            ->whereRaw('amount > COALESCE(partial_amount, 0)');
-                    });
-            })
-            ->get();
+        $totalWithdrawn = AffiliateWithdrawal::where('affiliate_user_id', $affiliate->id)->sum('amount');
 
-        $availableCommission = $earnings->sum(function ($earning) {
-            if ($earning->status === 'paid') {
-                return $earning->amount - ($earning->partial_amount ?? 0);
-            }
-            return $earning->amount;
-        });
+        $totalCommission = AffiliateEarning::where('affiliate_user_id', $affiliate->id)->sum('amount');
+        $availableCommission = $totalCommission - $totalWithdrawn;
 
         if ($withdrawAmount > $availableCommission) {
             return back()->with('error', 'Nominal penarikan melebihi komisi yang tersedia.');
         }
 
-        $remainingAmount = $withdrawAmount;
-
-        // Ambil approved earnings terlebih dahulu
-        $approvedEarnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
-            ->where('status', 'approved')
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        foreach ($approvedEarnings as $earning) {
-            if ($remainingAmount <= 0) break;
-
-            if ($earning->amount <= $remainingAmount) {
-                $earning->update([
-                    'status' => 'paid',
-                    'paid_at' => now(),
-                    'partial_amount' => null,
-                ]);
-                $remainingAmount -= $earning->amount;
-            } else {
-                $earning->update([
-                    'status' => 'paid',
-                    'paid_at' => now(),
-                    'partial_amount' => $remainingAmount,
-                ]);
-                $remainingAmount = 0;
-                break;
-            }
-        }
-
-        if ($remainingAmount > 0) {
-            $paidWithRemainder = AffiliateEarning::where('affiliate_user_id', $affiliate->id)
-                ->where('status', 'paid')
-                ->whereRaw('amount > COALESCE(partial_amount, 0)')
-                ->orderBy('created_at', 'asc')
-                ->get();
-
-            foreach ($paidWithRemainder as $earning) {
-                if ($remainingAmount <= 0) break;
-
-                $currentPartial = $earning->partial_amount ?? 0;
-                $remainingInEarning = $earning->amount - $currentPartial;
-
-                if ($remainingInEarning <= $remainingAmount) {
-                    $earning->update([
-                        'partial_amount' => $earning->amount,
-                    ]);
-                    $remainingAmount -= $remainingInEarning;
-                } else {
-                    $earning->update([
-                        'partial_amount' => $currentPartial + $remainingAmount,
-                    ]);
-                    $remainingAmount = 0;
-                }
-            }
-        }
+        AffiliateWithdrawal::create([
+            'affiliate_user_id' => $affiliate->id,
+            'amount' => $withdrawAmount,
+            'withdrawn_at' => now(),
+        ]);
 
         return back()->with('success', "Berhasil menarik komisi sebesar Rp " . number_format($withdrawAmount, 0, ',', '.') . " untuk {$affiliate->name}.");
     }

@@ -27,9 +27,19 @@ interface Stats {
     available_commission: number;
 }
 
+export interface Withdrawal {
+    id: string;
+    affiliate_user_id: string;
+    amount: number;
+    withdrawn_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
 interface AffiliateProps {
     affiliate: Affiliate;
     earnings?: Earning[];
+    withdrawals?: Withdrawal[];
     stats: Stats;
     flash?: {
         success?: string;
@@ -37,7 +47,7 @@ interface AffiliateProps {
     };
 }
 
-export default function ShowAffiliate({ affiliate, earnings, stats, flash }: AffiliateProps) {
+export default function ShowAffiliate({ affiliate, earnings, withdrawals, stats, flash }: AffiliateProps) {
     const [open, setOpen] = useState(false);
     const [withdrawOpen, setWithdrawOpen] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -143,7 +153,7 @@ export default function ShowAffiliate({ affiliate, earnings, stats, flash }: Aff
                             <AffiliateEarnings earnings={earnings ?? []} stats={stats} />
                         </TabsContent>
                         <TabsContent value="penarikan">
-                            <AffiliateWithdrawals earnings={earnings ?? []} />
+                            <AffiliateWithdrawals withdrawals={withdrawals ?? []} />
                         </TabsContent>
                     </Tabs>
 
