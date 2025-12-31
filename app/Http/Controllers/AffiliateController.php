@@ -99,7 +99,15 @@ class AffiliateController extends Controller
     public function show(string $id)
     {
         $affiliate = User::findOrFail($id);
-        $earnings = AffiliateEarning::where('affiliate_user_id', $affiliate->id)->get();
+        $earnings = AffiliateEarning::with([
+            'invoice.user',
+            'invoice.courseItems.course',
+            'invoice.bootcampItems.bootcamp',
+            'invoice.webinarItems.webinar',
+        ])
+            ->where('affiliate_user_id', $affiliate->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
         $withdrawals = AffiliateWithdrawal::where('affiliate_user_id', $affiliate->id)->orderBy('withdrawn_at', 'desc')->get();
 
         $totalCommission = $earnings->sum('amount');
