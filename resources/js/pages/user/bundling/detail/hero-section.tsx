@@ -3,12 +3,27 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Package, Sparkles } from 'lucide-react';
 
+interface Product {
+    id: string;
+    title: string;
+    slug: string;
+    price: number;
+    thumbnail?: string | null;
+}
+
+interface BundleItem {
+    id: string;
+    bundleable_type: string;
+    bundleable: Product;
+}
+
 interface Bundle {
     title: string;
     thumbnail?: string | null;
     short_description?: string | null;
     registration_deadline?: string | null;
     bundle_items_count: number;
+    bundle_items: BundleItem[];
 }
 
 interface HeroSectionProps {
@@ -18,17 +33,22 @@ interface HeroSectionProps {
 
 export default function HeroSection({ bundle, discountPercentage }: HeroSectionProps) {
     const deadlineDate = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
+    
+    // Get first 2 thumbnails from bundle items
+    const displayThumbnails = bundle.bundle_items
+        .slice(0, 2)
+        .map(item => item.bundleable.thumbnail ? `/storage/${item.bundleable.thumbnail}` : '/assets/images/placeholder.png');
 
     return (
-        <section className="to-background from-background via-primary/5 dark:via-primary/10 relative bg-gradient-to-b py-20 text-gray-900 dark:text-white">
+        <section className="to-background from-background via-primary/5 dark:via-primary/10 relative bg-gradient-to-b pt-20 pb-6 text-gray-900 dark:text-white">
             <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
                 <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
                 <div className="bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]" />
             </div>
 
-            <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-3">
-                <div className="col-span-2">
-                    <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-2">
+                <div>
+                    {/* <div className="mb-4 flex flex-wrap items-center gap-3">
                         <span className="text-primary border-primary bg-background mb-4 inline-flex w-fit items-center gap-2 rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                             <Sparkles size={14} className="mr-1" />
                             Paket Bundling
@@ -40,7 +60,7 @@ export default function HeroSection({ bundle, discountPercentage }: HeroSectionP
                             <Package size={14} className="mr-1" />
                             {bundle.bundle_items_count} Program
                         </span>
-                    </div>
+                    </div> */}
 
                     <h1 className="mb-4 text-4xl leading-tight font-bold italic sm:text-5xl">{bundle.title}</h1>
 
@@ -67,14 +87,49 @@ export default function HeroSection({ bundle, discountPercentage }: HeroSectionP
                     </div>
                 </div>
 
-                <div className="col-span-1 hidden lg:block">
-                    <img
-                        src={bundle.thumbnail ? `/storage/${bundle.thumbnail}` : '/assets/images/placeholder.png'}
-                        alt={bundle.title}
-                        className="rounded-xl shadow-lg"
-                    />
+                <div className="relative hidden h-80 items-center justify-center lg:flex">
+                        {displayThumbnails.length >= 2 ? (
+                            <>
+                                {/* Thumbnail kedua (belakang) */}
+                                <div className="absolute right-0 top-8 z-0 w-64 overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105 hover:rotate-6">
+                                    <img
+                                        src={displayThumbnails[1]}
+                                        alt="Product 2"
+                                        className="w-full h-auto object-contain"
+                                    />
+                                </div>
+                                
+                                {/* Thumbnail pertama (depan) */}
+                                <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105 hover:-rotate-6">
+                                    <img
+                                        src={displayThumbnails[0]}
+                                        alt="Product 1"
+                                        className="w-full h-auto object-contain"
+                                    />
+                                    
+                                    {/* Overlay gradient untuk efek depth */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                                </div>
+                            </>
+                        ) : displayThumbnails.length === 1 ? (
+                            <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl">
+                                <img
+                                    src={displayThumbnails[0]}
+                                    alt="Product 1"
+                                    className="w-full h-auto object-contain"
+                                />
+                            </div>
+                        ) : (
+                            <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl">
+                                <img
+                                    src="/assets/images/placeholder.png"
+                                    alt="Placeholder"
+                                    className="w-full h-auto object-contain"
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
         </section>
     );
 }
