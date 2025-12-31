@@ -22,7 +22,7 @@ import ShowCourse from './show-courses';
 import MentorDetail from './show-details';
 import AffiliateEarnings from './show-earnings';
 import ShowWebinars from './show-webinars';
-import AffiliateWithdrawals from './show-withdrawals';
+import MentorWithdrawals from './show-withdrawals';
 
 interface Course {
     id: number;
@@ -96,9 +96,19 @@ interface Stats {
     available_commission: number;
 }
 
+export interface Withdrawal {
+    id: string;
+    affiliate_user_id: string;
+    amount: number;
+    withdrawn_at: string;
+    created_at: string;
+    updated_at: string;
+}
+
 interface MentorProps {
     mentor: Mentor;
     earnings?: Earning[];
+    withdrawals?: Withdrawal[];
     courses?: Course[];
     articles?: Article[];
     webinars?: Webinar[];
@@ -110,7 +120,7 @@ interface MentorProps {
     };
 }
 
-export default function ShowMentor({ mentor, earnings, courses, articles, webinars, bootcamps, stats, flash }: MentorProps) {
+export default function ShowMentor({ mentor, earnings, withdrawals, courses, articles, webinars, bootcamps, stats, flash }: MentorProps) {
     const [open, setOpen] = useState(false);
     const [withdrawOpen, setWithdrawOpen] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -256,7 +266,7 @@ export default function ShowMentor({ mentor, earnings, courses, articles, webina
                             <AffiliateEarnings earnings={earnings ?? []} stats={stats} />
                         </TabsContent>
                         <TabsContent value="penarikan">
-                            <AffiliateWithdrawals earnings={earnings ?? []} />
+                            <MentorWithdrawals withdrawals={withdrawals ?? []} />
                         </TabsContent>
                     </Tabs>
 
