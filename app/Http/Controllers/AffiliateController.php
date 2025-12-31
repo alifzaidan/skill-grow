@@ -109,24 +109,24 @@ class AffiliateController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Total komisi dari semua earnings
+        $totalCommission = $earnings->sum('amount');
+
+        // Komisi terbayar: gunakan partial_amount jika ada
         $paidCommission = $earnings
-            ->where('status', 'paid')
+            ->filter(function ($earning) {
+                return $earning->status === 'paid';
+            })
             ->sum(function ($earning) {
                 return $earning->partial_amount ?? $earning->amount;
             });
 
-        $availableCommission = $earnings
-            ->where('status', 'approved')
-            ->sum('amount')
-            + $earnings
-            ->where('status', 'paid')
-            ->sum(function ($earning) {
-                return $earning->amount - ($earning->partial_amount ?? 0);
-            });
+        // Komisi tersedia: total komisi - komisi terbayar
+        $availableCommission = $totalCommission - $paidCommission;
 
         $stats = [
             'total_products' => $earnings->count(),
-            'total_commission' => $earnings->sum('amount'),
+            'total_commission' => $totalCommission,
             'paid_commission' => $paidCommission,
             'available_commission' => $availableCommission,
         ];
