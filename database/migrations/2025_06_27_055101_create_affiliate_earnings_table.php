@@ -19,6 +19,7 @@ return new class extends Migration
             $table->bigInteger('amount');
             $table->tinyInteger('rate');
             $table->enum('status', ['pending', 'approved', 'paid', 'rejected'])->default('pending');
+            $table->bigInteger('partial_amount')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
         });

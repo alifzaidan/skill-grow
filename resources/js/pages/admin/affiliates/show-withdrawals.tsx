@@ -53,7 +53,9 @@ export default function AffiliateWithdrawals({ earnings }: { earnings: Earning[]
             <div className="space-y-4">
                 {sortedDates.map((dateKey) => {
                     const dayEarnings = groupedByDate[dateKey];
-                    const totalAmount = dayEarnings.reduce((sum, e) => sum + e.amount, 0);
+                    const totalAmount = dayEarnings.reduce((sum, e) => {
+                        return sum + (e.partial_amount || e.amount);
+                    }, 0);
                     const dateObj = new Date(dateKey);
 
                     return (
@@ -83,7 +85,11 @@ export default function AffiliateWithdrawals({ earnings }: { earnings: Earning[]
             <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Penarikan Keseluruhan</p>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {formatCurrency(paidEarnings.reduce((sum, e) => sum + e.amount, 0))}
+                    {formatCurrency(
+                        paidEarnings.reduce((sum, e) => {
+                            return sum + (e.partial_amount || e.amount);
+                        }, 0),
+                    )}
                 </p>
             </div>
         </div>

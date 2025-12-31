@@ -192,10 +192,16 @@ class AffiliateController extends Controller
                 $earning->update([
                     'status' => 'paid',
                     'paid_at' => now(),
+                    'partial_amount' => null,
                 ]);
                 $remainingAmount -= $earning->amount;
             } else {
-                break;
+                $earning->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                    'partial_amount' => $remainingAmount,
+                ]);
+                $remainingAmount = 0;
             }
         }
 
