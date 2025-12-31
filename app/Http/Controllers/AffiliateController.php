@@ -189,7 +189,10 @@ class AffiliateController extends Controller
             if ($remainingAmount <= 0) break;
 
             if ($earning->amount <= $remainingAmount) {
-                $earning->update(['status' => 'paid']);
+                $earning->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
                 $remainingAmount -= $earning->amount;
             } else {
                 break;
