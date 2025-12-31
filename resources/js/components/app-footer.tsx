@@ -81,12 +81,12 @@ export default function AppFooter() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/syarat-dan-ketentuan" className="hover:text-primary text-sm text-gray-600 transition-colors">
+                                <Link href="/terms-and-conditions" className="hover:text-primary text-sm text-gray-600 transition-colors">
                                     Syarat & Ketentuan
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/kebijakan-privasi" className="hover:text-primary text-sm text-gray-600 transition-colors">
+                                <Link href="/privacy-policy" className="hover:text-primary text-sm text-gray-600 transition-colors">
                                     Kebijakan Privasi
                                 </Link>
                             </li>

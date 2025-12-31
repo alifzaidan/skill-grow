@@ -22,6 +22,7 @@ import ShowCourse from './show-courses';
 import MentorDetail from './show-details';
 import AffiliateEarnings from './show-earnings';
 import ShowWebinars from './show-webinars';
+import AffiliateWithdrawals from './show-withdrawals';
 
 interface Course {
     id: number;
@@ -195,7 +196,7 @@ export default function ShowMentor({ mentor, earnings, courses, articles, webina
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${mentor.name}`}</h1>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
                     <Tabs defaultValue="detail" className="lg:col-span-2">
-                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             <TabsTrigger value="courses">
                                 Kelas
@@ -227,6 +228,14 @@ export default function ShowMentor({ mentor, earnings, courses, articles, webina
                                     <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{earnings.length}</span>
                                 )}
                             </TabsTrigger>
+                            <TabsTrigger value="penarikan">
+                                Penarikan
+                                {earnings!.filter((e) => e.status === 'paid').length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                        {earnings!.filter((e) => e.status === 'paid').length}
+                                    </span>
+                                )}
+                            </TabsTrigger>
                         </TabsList>
                         <TabsContent value="detail">
                             <MentorDetail mentor={mentor} />
@@ -246,6 +255,9 @@ export default function ShowMentor({ mentor, earnings, courses, articles, webina
                         <TabsContent value="transaksi">
                             <AffiliateEarnings earnings={earnings ?? []} stats={stats} />
                         </TabsContent>
+                        <TabsContent value="penarikan">
+                            <AffiliateWithdrawals earnings={earnings ?? []} />
+                        </TabsContent>
                     </Tabs>
 
                     <div>
@@ -256,7 +268,7 @@ export default function ShowMentor({ mentor, earnings, courses, articles, webina
                                 <>
                                     <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
                                         <DialogTrigger asChild>
-                                            <Button className="w-full border-green-700 bg-green-600 hover:bg-green-700">
+                                            <Button className="w-full border-green-700 bg-green-600 text-white hover:bg-green-700">
                                                 <Banknote />
                                                 Tarik Komisi
                                             </Button>

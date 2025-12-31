@@ -18,6 +18,7 @@ import { Earning } from '../earnings/columns';
 import EditAffiliate from './edit';
 import AffiliateDetail from './show-details';
 import AffiliateEarnings from './show-earnings';
+import AffiliateWithdrawals from './show-withdrawals';
 
 interface Stats {
     total_products: number;
@@ -126,12 +127,23 @@ export default function ShowAffiliate({ affiliate, earnings, stats, flash }: Aff
                                     <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{earnings!.length}</span>
                                 )}
                             </TabsTrigger>
+                            <TabsTrigger value="penarikan">
+                                Penarikan
+                                {earnings!.filter((e) => e.status === 'paid').length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
+                                        {earnings!.filter((e) => e.status === 'paid').length}
+                                    </span>
+                                )}
+                            </TabsTrigger>
                         </TabsList>
                         <TabsContent value="detail">
                             <AffiliateDetail affiliate={affiliate} />
                         </TabsContent>
                         <TabsContent value="transaksi">
                             <AffiliateEarnings earnings={earnings ?? []} stats={stats} />
+                        </TabsContent>
+                        <TabsContent value="penarikan">
+                            <AffiliateWithdrawals earnings={earnings ?? []} />
                         </TabsContent>
                     </Tabs>
 
@@ -142,7 +154,7 @@ export default function ShowAffiliate({ affiliate, earnings, stats, flash }: Aff
                                 <>
                                     <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
                                         <DialogTrigger asChild>
-                                            <Button className="w-full border-green-700 bg-green-600 hover:bg-green-700">
+                                            <Button className="w-full border-green-700 bg-green-600 text-white hover:bg-green-700">
                                                 <Banknote />
                                                 Tarik Komisi
                                             </Button>
