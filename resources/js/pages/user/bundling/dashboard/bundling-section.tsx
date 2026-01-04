@@ -1,12 +1,10 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Magnetic } from '@/components/ui/magnetic';
-import { Spotlight } from '@/components/ui/spotlight';
 import { Link } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Calendar, GalleryVerticalEnd, Package, Percent } from 'lucide-react';
+import { Calendar, GalleryVerticalEnd } from 'lucide-react';
 import { useState } from 'react';
 
 interface BundleItem {
@@ -98,80 +96,78 @@ export default function BundlingSection({ bundles }: BundlingSectionProps) {
                             <Link
                                 key={bundle.id}
                                 href={route('bundle.detail', bundle.slug)}
-                                className="group relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] transition-all hover:bg-zinc-400/40 dark:bg-zinc-700/30 dark:hover:bg-zinc-600/40"
+                                className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl transition-transform hover:-translate-y-1 hover:shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
                             >
-                                <Spotlight className="bg-primary blur-2xl" size={284} />
-                                <div className="bg-background relative flex h-full w-full flex-col rounded-lg transition-all group-hover:shadow-lg dark:bg-zinc-800">
-                                    {/* Thumbnail */}
-                                    <div className="relative w-full overflow-hidden rounded-t-lg">
-                                        <img
-                                            src={bundle.thumbnail ? `/storage/${bundle.thumbnail}` : '/assets/images/placeholder.png'}
-                                            alt={bundle.title}
-                                            className="h-48 w-full object-cover transition-transform duration-300"
-                                        />
+                                <div className="relative h-48 w-full overflow-hidden">
+                                    <img
+                                        src={bundle.thumbnail ? `/storage/${bundle.thumbnail}` : '/assets/images/placeholder.png'}
+                                        alt={bundle.title}
+                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
 
-                                        {/* Discount Badge */}
-                                        {discount > 0 && (
-                                            <div className="absolute top-3 right-3">
-                                                <Badge className="bg-red-500 text-white shadow-lg">
-                                                    <Percent size={12} className="mr-1" />
-                                                    Hemat {discount}%
-                                                </Badge>
-                                            </div>
-                                        )}
-
-                                        {/* Items Count Badge */}
-                                        <div className="absolute bottom-3 left-3">
-                                            <Badge
-                                                variant="secondary"
-                                                className="bg-white/90 text-gray-900 backdrop-blur-sm dark:bg-gray-900/90 dark:text-white"
-                                            >
-                                                <Package size={12} className="mr-1" />
-                                                {bundle.bundle_items_count} Program
-                                            </Badge>
+                                    {/* Discount Badge */}
+                                    {discount > 0 && (
+                                        <div className="absolute top-3 left-3">
+                                            <span className="rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white shadow">
+                                                Hemat {discount}%
+                                            </span>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    {/* Content */}
-                                    <div className="flex flex-1 flex-col p-4">
-                                        <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-gray-900 dark:text-white">{bundle.title}</h3>
-
-                                        {bundle.short_description && (
-                                            <p className="text-muted-foreground mb-4 line-clamp-2 text-sm">{bundle.short_description}</p>
-                                        )}
-
-                                        {/* Price */}
-                                        <div className="mt-auto">
-                                            {bundle.price === 0 ? (
-                                                <p className="text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
-                                            ) : (
-                                                <div className="mb-3">
-                                                    {bundle.strikethrough_price > 0 && (
-                                                        <p className="text-sm text-gray-500 line-through dark:text-gray-400">
-                                                            {formatRupiah(bundle.strikethrough_price)}
-                                                        </p>
-                                                    )}
-                                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatRupiah(bundle.price)}</p>
-                                                </div>
-                                            )}
-
-                                            {/* Deadline */}
-                                            {hasDeadline && (
-                                                <div className="border-t pt-3">
-                                                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                                        <Calendar size={14} className="text-red-500" />
-                                                        <span>
-                                                            Daftar sebelum:{' '}
-                                                            <span className="font-medium text-gray-900 dark:text-white">
-                                                                {format(new Date(bundle.registration_deadline!), 'dd MMM yyyy', { locale: id })}
-                                                            </span>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                    {/* Items Count Badge */}
+                                    <div className="absolute top-3 right-3">
+                                        <span className="bg-primary rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
+                                            {bundle.bundle_items_count} Program
+                                        </span>
                                     </div>
                                 </div>
+
+                                <div className="flex flex-1 flex-col justify-between p-5">
+                                    <div>
+                                        <h2 className="mb-2 line-clamp-2 text-lg font-bold text-gray-900 dark:text-white">{bundle.title}</h2>
+                                        {bundle.short_description && (
+                                            <p className="mb-4 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">{bundle.short_description}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-auto">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                {bundle.price === 0 ? (
+                                                    <span className="font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                ) : (
+                                                    <div>
+                                                        {bundle.strikethrough_price > 0 && (
+                                                            <span className="mr-1 text-xs text-red-400 line-through">
+                                                                {formatRupiah(bundle.strikethrough_price)}
+                                                            </span>
+                                                        )}
+                                                        <span className="text-base font-bold text-gray-800 dark:text-gray-200">
+                                                            {formatRupiah(bundle.price)}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Deadline */}
+                                        {/* {hasDeadline && (
+                                            <div className="mt-3 border-t pt-3">
+                                                <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                                    <Calendar size={14} className="text-red-500" />
+                                                    <span>
+                                                        Daftar sebelum:{' '}
+                                                        <span className="font-medium text-gray-900 dark:text-white">
+                                                            {format(new Date(bundle.registration_deadline!), 'dd MMM yyyy', { locale: id })}
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )} */}
+                                    </div>
+                                </div>
+
+                                <div className="ring-primary pointer-events-none absolute inset-0 rounded-2xl opacity-0 ring-2 transition-opacity group-hover:opacity-100"></div>
                             </Link>
                         );
                     })

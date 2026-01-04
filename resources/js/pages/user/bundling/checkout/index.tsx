@@ -205,14 +205,14 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
         return (
             <UserLayout>
                 <Head title="Checkout Paket Bundling" />
-                <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
-                    <div className="mx-auto my-12 w-full max-w-7xl px-4">
-                        <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                            Checkout Paket Bundling "{bundle.title}"
-                        </h2>
-                        <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
-                    </div>
-                </section>
+                    <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
+                        <div className="mx-auto my-12 w-full max-w-7xl px-4">
+                            <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
+                                Checkout Paket Bundling "{bundle.title}"
+                            </h2>
+                            <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
+                        </div>
+                    </section>
                 <section className="mx-auto my-4 w-full max-w-7xl px-4">
                     <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                         <User size={64} className="text-orange-500" />
@@ -232,18 +232,8 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
     return (
         <UserLayout>
             <Head title={`Checkout - ${bundle.title}`} />
-            <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
-                <div className="mx-auto my-12 w-full max-w-7xl px-4">
-                    <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Checkout Paket Bundling
-                    </h2>
-                    <p className="text-center text-gray-400">
-                        Silakan selesaikan pembayaran untuk mendapatkan akses ke semua program dalam paket bundling.
-                    </p>
-                </div>
-            </section>
-
-            <section className="mx-auto my-4 w-full max-w-7xl px-4">
+            
+            <section className="mx-auto mb-4 my-8 w-full max-w-7xl px-4">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Left Column - Bundle Details */}
                     <div className="lg:col-span-2">
