@@ -384,12 +384,16 @@ class InvoiceController extends Controller
     {
         DB::beginTransaction();
         try {
-            $userId = Auth::id();
-            $bundleId = $request->input('bundle_id');
-            $discountAmount = $request->input('discount_amount', 0);
-            $transactionFee = $request->input('transaction_fee', 5000);
-            $nettAmount = $request->input('nett_amount');
-            $totalAmount = $request->input('total_amount');
+            $validated = $request->validate([
+                'bundle_id' => 'required|string|exists:bundles,id',
+                'discount_amount' => 'nullable|numeric|min:0',
+                'nett_amount' => 'required|numeric|min:0',
+                'transaction_fee' => 'required|numeric|min:0',
+                'total_amount' => 'required|numeric|min:0',
+            ]);
+
+            $user = Auth::user();
+            $bundleId = $validated['bundle_id'];
 
             $bundle = Bundle::with('bundleItems.bundleable')->findOrFail($bundleId);
 
@@ -398,122 +402,161 @@ class InvoiceController extends Controller
                 throw new \Exception('Bundle tidak tersedia untuk pembelian');
             }
 
-            // Bundle harus berbayar
             if ($bundle->price === 0) {
                 throw new \Exception('Bundle ini gratis, tidak perlu checkout');
             }
 
-            // Check if already purchased
-            if ($bundle->isPurchasedByUser($userId)) {
+            if ($bundle->isPurchasedByUser($user->id)) {
                 throw new \Exception('Anda sudah membeli bundle ini');
             }
 
-            // Validate pricing
-            $expectedNettAmount = $bundle->price;
-            $expectedTotal = $expectedNettAmount + $transactionFee;
+            $existingInvoice = Invoice::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->whereHas('bundleEnrollments', function ($q) use ($bundleId) {
+                    $q->where('bundle_id', $bundleId);
+                })
+                ->first();
 
-            if ($nettAmount != $expectedNettAmount) {
+            if ($existingInvoice && $existingInvoice->invoice_url) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => true,
+                    'payment_url' => $existingInvoice->invoice_url,
+                    'message' => 'Invoice sudah ada, silakan lanjutkan pembayaran.'
+                ], 200);
+            }
+
+            $expectedNettAmount = $bundle->price;
+            $expectedTotal = $expectedNettAmount + $validated['transaction_fee'];
+
+            if ($validated['nett_amount'] != $expectedNettAmount) {
                 throw new \Exception('Harga nett tidak sesuai');
             }
 
-            if ($totalAmount != $expectedTotal) {
+            if ($validated['total_amount'] != $expectedTotal) {
                 throw new \Exception('Total amount tidak sesuai');
             }
 
-            $invoice_code = IdGenerator::generate([
+            $invoiceCode = IdGenerator::generate([
                 'table' => 'invoices',
                 'field' => 'invoice_code',
-                'length' => 11,
-                'reset_on_prefix_change' => true,
-                'prefix' => 'SGW-' . date('y')
+                'length' => 20,
+                'prefix' => 'INV-' . date('Ymd') . '-',
+                'reset_on_prefix_change' => true
             ]);
 
-            $expiresAt = Carbon::now()->addHours(24);
-
-            // Create invoice
             $invoice = Invoice::create([
-                'user_id' => $userId,
-                'invoice_code' => $invoice_code,
-                'discount_amount' => $discountAmount,
-                'amount' => $totalAmount,
-                'nett_amount' => $nettAmount,
-                'expires_at' => $expiresAt,
+                'id' => Str::uuid(),
+                'invoice_code' => $invoiceCode,
+                'user_id' => $user->id,
+                'discount_amount' => $validated['discount_amount'] ?? 0,
+                'amount' => $validated['total_amount'],
+                'nett_amount' => $validated['nett_amount'],
+                'status' => 'pending',
+                'expires_at' => now()->addHours(24),
             ]);
 
-            // Create bundle enrollment
             EnrollmentBundle::create([
+                'id' => Str::uuid(),
                 'invoice_id' => $invoice->id,
                 'bundle_id' => $bundle->id,
-                'price' => $nettAmount,
+                'price' => $validated['nett_amount'],
             ]);
-
-            // Prepare items for Xendit
-            $items = [];
-            $fees = [];
-
-            $totalOriginalPrice = $bundle->bundleItems->sum('price');
-            if ($totalOriginalPrice > $bundle->price) {
-                $bundleDiscount = $totalOriginalPrice - $bundle->price;
-                $fees[] = ['type' => 'Diskon Bundle', 'value' => -$bundleDiscount];
-            }
 
             foreach ($bundle->bundleItems as $bundleItem) {
-                $items[] = [
-                    'name' => $bundleItem->bundleable->title,
-                    'price' => $bundleItem->price,
-                    'quantity' => 1,
-                ];
+                $type = $this->getBundleItemType($bundleItem->bundleable_type);
+                if ($type && $bundleItem->bundleable) {
+                    $this->addToCertificateParticipants($type, $bundleItem->bundleable->id, $user->id);
+                }
             }
 
-            $fees[] = ['type' => 'Biaya Transaksi', 'value' => $transactionFee];
+            // Create DOKU payment
+            try {
+                $customerData = [
+                    'customer_id' => 'USER-' . $user->id,
+                    'customer_name' => $user->name,
+                    'customer_email' => $user->email,
+                    'customer_phone' => $user->phone_number,
+                    'item_name' => $bundle->title,
+                    'item_description' => 'Paket Bundling - ' . $bundle->title . ' (' . $bundle->bundle_items_count . ' Program)',
+                ];
 
-            // Create Xendit invoice
-            $xendit_create_invoice = new CreateInvoiceRequest([
-                'external_id' => $invoice_code,
-                'customer' => [
-                    'given_names' => Auth::user()->name,
-                    'email' => Auth::user()->email,
-                    'mobile_number' => Auth::user()->phone_number,
-                ],
-                'customer_notification_preference' => [
-                    'invoice_created' => ['email', 'whatsapp'],
-                    'invoice_reminder' => ['email', 'whatsapp'],
-                    'invoice_paid' => ['email'],
-                ],
-                'description' => 'Invoice pembayaran Paket Bundling: ' . $bundle->title,
-                'amount' => $totalAmount,
-                'items' => $items,
-                'fees' => $fees,
-                'failure_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-                'success_redirect_url' => route('invoice.show', ['id' => $invoice->id]),
-            ]);
+                Log::info('Creating DOKU checkout for bundle', [
+                    'invoice_code' => $invoiceCode,
+                    'bundle_id' => $bundle->id,
+                    'amount' => $validated['total_amount'],
+                    'customer' => $customerData
+                ]);
 
-            $xendit_api_instance = new InvoiceApi();
-            $xendit_invoice = $xendit_api_instance->createInvoice($xendit_create_invoice);
+                $dokuResponse = $this->dokuService->createCheckout(
+                    $invoiceCode,
+                    (int) $validated['total_amount'],
+                    $customerData
+                );
 
-            $invoice->update([
-                'invoice_url' => $xendit_invoice['invoice_url'],
-            ]);
+                Log::info('DOKU Response received for bundle', [
+                    'invoice_code' => $invoiceCode,
+                    'response' => $dokuResponse
+                ]);
 
-            DB::commit();
+                $paymentUrl = null;
+                if (isset($dokuResponse['response']['payment']['url'])) {
+                    $paymentUrl = $dokuResponse['response']['payment']['url'];
+                } elseif (isset($dokuResponse['payment']['url'])) {
+                    $paymentUrl = $dokuResponse['payment']['url'];
+                } elseif (isset($dokuResponse['url'])) {
+                    $paymentUrl = $dokuResponse['url'];
+                }
 
-            return response()->json([
-                'success' => true,
-                'payment_url' => $xendit_invoice['invoice_url'],
-                'invoice_id' => $invoice->id,
-                'invoice_code' => $invoice->invoice_code
-            ], 200);
+                if (!$paymentUrl) {
+                    throw new \Exception('Payment URL not found in DOKU response: ' . json_encode($dokuResponse));
+                }
+
+                // Update invoice with payment URL
+                $invoice->update([
+                    'invoice_url' => $paymentUrl,
+                ]);
+
+                DB::commit();
+
+                Log::info('Bundle invoice created successfully', [
+                    'invoice_code' => $invoiceCode,
+                    'bundle_id' => $bundle->id,
+                    'payment_url' => $paymentUrl
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'payment_url' => $paymentUrl,
+                    'invoice_code' => $invoiceCode,
+                    'invoice_id' => $invoice->id
+                ], 200);
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+                Log::error('DOKU Payment Creation Failed for Bundle', [
+                    'invoice_code' => $invoiceCode,
+                    'bundle_id' => $bundle->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal membuat pembayaran: ' . $e->getMessage(),
+                ], 400);
+            }
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Bundle invoice creation failed', [
+
+            Log::error('Bundle Invoice Store Error', [
                 'error' => $e->getMessage(),
-                'user_id' => Auth::id(),
-                'bundle_id' => $request->input('bundle_id')
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
             ], 422);
         }
     }
@@ -823,9 +866,13 @@ class InvoiceController extends Controller
                 return response('SUCCESS', 200);
             }
 
-            $invoice = Invoice::with(['user', 'courseItems.course'])
-                ->where('invoice_code', $invoiceCode)
-                ->first();
+            $invoice = Invoice::with([
+                'user',
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'bundleEnrollments.bundle.bundleItems.bundleable'
+            ])->where('invoice_code', $invoiceCode)->first();
 
             if (!$invoice) {
                 Log::error('DOKU Callback: Invoice not found', ['invoice_code' => $invoiceCode]);
@@ -843,12 +890,21 @@ class InvoiceController extends Controller
                     'payment_channel' => $channel,
                 ]);
 
+                // Record affiliate commission
                 $this->recordAffiliateCommission($invoice);
+
+                // Add enrollment to certificate participants
                 $this->addEnrollmentToCertificateParticipants($invoice);
+
+                // Handle bundle enrollment - create individual enrollments
+                if ($invoice->hasBundle()) {
+                    $this->createIndividualEnrollmentsFromBundle($invoice);
+                }
 
                 Log::info('DOKU Callback: Payment successful', [
                     'invoice_code' => $invoiceCode,
                     'invoice_id'   => $invoice->id,
+                    'type'         => $invoice->getInvoiceType(),
                 ]);
             } elseif (!$isSuccess && $invoice->status === 'pending') {
                 $invoice->update(['status' => 'failed']);
@@ -866,6 +922,96 @@ class InvoiceController extends Controller
             ]);
             return response('SUCCESS', 200);
         }
+    }
+
+    /**
+     * Create individual enrollments from bundle items after payment success
+     */
+    private function createIndividualEnrollmentsFromBundle(Invoice $invoice)
+    {
+        try {
+            foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+                $bundle = $bundleEnrollment->bundle;
+
+                if (!$bundle) {
+                    continue;
+                }
+
+                foreach ($bundle->bundleItems as $bundleItem) {
+                    if (!$bundleItem->bundleable) {
+                        continue;
+                    }
+
+                    $type = $this->getBundleItemType($bundleItem->bundleable_type);
+
+                    if ($type === 'course') {
+                        // Check if enrollment already exists
+                        $existingEnrollment = EnrollmentCourse::where('invoice_id', $invoice->id)
+                            ->where('course_id', $bundleItem->bundleable_id)
+                            ->first();
+
+                        if (!$existingEnrollment) {
+                            EnrollmentCourse::create([
+                                'id' => Str::uuid(),
+                                'invoice_id' => $invoice->id,
+                                'course_id' => $bundleItem->bundleable_id,
+                                'price' => $bundleItem->price,
+                                'progress' => 0,
+                            ]);
+                        }
+                    } elseif ($type === 'bootcamp') {
+                        $existingEnrollment = EnrollmentBootcamp::where('invoice_id', $invoice->id)
+                            ->where('bootcamp_id', $bundleItem->bundleable_id)
+                            ->first();
+
+                        if (!$existingEnrollment) {
+                            EnrollmentBootcamp::create([
+                                'id' => Str::uuid(),
+                                'invoice_id' => $invoice->id,
+                                'bootcamp_id' => $bundleItem->bundleable_id,
+                                'price' => $bundleItem->price,
+                                'progress' => 0,
+                            ]);
+                        }
+                    } elseif ($type === 'webinar') {
+                        $existingEnrollment = EnrollmentWebinar::where('invoice_id', $invoice->id)
+                            ->where('webinar_id', $bundleItem->bundleable_id)
+                            ->first();
+
+                        if (!$existingEnrollment) {
+                            EnrollmentWebinar::create([
+                                'id' => Str::uuid(),
+                                'invoice_id' => $invoice->id,
+                                'webinar_id' => $bundleItem->bundleable_id,
+                                'price' => $bundleItem->price,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            Log::info('Individual enrollments created from bundle', [
+                'invoice_id' => $invoice->id,
+                'invoice_code' => $invoice->invoice_code
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to create individual enrollments from bundle', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    private function getBundleItemType(string $bundleableType): ?string
+    {
+        if (str_contains($bundleableType, 'Course')) {
+            return 'course';
+        } elseif (str_contains($bundleableType, 'Bootcamp')) {
+            return 'bootcamp';
+        } elseif (str_contains($bundleableType, 'Webinar')) {
+            return 'webinar';
+        }
+        return null;
     }
 
     /**
@@ -1295,8 +1441,14 @@ class InvoiceController extends Controller
      */
     private function addEnrollmentToCertificateParticipants(Invoice $invoice)
     {
-        $invoice->load(['courseItems', 'bootcampItems', 'webinarItems']);
+        $invoice->load([
+            'courseItems',
+            'bootcampItems',
+            'webinarItems',
+            'bundleEnrollments.bundle.bundleItems.bundleable'
+        ]);
 
+        // Direct enrollments
         foreach ($invoice->courseItems as $courseItem) {
             $this->addToCertificateParticipants('course', $courseItem->course_id, $invoice->user_id);
         }
@@ -1307,6 +1459,26 @@ class InvoiceController extends Controller
 
         foreach ($invoice->webinarItems as $webinarItem) {
             $this->addToCertificateParticipants('webinar', $webinarItem->webinar_id, $invoice->user_id);
+        }
+
+        foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+            $bundle = $bundleEnrollment->bundle;
+
+            if (!$bundle) {
+                continue;
+            }
+
+            foreach ($bundle->bundleItems as $bundleItem) {
+                if (!$bundleItem->bundleable) {
+                    continue;
+                }
+
+                $type = $this->getBundleItemType($bundleItem->bundleable_type);
+
+                if ($type) {
+                    $this->addToCertificateParticipants($type, $bundleItem->bundleable->id, $invoice->user_id);
+                }
+            }
         }
     }
 
