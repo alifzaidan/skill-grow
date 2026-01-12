@@ -24,6 +24,7 @@ interface PartnershipProduct {
     registration_url: string;
     status: string;
     created_at: string | Date;
+    type: 'regular' | 'scholarship';
 }
 
 interface RelatedPartnershipProduct {
