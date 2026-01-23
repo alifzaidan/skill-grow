@@ -215,7 +215,7 @@ export default function ScholarshipApplicationForm({ partnershipProduct }: { par
                                     📧 <span className="font-medium">skillgrow.id@gmail.com</span>
                                 </p>
                                 <p className="text-sm">
-                                    💬 <span className="font-medium">+62 812-XXXX-XXXX</span>
+                                    💬 <span className="font-medium">+6285184012430</span>
                                 </p>
                             </div>
                         </div>

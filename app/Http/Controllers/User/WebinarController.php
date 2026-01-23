@@ -12,7 +12,7 @@ use Inertia\Inertia;
 
 class WebinarController extends Controller
 {
-    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285142505794';
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285184012430';
 
     public function index()
     {
