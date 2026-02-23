@@ -29,10 +29,6 @@ use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Support\Facades\Log;
 
-use Xendit\Configuration;
-use Xendit\Invoice\CreateInvoiceRequest;
-use Xendit\Invoice\InvoiceApi;
-
 class InvoiceController extends Controller
 {
     use WablasTrait;
@@ -659,7 +655,7 @@ class InvoiceController extends Controller
 
             $this->addToCertificateParticipants($type, $item->id, $userId);
 
-            // $this->sendWhatsAppFreeEnrollment($invoice, $type, $item);
+            $this->sendWhatsAppFreeEnrollment($invoice, $type, $item);
 
             DB::commit();
 
@@ -890,6 +886,8 @@ class InvoiceController extends Controller
                     'payment_channel' => $channel,
                 ]);
 
+                $this->sendWhatsAppNotification($invoice);
+
                 // Record affiliate commission
                 $this->recordAffiliateCommission($invoice);
 
@@ -908,6 +906,7 @@ class InvoiceController extends Controller
                 ]);
             } elseif (!$isSuccess && $invoice->status === 'pending') {
                 $invoice->update(['status' => 'failed']);
+                $this->sendWhatsAppPaymentFailed($invoice);
                 Log::info('DOKU Callback: Payment failed', [
                     'invoice_code' => $invoiceCode,
                     'status'       => $status,
@@ -1016,97 +1015,91 @@ class InvoiceController extends Controller
 
     /**
      * Kirim notifikasi WhatsApp setelah pembayaran berhasil
-     *
-     * @param Invoice $invoice
-     * @return void
      */
-    // private function sendWhatsAppNotification(Invoice $invoice)
-    // {
-    //     try {
-    //         $user = $invoice->user;
+    private function sendWhatsAppNotification(Invoice $invoice)
+    {
+        try {
+            $user = $invoice->user;
 
-    //         if (!$user->phone_number) {
-    //             Log::warning('User does not have phone number', ['user_id' => $user->id, 'invoice_code' => $invoice->invoice_code]);
-    //             return;
-    //         }
+            if (!$user->phone_number) {
+                Log::warning('User does not have phone number', ['user_id' => $user->id, 'invoice_code' => $invoice->invoice_code]);
+                return;
+            }
 
-    //         $phoneNumber = $this->formatPhoneNumber($user->phone_number);
-    //         $message = $this->createWhatsAppMessage($invoice);
+            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $message = $this->createWhatsAppMessage($invoice);
 
-    //         $waData = [
-    //             [
-    //                 'phone' => $phoneNumber,
-    //                 'message' => $message,
-    //                 'isGroup' => 'false'
-    //             ]
-    //         ];
+            $waData = [
+                [
+                    'phone' => $phoneNumber,
+                    'message' => $message,
+                    'isGroup' => 'false'
+                ]
+            ];
 
-    //         $sent = self::sendText($waData);
+            $sent = self::sendText($waData);
 
-    //         if ($sent) {
-    //             Log::info('WhatsApp notification sent successfully', [
-    //                 'invoice_code' => $invoice->invoice_code,
-    //                 'user_id' => $user->id,
-    //                 'phone' => $phoneNumber
-    //             ]);
-    //         }
-    //     } catch (\Exception $e) {
-    //         Log::error('Failed to send WhatsApp notification', [
-    //             'invoice_code' => $invoice->invoice_code,
-    //             'error' => $e->getMessage()
-    //         ]);
-    //     }
-    // }
+            if ($sent) {
+                Log::info('WhatsApp notification sent successfully', [
+                    'invoice_code' => $invoice->invoice_code,
+                    'user_id' => $user->id,
+                    'phone' => $phoneNumber
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send WhatsApp notification', [
+                'invoice_code' => $invoice->invoice_code,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 
     /**
      * Kirim notifikasi WhatsApp untuk pembayaran gagal
-     *
-     * @param Invoice $invoice
-     * @return void
      */
-    // private function sendWhatsAppPaymentFailed(Invoice $invoice)
-    // {
-    //     try {
-    //         $user = $invoice->user;
+    private function sendWhatsAppPaymentFailed(Invoice $invoice)
+    {
+        try {
+            $user = $invoice->user;
 
-    //         if (!$user->phone_number) {
-    //             return;
-    //         }
+            if (!$user->phone_number) {
+                return;
+            }
 
-    //         $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
 
-    //         $itemType = 'Program';
-    //         if ($invoice->courseItems->count() > 0) {
-    //             $itemType = 'Kelas Online';
-    //         } elseif ($invoice->bootcampItems->count() > 0) {
-    //             $itemType = 'Bootcamp';
-    //         } elseif ($invoice->webinarItems->count() > 0) {
-    //             $itemType = 'Webinar';
-    //         }
+            $itemType = 'Program';
+            if ($invoice->courseItems->count() > 0) {
+                $itemType = 'Kelas Online';
+            } elseif ($invoice->bootcampItems->count() > 0) {
+                $itemType = 'Bootcamp';
+            } elseif ($invoice->webinarItems->count() > 0) {
+                $itemType = 'Webinar';
+            }
 
-    //         $message = "*[SkillGrow - Pembayaran {$itemType} Gagal]*\n\n";
-    //         $message .= "Hai *{$user->name}*,\n\n";
-    //         $message .= "Maaf, pembayaran {$itemType} untuk invoice *{$invoice->invoice_code}* tidak berhasil atau telah kadaluarsa.\n\n";
-    //         $message .= "Silakan melakukan pembelian ulang jika Anda masih berminat.\n\n";
-    //         $message .= "Terima kasih atas perhatiannya.\n\n";
-    //         $message .= "*Araska - Customer Support*";
+            $message = "*[Skillgrow - Pembayaran {$itemType} Gagal]*\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Maaf, pembayaran {$itemType} untuk invoice *{$invoice->invoice_code}* tidak berhasil atau telah kadaluarsa.\n\n";
+            $message .= "Silakan melakukan pembelian ulang jika Anda masih berminat.\n\n";
+            $message .= "Terima kasih atas perhatiannya.\n\n";
+            $message .= "*Skillgrow - Customer Support*";
 
-    //         $waData = [
-    //             [
-    //                 'phone' => $phoneNumber,
-    //                 'message' => $message,
-    //                 'isGroup' => 'false'
-    //             ]
-    //         ];
+            $waData = [
+                [
+                    'phone' => $phoneNumber,
+                    'message' => $message,
+                    'isGroup' => 'false'
+                ]
+            ];
 
-    //         self::sendText($waData);
-    //     } catch (\Exception $e) {
-    //         Log::error('Failed to send WhatsApp payment failed notification', [
-    //             'invoice_code' => $invoice->invoice_code,
-    //             'error' => $e->getMessage()
-    //         ]);
-    //     }
-    // }
+            self::sendText($waData);
+        } catch (\Exception $e) {
+            Log::error('Failed to send WhatsApp payment failed notification', [
+                'invoice_code' => $invoice->invoice_code,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 
     /**
      * Buat pesan WhatsApp berdasarkan item yang dibeli
@@ -1114,149 +1107,149 @@ class InvoiceController extends Controller
      * @param Invoice $invoice
      * @return string
      */
-    // private function createWhatsAppMessage(Invoice $invoice): string
-    // {
-    //     $user = $invoice->user;
-    //     $loginUrl = route('login');
-    //     $profileUrl = route('profile.index');
+    private function createWhatsAppMessage(Invoice $invoice): string
+    {
+        $user = $invoice->user;
+        $loginUrl = route('login');
+        $profileUrl = route('profile.index');
 
-    //     $invoice->load('discountUsage.discountCode');
+        $invoice->load('discountUsage.discountCode');
 
-    //     $itemType = null;
-    //     $itemData = null;
-    //     $typeInfo = null;
+        $itemType = null;
+        $itemData = null;
+        $typeInfo = null;
 
-    //     if ($invoice->bundleEnrollments->count() > 0) {
-    //         $itemType = 'bundle';
-    //         $bundleEnrollment = $invoice->bundleEnrollments->first();
-    //         $bundle = $bundleEnrollment->bundle;
+        if ($invoice->bundleEnrollments->count() > 0) {
+            $itemType = 'bundle';
+            $bundleEnrollment = $invoice->bundleEnrollments->first();
+            $bundle = $bundleEnrollment->bundle;
 
-    //         $typeInfo = [
-    //             'icon' => '📦',
-    //             'name' => 'Paket Bundling',
-    //             'menu' => 'Dashboard',
-    //             'title' => $bundle->title,
-    //             'item' => $bundle
-    //         ];
-    //     } elseif ($invoice->courseItems->count() > 0) {
-    //         $itemType = 'course';
-    //         $itemData = $invoice->courseItems->first();
-    //         $typeInfo = [
-    //             'icon' => '📚',
-    //             'name' => 'Kelas Online',
-    //             'menu' => 'Kelas Saya',
-    //             'title' => $itemData->course->title,
-    //             'item' => $itemData->course
-    //         ];
-    //     } elseif ($invoice->bootcampItems->count() > 0) {
-    //         $itemType = 'bootcamp';
-    //         $itemData = $invoice->bootcampItems->first();
-    //         $typeInfo = [
-    //             'icon' => '🎯',
-    //             'name' => 'Bootcamp',
-    //             'menu' => 'Bootcamp Saya',
-    //             'title' => $itemData->bootcamp->title,
-    //             'item' => $itemData->bootcamp
-    //         ];
-    //     } elseif ($invoice->webinarItems->count() > 0) {
-    //         $itemType = 'webinar';
-    //         $itemData = $invoice->webinarItems->first();
-    //         $typeInfo = [
-    //             'icon' => '📺',
-    //             'name' => 'Webinar',
-    //             'menu' => 'Webinar Saya',
-    //             'title' => $itemData->webinar->title,
-    //             'item' => $itemData->webinar
-    //         ];
-    //     }
+            $typeInfo = [
+                'icon' => '📦',
+                'name' => 'Paket Bundling',
+                'menu' => 'Dashboard',
+                'title' => $bundle->title,
+                'item' => $bundle
+            ];
+        } elseif ($invoice->courseItems->count() > 0) {
+            $itemType = 'course';
+            $itemData = $invoice->courseItems->first();
+            $typeInfo = [
+                'icon' => '📚',
+                'name' => 'Kelas Online',
+                'menu' => 'Kelas Saya',
+                'title' => $itemData->course->title,
+                'item' => $itemData->course
+            ];
+        } elseif ($invoice->bootcampItems->count() > 0) {
+            $itemType = 'bootcamp';
+            $itemData = $invoice->bootcampItems->first();
+            $typeInfo = [
+                'icon' => '🎯',
+                'name' => 'Bootcamp',
+                'menu' => 'Bootcamp Saya',
+                'title' => $itemData->bootcamp->title,
+                'item' => $itemData->bootcamp
+            ];
+        } elseif ($invoice->webinarItems->count() > 0) {
+            $itemType = 'webinar';
+            $itemData = $invoice->webinarItems->first();
+            $typeInfo = [
+                'icon' => '📺',
+                'name' => 'Webinar',
+                'menu' => 'Webinar Saya',
+                'title' => $itemData->webinar->title,
+                'item' => $itemData->webinar
+            ];
+        }
 
-    //     $isFreePurchase = $invoice->amount == 0;
+        $isFreePurchase = $invoice->amount == 0;
 
-    //     if ($isFreePurchase) {
-    //         $message = "*[SkillGrow - Pendaftaran {$typeInfo['name']} Berhasil]* ✅\n\n";
-    //         $message .= "Hai *{$user->name}*,\n\n";
-    //         $message .= "Selamat! Anda telah berhasil mendaftar untuk {$typeInfo['name']} GRATIS.\n\n";
-    //     } else {
-    //         $message = "*[SkillGrow - Pembayaran {$typeInfo['name']} Berhasil]* ✅\n\n";
-    //         $message .= "Hai *{$user->name}*,\n\n";
-    //         $message .= "Terima kasih! Pembayaran {$typeInfo['name']} Anda telah berhasil diproses.\n\n";
-    //     }
+        if ($isFreePurchase) {
+            $message = "*[Skillgrow - Pendaftaran {$typeInfo['name']} Berhasil]* ✅\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Selamat! Anda telah berhasil mendaftar untuk {$typeInfo['name']} GRATIS.\n\n";
+        } else {
+            $message = "*[Skillgrow - Pembayaran {$typeInfo['name']} Berhasil]* ✅\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Terima kasih! Pembayaran {$typeInfo['name']} Anda telah berhasil diproses.\n\n";
+        }
 
-    //     $message .= "*Detail " . ($isFreePurchase ? 'Pendaftaran' : 'Pembelian') . ":*\n";
-    //     $message .= "🧾 " . ($isFreePurchase ? 'Kode' : 'Invoice') . ": *{$invoice->invoice_code}*\n";
-    //     $message .= "{$typeInfo['icon']} {$typeInfo['name']}: *{$typeInfo['title']}*\n";
+        $message .= "*Detail " . ($isFreePurchase ? 'Pendaftaran' : 'Pembelian') . ":*\n";
+        $message .= "🧾 " . ($isFreePurchase ? 'Kode' : 'Invoice') . ": *{$invoice->invoice_code}*\n";
+        $message .= "{$typeInfo['icon']} {$typeInfo['name']}: *{$typeInfo['title']}*\n";
 
-    //     if ($itemType === 'bundle') {
-    //         $bundle = $typeInfo['item'];
-    //         $message .= "📦 Berisi: *{$bundle->bundle_items_count} Program*\n";
-    //     }
+        if ($itemType === 'bundle') {
+            $bundle = $typeInfo['item'];
+            $message .= "📦 Berisi: *{$bundle->bundle_items_count} Program*\n";
+        }
 
-    //     if ($isFreePurchase) {
-    //         $message .= "💰 Biaya: *GRATIS* 🎉\n";
-    //     } else {
-    //         if ($invoice->discountUsage && $invoice->discountUsage->discountCode) {
-    //             $discountCode = $invoice->discountUsage->discountCode;
-    //             $message .= "🏷️ Kode Promo: *{$discountCode->code}* (-Rp " . number_format($invoice->discountUsage->discount_amount, 0, ',', '.') . ")\n";
-    //         }
-    //         $message .= "💰 Total: *Rp " . number_format($invoice->amount, 0, ',', '.') . "*\n";
-    //     }
+        if ($isFreePurchase) {
+            $message .= "💰 Biaya: *GRATIS* 🎉\n";
+        } else {
+            if ($invoice->discountUsage && $invoice->discountUsage->discountCode) {
+                $discountCode = $invoice->discountUsage->discountCode;
+                $message .= "🏷️ Kode Promo: *{$discountCode->code}* (-Rp " . number_format($invoice->discountUsage->discount_amount, 0, ',', '.') . ")\n";
+            }
+            $message .= "💰 Total: *Rp " . number_format($invoice->amount, 0, ',', '.') . "*\n";
+        }
 
-    //     $message .= "📅 " . ($isFreePurchase ? 'Terdaftar' : 'Dibayar') . ": " . Carbon::parse($invoice->paid_at)->format('d M Y H:i') . "\n\n";
+        $message .= "📅 " . ($isFreePurchase ? 'Terdaftar' : 'Dibayar') . ": " . Carbon::parse($invoice->paid_at)->format('d M Y H:i') . "\n\n";
 
-    //     $message .= "*Cara Mengakses:*\n";
-    //     $message .= "1. Login ke akun Anda: {$loginUrl}\n";
-    //     $message .= "2. Kunjungi dashboard: {$profileUrl}\n";
-    //     if ($itemType === 'bundle') {
-    //         $message .= "3. Semua program sudah bisa diakses dari menu masing-masing\n";
-    //         $message .= "4. Mulai belajar dan raih sertifikat untuk setiap program! 🎓\n\n";
-    //     } else {
-    //         $message .= "3. Pilih menu '{$typeInfo['menu']}'\n";
-    //         $message .= "4. Mulai belajar dan raih sertifikat! 🎓\n\n";
-    //     }
+        $message .= "*Cara Mengakses:*\n";
+        $message .= "1. Login ke akun Anda: {$loginUrl}\n";
+        $message .= "2. Kunjungi dashboard: {$profileUrl}\n";
+        if ($itemType === 'bundle') {
+            $message .= "3. Semua program sudah bisa diakses dari menu masing-masing\n";
+            $message .= "4. Mulai belajar dan raih sertifikat untuk setiap program! 🎓\n\n";
+        } else {
+            $message .= "3. Pilih menu '{$typeInfo['menu']}'\n";
+            $message .= "4. Mulai belajar dan raih sertifikat! 🎓\n\n";
+        }
 
-    //     if ($itemType === 'webinar') {
-    //         $webinar = $typeInfo['item'];
-    //         $startTime = Carbon::parse($webinar->start_time);
-    //         $message .= "*Jadwal Webinar:*\n";
-    //         $message .= "📅 {$startTime->format('d M Y')}\n";
-    //         $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
+        if ($itemType === 'webinar') {
+            $webinar = $typeInfo['item'];
+            $startTime = Carbon::parse($webinar->start_time);
+            $message .= "*Jadwal Webinar:*\n";
+            $message .= "📅 {$startTime->format('d M Y')}\n";
+            $message .= "🕐 {$startTime->format('H:i')} WIB\n\n";
 
-    //         if (!empty($webinar->group_url)) {
-    //             $message .= "*Join Group Webinar:*\n";
-    //             $message .= "👥 {$webinar->group_url}\n\n";
-    //             $message .= "⚠️ *Penting:* \n";
-    //             $message .= "• Bergabung dengan group untuk update terbaru\n";
-    //             $message .= "• Jangan lupa attend sesuai jadwal!\n\n";
-    //         } else {
-    //             $message .= "⚠️ *Penting:* Jangan lupa bergabung sesuai jadwal!\n\n";
-    //         }
-    //     } elseif ($itemType === 'bootcamp') {
-    //         $bootcamp = $typeInfo['item'];
-    //         $startDate = Carbon::parse($bootcamp->start_date);
-    //         $endDate = Carbon::parse($bootcamp->end_date);
-    //         $message .= "*Periode Bootcamp:*\n";
-    //         $message .= "📅 {$startDate->format('d M Y')} - {$endDate->format('d M Y')}\n\n";
+            if (!empty($webinar->group_url)) {
+                $message .= "*Join Group Webinar:*\n";
+                $message .= "👥 {$webinar->group_url}\n\n";
+                $message .= "⚠️ *Penting:* \n";
+                $message .= "• Bergabung dengan group untuk update terbaru\n";
+                $message .= "• Jangan lupa attend sesuai jadwal!\n\n";
+            } else {
+                $message .= "⚠️ *Penting:* Jangan lupa bergabung sesuai jadwal!\n\n";
+            }
+        } elseif ($itemType === 'bootcamp') {
+            $bootcamp = $typeInfo['item'];
+            $startDate = Carbon::parse($bootcamp->start_date);
+            $endDate = Carbon::parse($bootcamp->end_date);
+            $message .= "*Periode Bootcamp:*\n";
+            $message .= "📅 {$startDate->format('d M Y')} - {$endDate->format('d M Y')}\n\n";
 
-    //         if (!empty($bootcamp->group_url)) {
-    //             $message .= "*Join Group Bootcamp:*\n";
-    //             $message .= "👥 {$bootcamp->group_url}\n\n";
-    //             $message .= "⚠️ *Penting:* \n";
-    //             $message .= "• Bergabung dengan group untuk mendapatkan info penting dan diskusi\n";
-    //             $message .= "• Aktif mengikuti seluruh kegiatan bootcamp\n\n";
-    //         }
-    //     }
+            if (!empty($bootcamp->group_url)) {
+                $message .= "*Join Group Bootcamp:*\n";
+                $message .= "👥 {$bootcamp->group_url}\n\n";
+                $message .= "⚠️ *Penting:* \n";
+                $message .= "• Bergabung dengan group untuk mendapatkan info penting dan diskusi\n";
+                $message .= "• Aktif mengikuti seluruh kegiatan bootcamp\n\n";
+            }
+        }
 
-    //     if ($isFreePurchase) {
-    //         $message .= "Terima kasih telah bergabung dengan SkillGrow! 🚀\n\n";
-    //     } else {
-    //         $message .= "Jika ada pertanyaan, jangan ragu untuk menghubungi kami.\n\n";
-    //         $message .= "Selamat belajar! 🚀\n\n";
-    //     }
+        if ($isFreePurchase) {
+            $message .= "Terima kasih telah bergabung dengan Skillgrow! 🚀\n\n";
+        } else {
+            $message .= "Jika ada pertanyaan, jangan ragu untuk menghubungi kami.\n\n";
+            $message .= "Selamat belajar! 🚀\n\n";
+        }
 
-    //     $message .= "*Araska - Customer Support*";
+        $message .= "*Skillgrow - Customer Support*";
 
-    //     return $message;
-    // }
+        return $message;
+    }
 
     /**
      * Kirim notifikasi WhatsApp untuk pendaftaran gratis
@@ -1266,48 +1259,48 @@ class InvoiceController extends Controller
      * @param mixed $item
      * @return void
      */
-    // private function sendWhatsAppFreeEnrollment(Invoice $invoice, string $type, $item)
-    // {
-    //     try {
-    //         $user = $invoice->user;
+    private function sendWhatsAppFreeEnrollment(Invoice $invoice, string $type, $item)
+    {
+        try {
+            $user = $invoice->user;
 
-    //         if (!$user->phone_number) {
-    //             Log::warning('User does not have phone number for free enrollment', [
-    //                 'user_id' => $user->id,
-    //                 'invoice_code' => $invoice->invoice_code
-    //             ]);
-    //             return;
-    //         }
+            if (!$user->phone_number) {
+                Log::warning('User does not have phone number for free enrollment', [
+                    'user_id' => $user->id,
+                    'invoice_code' => $invoice->invoice_code
+                ]);
+                return;
+            }
 
-    //         $phoneNumber = $this->formatPhoneNumber($user->phone_number);
-    //         $message = $this->createWhatsAppMessage($invoice);
+            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $message = $this->createWhatsAppMessage($invoice);
 
-    //         $waData = [
-    //             [
-    //                 'phone' => $phoneNumber,
-    //                 'message' => $message,
-    //                 'isGroup' => 'false'
-    //             ]
-    //         ];
+            $waData = [
+                [
+                    'phone' => $phoneNumber,
+                    'message' => $message,
+                    'isGroup' => 'false'
+                ]
+            ];
 
-    //         $sent = self::sendText($waData);
+            $sent = self::sendText($waData);
 
-    //         if ($sent) {
-    //             Log::info('WhatsApp free enrollment notification sent successfully', [
-    //                 'invoice_code' => $invoice->invoice_code,
-    //                 'user_id' => $user->id,
-    //                 'phone' => $phoneNumber,
-    //                 'type' => $type
-    //             ]);
-    //         }
-    //     } catch (\Exception $e) {
-    //         Log::error('Failed to send WhatsApp free enrollment notification', [
-    //             'invoice_code' => $invoice->invoice_code,
-    //             'type' => $type,
-    //             'error' => $e->getMessage()
-    //         ]);
-    //     }
-    // }
+            if ($sent) {
+                Log::info('WhatsApp free enrollment notification sent successfully', [
+                    'invoice_code' => $invoice->invoice_code,
+                    'user_id' => $user->id,
+                    'phone' => $phoneNumber,
+                    'type' => $type
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send WhatsApp free enrollment notification', [
+                'invoice_code' => $invoice->invoice_code,
+                'type' => $type,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 
     /**
      * Format nomor HP ke format WhatsApp (62...)
@@ -1315,23 +1308,23 @@ class InvoiceController extends Controller
      * @param string $phoneNumber
      * @return string
      */
-    // private function formatPhoneNumber(string $phoneNumber): string
-    // {
-    //     // Hapus semua karakter non-digit
-    //     $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+    private function formatPhoneNumber(string $phoneNumber): string
+    {
+        // Hapus semua karakter non-digit
+        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
 
-    //     // Jika dimulai dengan 0, ganti dengan 62
-    //     if (substr($phoneNumber, 0, 1) == '0') {
-    //         $phoneNumber = '62' . substr($phoneNumber, 1);
-    //     }
+        // Jika dimulai dengan 0, ganti dengan 62
+        if (substr($phoneNumber, 0, 1) == '0') {
+            $phoneNumber = '62' . substr($phoneNumber, 1);
+        }
 
-    //     // Jika belum dimulai dengan 62, tambahkan 62
-    //     if (substr($phoneNumber, 0, 2) != '62') {
-    //         $phoneNumber = '62' . $phoneNumber;
-    //     }
+        // Jika belum dimulai dengan 62, tambahkan 62
+        if (substr($phoneNumber, 0, 2) != '62') {
+            $phoneNumber = '62' . $phoneNumber;
+        }
 
-    //     return $phoneNumber;
-    // }
+        return $phoneNumber;
+    }
 
     /**
      * Mencatat komisi untuk afiliasi jika ada.
