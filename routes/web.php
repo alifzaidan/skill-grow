@@ -180,6 +180,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/bootcamps/{bootcamp}/publish', [BootcampController::class, 'publish'])->name('bootcamps.publish');
         Route::post('/bootcamps/{bootcamp}/archive', [BootcampController::class, 'archive'])->name('bootcamps.archive');
         Route::post('/bootcamps/{bootcamp}/duplicate', [BootcampController::class, 'duplicate'])->name('bootcamps.duplicate');
+        Route::post('/bootcamps/{bootcamp}/hidden', [BootcampController::class, 'hidden'])->name('bootcamps.hidden');
         Route::post('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'addScheduleRecording'])->name('bootcamps.add-recording');
         Route::delete('/bootcamps/{bootcamp}/schedules/{schedule}/recording', [BootcampController::class, 'removeScheduleRecording'])->name('bootcamps.remove-recording');
 
@@ -200,7 +201,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
             '/partnership-products/{id}/scholarship-participants/{scholarshipId}/accept',
             [PartnershipProductController::class, 'acceptScholarshipParticipant']
         )->name('partnership-products.scholarship-participants.accept');
-        
+
         Route::resource('bundles', BundleController::class);
         Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');
         Route::post('/bundles/{bundle}/archive', [BundleController::class, 'archive'])->name('bundles.archive');
