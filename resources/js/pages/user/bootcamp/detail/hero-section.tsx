@@ -80,7 +80,12 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                                 <div className="space-y-1">
                                                     {bootcamp.schedules.map((schedule, idx) => (
                                                         <p key={idx} className="text-sm capitalize">
-                                                            {schedule.day} - {schedule.start_time.slice(0, 5)} s/d {schedule.end_time.slice(0, 5)} WIB
+                                                            {schedule.day},{' '}
+                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                            })}{' '}
+                                                            - {schedule.start_time.slice(0, 5)} s/d {schedule.end_time.slice(0, 5)} WIB
                                                         </p>
                                                     ))}
                                                 </div>

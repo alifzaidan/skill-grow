@@ -4,11 +4,35 @@ interface Bootcamp {
     curriculum?: string | null;
 }
 
+function sanitizeListText(value: string): string {
+    return value
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&amp;/gi, '&')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function parseCurriculum(curriculum?: string | null): string[] {
     if (!curriculum) return [];
-    const matches = curriculum.match(/<li>(.*?)<\/li>/g);
-    if (!matches) return [];
-    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+
+    const normalized = curriculum.replace(/<br\s*\/?>/gi, '\n').trim();
+    const liMatches = normalized.match(/<li[^>]*>[\s\S]*?<\/li>/gi);
+
+    if (liMatches?.length) {
+        return liMatches.map((li) => sanitizeListText(li.replace(/<\/?li[^>]*>/gi, ''))).filter(Boolean);
+    }
+
+    return normalized
+        .split(/\r?\n/)
+        .map((line) => line.replace(/^(?:[\s•*-]+|✔(?:️)?|✅|☑(?:️)?)+/gu, '').trim())
+        .map((line) => sanitizeListText(line))
+        .filter(Boolean)
+        .filter((line) => !line.endsWith(':'));
 }
 
 export default function TimelineSection({ bootcamp }: { bootcamp: Bootcamp }) {
