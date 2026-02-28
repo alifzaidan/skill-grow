@@ -53,7 +53,11 @@ export default function BenefitsSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 className="flex gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
                             >
                                 <BadgeCheck className="mt-1 min-w-6 text-green-600" size={24} />
-                                <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
+                                {/<[a-z][\s\S]*>/i.test(benefit) ? (
+                                    <p className="text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: benefit }} />
+                                ) : (
+                                    <p className="text-gray-700 dark:text-gray-300">{benefit}</p>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -69,7 +73,11 @@ export default function BenefitsSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 className="flex gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
                             >
                                 <BadgeCheck className="mt-1 min-w-6 text-green-600" size={24} />
-                                <p className="text-gray-700 dark:text-gray-300">{req}</p>
+                                {/<[a-z][\s\S]*>/i.test(req) ? (
+                                    <p className="text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: req }} />
+                                ) : (
+                                    <p className="text-gray-700 dark:text-gray-300">{req}</p>
+                                )}
                             </div>
                         ))}
                     </div>
