@@ -5,11 +5,35 @@ interface Bootcamp {
     requirements?: string | null;
 }
 
+function sanitizeListText(value: string): string {
+    return value
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&amp;/gi, '&')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function parseList(items?: string | null): string[] {
     if (!items) return [];
-    const matches = items.match(/<li>(.*?)<\/li>/g);
-    if (!matches) return [];
-    return matches.map((li) => li.replace(/<\/?li>/g, '').trim());
+
+    const normalized = items.replace(/<br\s*\/?>/gi, '\n').trim();
+    const liMatches = normalized.match(/<li[^>]*>[\s\S]*?<\/li>/gi);
+
+    if (liMatches?.length) {
+        return liMatches.map((li) => sanitizeListText(li.replace(/<\/?li[^>]*>/gi, ''))).filter(Boolean);
+    }
+
+    return normalized
+        .split(/\r?\n/)
+        .map((line) => line.replace(/^(?:[\s•*-]+|✔(?:️)?|✅|☑(?:️)?)+/gu, '').trim())
+        .map((line) => sanitizeListText(line))
+        .filter(Boolean)
+        .filter((line) => !line.endsWith(':'));
 }
 
 export default function BenefitsSection({ bootcamp }: { bootcamp: Bootcamp }) {
