@@ -93,8 +93,9 @@ class InvoiceController extends Controller
             ->sum('nett_amount');
 
         // This month statistics
-        $thisMonthTransactions = $invoices->filter(function ($inv) {
-            return Carbon::parse($inv->created_at)->isCurrentMonth();
+        $thisMonthTransactions = $invoices
+            ->filter(function ($inv) {
+                return $inv->paid_at && Carbon::parse($inv->paid_at)->isCurrentMonth();
         })->count();
 
         $thisMonthRevenue = $invoices
