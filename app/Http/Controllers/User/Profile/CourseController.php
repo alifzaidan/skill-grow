@@ -85,7 +85,13 @@ class CourseController extends Controller
         try {
             $userId = Auth::id();
 
-            $course = Invoice::with('courseItems.course')
+            $course = Invoice::with([
+                'courseItems' => function ($query) use ($slug) {
+                    $query->whereHas('course', function ($q) use ($slug) {
+                        $q->where('slug', $slug);
+                    })->with('course'); // ✅ filter by slug
+                }
+            ])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('courseItems.course', function ($query) use ($slug) {
@@ -98,7 +104,12 @@ class CourseController extends Controller
                 return back()->with('error', 'Course tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $courseItem = $course->courseItems->first();
+            $courseItem = $course->courseItems->first(); // ✅ sudah difilter by slug
+
+            if (!$courseItem) {
+                return back()->with('error', 'Course tidak ditemukan.');
+            }
+
             $courseData = $courseItem->course;
 
             if ($courseItem->progress < 100) {
@@ -143,7 +154,13 @@ class CourseController extends Controller
         try {
             $userId = Auth::id();
 
-            $course = Invoice::with('courseItems.course')
+            $course = Invoice::with([
+                'courseItems' => function ($query) use ($slug) {
+                    $query->whereHas('course', function ($q) use ($slug) {
+                        $q->where('slug', $slug);
+                    })->with('course'); // ✅ filter by slug
+                }
+            ])
                 ->where('user_id', $userId)
                 ->where('status', 'paid')
                 ->whereHas('courseItems.course', function ($query) use ($slug) {
@@ -156,7 +173,12 @@ class CourseController extends Controller
                 return back()->with('error', 'Course tidak ditemukan atau Anda belum terdaftar.');
             }
 
-            $courseItem = $course->courseItems->first();
+            $courseItem = $course->courseItems->first(); // ✅ sudah difilter by slug
+
+            if (!$courseItem) {
+                return back()->with('error', 'Course tidak ditemukan.');
+            }
+
             $courseData = $courseItem->course;
 
             if ($courseItem->progress < 100) {
