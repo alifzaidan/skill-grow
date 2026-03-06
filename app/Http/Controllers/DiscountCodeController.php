@@ -518,6 +518,7 @@ class DiscountCodeController extends Controller
                 'amount' => 'required|integer|min:1',
                 'product_type' => 'required|string|in:course,bootcamp,webinar',
                 'product_id' => 'required|string',
+                'email' => 'nullable|email', // Add email validation
             ]);
 
             $discountCode = DiscountCode::where('code', $request->code)->first();
@@ -529,13 +530,23 @@ class DiscountCodeController extends Controller
                 ]);
             }
 
+            // Check if user is logged in or email is provided
             $userId = Auth::id();
-            if (!$userId) {
-                return response()->json([
-                    'valid' => false,
-                    'message' => 'Anda harus login terlebih dahulu'
-                ]);
+            $userEmail = $request->email;
+            
+            // If email is provided and user not logged in, check by email
+            if (!$userId && $userEmail) {
+                $user = \App\Models\User::where('email', $userEmail)->first();
+                if ($user) {
+                    $userId = $user->id;
+                }
             }
+            // elseif (!$userId) {
+            //     return response()->json([
+            //         'valid' => false,
+            //         'message' => 'Anda harus login atau masukkan data diri terlebih dahulu'
+            //     ]);
+            // }
 
             if (!$discountCode->isValid()) {
                 return response()->json([
@@ -551,7 +562,8 @@ class DiscountCodeController extends Controller
                 ]);
             }
 
-            if (!$discountCode->canBeUsedByUser($userId)) {
+            // Check if user can use this discount code
+            if ($userId && !$discountCode->canBeUsedByUser($userId)) {
                 return response()->json([
                     'valid' => false,
                     'message' => 'Anda sudah mencapai batas penggunaan kode diskon ini'

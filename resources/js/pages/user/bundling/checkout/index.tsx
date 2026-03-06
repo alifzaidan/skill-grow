@@ -6,9 +6,13 @@ import { Separator } from '@/components/ui/separator';
 import UserLayout from '@/layouts/user-layout';
 import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { BadgeCheck, Check, Hourglass, Package, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { BadgeCheck, Check, Hourglass, LoaderCircle, Package, RefreshCw, User } from 'lucide-react';
+import { FormEventHandler, useEffect, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import InputError from '@/components/input-error';
+import { Input } from '@/components/ui/input';
 
 interface Product {
     id: string;
@@ -51,6 +55,14 @@ interface CheckoutBundleProps {
     referralInfo: ReferralInfo;
 }
 
+type RegisterForm = {
+    name: string;
+    email: string;
+    phone_number: string;
+    password: string;
+    password_confirmation: string;
+};
+
 export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, referralInfo }: CheckoutBundleProps) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
@@ -62,6 +74,56 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
     const transactionFee = 5000;
     const bundleDiscount = bundle.strikethrough_price - bundle.price;
     const totalPrice = bundle.price + transactionFee;
+
+    const [emailExists, setEmailExists] = useState(false);
+    const [checkingEmail, setCheckingEmail] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const { data, setData, post, processing, errors, reset } = useForm<Required<RegisterForm>>({
+        name: '',
+        email: '',
+        phone_number: '',
+        password: '',
+        password_confirmation: '',
+    });
+
+    useEffect(() => {
+        if (!data.email || !data.email.includes('@')) {
+            setEmailExists(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setCheckingEmail(true);
+            try {
+                const response = await axios.post('/api/check-email', {
+                    email: data.email
+                });
+
+                if (response.data.exists) {
+                    setEmailExists(true);
+                    setData('name', response.data.name || '');
+                    setData('phone_number', response.data.phone_number || '');
+                } else {
+                    setEmailExists(false);
+                }
+            } catch (error) {
+                console.error('Error checking email:', error);
+                setEmailExists(false);
+            } finally {
+                setCheckingEmail(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [data.email]);
+
+    const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+        post(route('register'), {
+            onFinish: () => reset('password', 'password_confirmation'),
+        });
+    };
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -97,18 +159,99 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (!isLoggedIn) {
+            if (!data.email || !data.name || !data.phone_number) {
+                toast.error('Lengkapi data terlebih dahulu');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                if (emailExists) {
+                    const response = await axios.post('/auto-login', {
+                        email: data.email,
+                        phone_number: data.phone_number,
+                    });
+
+                    if (!response.data.success) {
+                        throw new Error(response.data.message || 'Login gagal. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                    }
+
+                    toast.success('Login berhasil! Menyiapkan pembayaran...');
+
+                    sessionStorage.setItem(
+                        'pendingCheckout',
+                        JSON.stringify({
+                            bundleId: bundle.id,
+                            productType: 'bundle',
+                            termsAccepted,
+                            timestamp: Date.now(),
+                        }),
+                    );
+
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    window.location.reload();
+                    return;
+                } else {
+                    const response = await axios.post('/register', {
+                        name: data.name,
+                        email: data.email,
+                        phone_number: data.phone_number,
+                        password: data.phone_number,
+                        password_confirmation: data.phone_number,
+                    });
+
+                    if (!(response.data.success || response.status === 200 || response.status === 201)) {
+                        throw new Error('Registrasi gagal');
+                    }
+
+                    toast.success('Registrasi berhasil! Menyiapkan pembayaran...');
+
+                    sessionStorage.setItem(
+                        'pendingCheckout',
+                        JSON.stringify({
+                            bundleId: bundle.id,
+                            productType: 'bundle',
+                            termsAccepted,
+                            timestamp: Date.now(),
+                        }),
+                    );
+
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                    window.location.reload();
+                    return;
+                }
+            } catch (error: any) {
+                console.error('Login/Register error:', error);
+                setLoading(false);
+
+                if (error.response?.status === 419) {
+                    toast.error('Sesi telah berakhir. Silakan muat ulang halaman.');
+                } else {
+                    toast.error(error.response?.data?.message || error.message || 'Gagal login/registrasi');
+                }
+                return;
+            }
+        }
+
+        // Validasi profil setelah login
         if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
-            window.location.href = route('profile.edit');
+            toast.error('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
+            window.location.href = route('profile.edit', { redirect: window.location.href });
             return;
         }
 
+        // Validasi terms
         if (!termsAccepted) {
-            alert('Anda harus menyetujui syarat dan ketentuan!');
+            toast.error('Anda harus menyetujui syarat dan ketentuan!');
+            setLoading(false);
             return;
         }
 
-        setLoading(true);
+        if (!loading) {
+            setLoading(true);
+        }
 
         const submitPayment = async (retryCount = 0): Promise<void> => {
             const invoiceData = {
@@ -128,27 +271,33 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': csrfToken || '',
                         Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     credentials: 'same-origin',
                     body: JSON.stringify(invoiceData),
                 });
 
                 if (res.status === 419 && retryCount < 2) {
-                    console.log(`CSRF token expired, refreshing... (attempt ${retryCount + 1})`);
                     await refreshCSRFToken();
                     return submitPayment(retryCount + 1);
                 }
 
-                const data = await res.json();
+                if (res.status === 401 && retryCount < 2) {
+                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                    return submitPayment(retryCount + 1);
+                }
 
-                if (res.ok && data.success) {
-                    if (data.payment_url) {
-                        window.location.href = data.payment_url;
+                const responseData = await res.json();
+
+                if (res.ok && responseData.success) {
+                    if (responseData.payment_url) {
+                        sessionStorage.removeItem('pendingCheckout');
+                        window.location.href = responseData.payment_url;
                     } else {
                         throw new Error('Payment URL not received');
                     }
                 } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
+                    throw new Error(responseData.message || 'Gagal membuat invoice.');
                 }
             } catch (error) {
                 console.error('Payment error:', error);
@@ -159,60 +308,130 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
         try {
             await submitPayment();
         } catch (error: any) {
-            alert(error.message || 'Terjadi kesalahan saat proses pembayaran.');
+            toast.error(error.message || 'Terjadi kesalahan saat proses pembayaran.');
             setLoading(false);
         }
     };
 
-    if (!isLoggedIn) {
-        const currentUrl = window.location.href;
-        const loginUrl = route('login', { redirect: currentUrl });
+    useEffect(() => {
 
+        const pendingCheckout = sessionStorage.getItem('pendingCheckout');
+
+        if (pendingCheckout && isLoggedIn) {
+            try {
+                const checkoutData = JSON.parse(pendingCheckout);
+
+                // Validasi timestamp (maksimal 5 menit)
+                const timestamp = checkoutData.timestamp || 0;
+                const now = Date.now();
+                const fiveMinutes = 5 * 60 * 1000;
+
+                if (now - timestamp > fiveMinutes) {
+                    sessionStorage.removeItem('pendingCheckout');
+                    toast.error('Sesi checkout telah kadaluarsa');
+                    return;
+                }
+
+                // Validasi bundle ID + product type
+                if (checkoutData.bundleId !== bundle.id || checkoutData.productType !== 'bundle') {
+                    sessionStorage.removeItem('pendingCheckout');
+                    return;
+                }
+
+
+                // Restore state
+                setTermsAccepted(checkoutData.termsAccepted || false);
+
+                toast.success('Melanjutkan pembayaran...');
+
+                setTimeout(async () => {
+                    setLoading(true);
+
+                    const submitPayment = async (retryCount = 0): Promise<void> => {
+                        const invoiceData = {
+                            bundle_id: bundle.id,
+                            discount_amount: bundleDiscount,
+                            nett_amount: bundle.price,
+                            transaction_fee: transactionFee,
+                            total_amount: totalPrice,
+                        };
+
+
+                        try {
+                            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+
+                            const res = await fetch(route('invoice.store.bundle'), {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken || '',
+                                    Accept: 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                },
+                                credentials: 'same-origin',
+                                body: JSON.stringify(invoiceData),
+                            });
+
+
+                            if (res.status === 419 && retryCount < 2) {
+                                await refreshCSRFToken();
+                                return submitPayment(retryCount + 1);
+                            }
+
+                            if (res.status === 401 && retryCount < 2) {
+                                await new Promise((resolve) => setTimeout(resolve, 2000));
+                                return submitPayment(retryCount + 1);
+                            }
+
+                            const data = await res.json();
+
+                            if (res.ok && data.success) {
+                                if (data.payment_url) {
+                                    sessionStorage.removeItem('pendingCheckout');
+                                    window.location.href = data.payment_url;
+                                } else {
+                                    throw new Error('Payment URL not received');
+                                }
+                            } else {
+                                throw new Error(data.message || 'Gagal membuat invoice.');
+                            }
+                        } catch (error) {
+                            console.error('Payment error:', error);
+                            throw error;
+                        }
+                    };
+
+                    try {
+                        await submitPayment();
+                    } catch (error: any) {
+                        console.error('Failed to process payment:', error);
+                        toast.error(error.message || 'Terjadi kesalahan saat proses pembayaran.');
+                        sessionStorage.removeItem('pendingCheckout');
+                        setLoading(false);
+                    }
+                }, 2000);
+            } catch (error) {
+                console.error('Error processing pending checkout:', error);
+                sessionStorage.removeItem('pendingCheckout');
+                toast.error('Gagal memproses checkout');
+            }
+        }
+
+    }, [isLoggedIn, bundle.id, bundle.price, bundleDiscount, transactionFee, totalPrice]);
+
+
+    if (isLoggedIn && !isProfileComplete) {
         return (
             <UserLayout>
-                <Head title="Login Required" />
+                <Head title="Checkout Paket Bundling" />
                 <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
                     <div className="mx-auto my-12 w-full max-w-7xl px-4">
                         <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
                             Checkout Paket Bundling "{bundle.title}"
                         </h2>
-                        <p className="text-center text-gray-400">Silakan login terlebih dahulu untuk membeli paket bundling.</p>
+                        <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
                     </div>
                 </section>
-                <section className="mx-auto my-4 w-full max-w-7xl px-4">
-                    <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
-                        <User size={64} className="text-blue-500" />
-                        <h2 className="text-xl font-bold">Login Diperlukan</h2>
-                        <p className="text-sm text-gray-500">
-                            Anda perlu login terlebih dahulu untuk membeli paket bundling ini.
-                            {referralInfo.hasActive && ' Kode referral Anda akan tetap tersimpan.'}
-                        </p>
-                        <div className="flex w-full max-w-md gap-2">
-                            <Button asChild className="flex-1">
-                                <a href={loginUrl}>Login</a>
-                            </Button>
-                            <Button asChild variant="outline" className="flex-1">
-                                <Link href={route('register', referralInfo.code ? { ref: referralInfo.code } : {})}>Daftar</Link>
-                            </Button>
-                        </div>
-                    </div>
-                </section>
-            </UserLayout>
-        );
-    }
-
-    if (!isProfileComplete) {
-        return (
-            <UserLayout>
-                <Head title="Checkout Paket Bundling" />
-                    <section className="to-primary w-full bg-gradient-to-tl from-black px-4">
-                        <div className="mx-auto my-12 w-full max-w-7xl px-4">
-                            <h2 className="mx-auto mb-4 max-w-3xl bg-gradient-to-r from-[#71D0F7] via-white to-[#E6834A] bg-clip-text text-center text-3xl font-bold text-transparent italic sm:text-4xl">
-                                Checkout Paket Bundling "{bundle.title}"
-                            </h2>
-                            <p className="text-center text-gray-400">Silakan lengkapi profil Anda terlebih dahulu.</p>
-                        </div>
-                    </section>
                 <section className="mx-auto my-4 w-full max-w-7xl px-4">
                     <div className="flex h-full flex-col items-center justify-center space-y-4 rounded-lg border p-6 text-center">
                         <User size={64} className="text-orange-500" />
@@ -232,7 +451,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
     return (
         <UserLayout>
             <Head title={`Checkout - ${bundle.title}`} />
-            
+
             <section className="mx-auto mb-4 my-8 w-full max-w-7xl px-4">
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Left Column - Bundle Details */}
@@ -274,8 +493,8 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                                     {item.bundleable_type.includes('Course')
                                                         ? 'Kelas Online'
                                                         : item.bundleable_type.includes('Bootcamp')
-                                                          ? 'Bootcamp'
-                                                          : 'Webinar'}
+                                                            ? 'Bootcamp'
+                                                            : 'Webinar'}
                                                 </p>
                                             </div>
                                             <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -316,6 +535,126 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                 </ul>
                             </div>
                         </div>
+                        {!isLoggedIn && (
+                            <form className="flex flex-col gap-6 p-6 mt-6 rounded-2xl border bg-white/95 dark:bg-gray-800/95" onSubmit={submit}>
+                                <h1 className="text-xl font-bold">Masukkan Data Diri Anda</h1>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <div className="flex gap-2">
+                                        <div className="relative flex-1">
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                required
+                                                tabIndex={1}
+                                                autoComplete="email"
+                                                value={data.email}
+                                                onChange={(e) => setData('email', e.target.value)}
+                                                disabled={processing}
+                                                placeholder="email@example.com"
+                                                className="pr-10"
+                                            />
+                                            {checkingEmail && (
+                                                <div className="absolute top-1/2 right-3 -translate-y-1/2">
+                                                    <LoaderCircle className="h-4 w-4 animate-spin text-gray-400" />
+                                                </div>
+                                            )}
+                                            {!checkingEmail && emailExists && (
+                                                <div className="absolute top-1/2 right-3 -translate-y-1/2">
+                                                    <Check className="h-5 w-5 text-green-600" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={async () => {
+                                                if (!data.email || !data.email.includes('@')) {
+                                                    toast.error('Masukkan email yang valid');
+                                                    return;
+                                                }
+
+                                                setCheckingEmail(true);
+                                                try {
+                                                    const response = await axios.post('/api/check-email', {
+                                                        email: data.email
+                                                    });
+
+                                                    if (response.data.exists) {
+                                                        setEmailExists(true);
+                                                        setData('name', response.data.name || '');
+                                                        setData('phone_number', response.data.phone_number || '');
+                                                        toast.success('Email ditemukan!');
+                                                    } else {
+                                                        setEmailExists(false);
+                                                        toast.info('Email tidak terdaftar');
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error checking email:', error);
+                                                    setEmailExists(false);
+                                                    toast.error('Gagal mengecek email');
+                                                } finally {
+                                                    setCheckingEmail(false);
+                                                }
+                                            }}
+                                            disabled={checkingEmail || !data.email}
+                                            className="flex-shrink-0"
+                                        >
+                                            <RefreshCw className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    {emailExists && (
+                                        <p className="text-xs text-green-600">Email ditemukan, data terisi otomatis</p>
+                                    )}
+                                    <InputError message={errors.email} />
+                                </div>
+
+                                <div className="grid gap-6">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="name">Nama</Label>
+                                        <Input
+                                            id="name"
+                                            type="text"
+                                            required
+                                            tabIndex={2}
+                                            autoComplete="name"
+                                            value={data.name}
+                                            onChange={(e) => setData('name', e.target.value)}
+                                            disabled={processing || emailExists}
+                                            placeholder="Nama lengkap Anda"
+                                        />
+                                        <InputError message={errors.name} className="mt-2" />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="phone_number">No. Telepon</Label>
+                                        <Input
+                                            id="phone_number"
+                                            type="tel"
+                                            required
+                                            tabIndex={3}
+                                            autoComplete="tel"
+                                            value={data.phone_number}
+                                            onChange={(e) => setData('phone_number', e.target.value)}
+                                            disabled={processing || emailExists}
+                                            placeholder="08xxxxxxxxxx"
+                                        />
+                                        {!emailExists && (
+                                            <p className="text-xs text-gray-500">
+                                                Nomor telepon akan digunakan sebagai password anda
+                                            </p>
+                                        )}
+                                        {emailExists && (
+                                            <p className="text-xs text-blue-600">
+                                                Pastikan nomor telepon sesuai dengan yang terdaftar
+                                            </p>
+                                        )}
+                                        <InputError message={errors.phone_number} />
+                                    </div>
+                                </div>
+                            </form>
+                        )}
                     </div>
 
                     {/* Right Column - Payment */}

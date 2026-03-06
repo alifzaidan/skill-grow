@@ -60,14 +60,6 @@ export default function RegisterSection({
         buttonText = 'Tidak Dapat Mendaftar';
         warningMessage = 'Anda sudah memiliki beberapa produk dalam bundle ini!';
         isDisabled = true;
-    } else if (!isLoggedIn) {
-        registrationUrl = bundle.registration_url;
-        buttonText = 'Login untuk Mendaftar';
-        warningMessage = 'Anda harus login terlebih dahulu!';
-    } else if (!isProfileComplete) {
-        registrationUrl = route('profile.edit', { redirect: window.location.href });
-        buttonText = 'Lengkapi Profil untuk Mendaftar';
-        warningMessage = 'Profil Anda belum lengkap!';
     } else {
         registrationUrl = bundle.registration_url;
         buttonText = 'Daftar Sekarang';
