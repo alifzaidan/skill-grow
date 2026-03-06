@@ -13,6 +13,7 @@ type RegisterForm = {
     name: string;
     email: string;
     phone_number: string;
+    instance: string;
     password: string;
     password_confirmation: string;
     affiliate_code?: string;
@@ -39,6 +40,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
         name: '',
         email: '',
         phone_number: '',
+        instance:'',
         password: '',
         password_confirmation: '',
         affiliate_code: getReferralCode(),
