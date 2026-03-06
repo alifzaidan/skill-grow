@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\InvoiceApiController;
+use App\Http\Controllers\Api\UserApiController;
 use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SearchController;
@@ -15,6 +17,16 @@ Route::get('/user', function (Request $request) {
 Route::post('/doku/callback', [InvoiceController::class, 'callbackDoku'])->name('doku.callback');
 
 Route::get('/search', [SearchController::class, 'search']);
+
+// Public API Routes
+Route::middleware(['auth:sanctum', 'token.ability:external-api'])->group(function () {
+    Route::get('/users', [UserApiController::class, 'index'])->name('api.users.index');
+    Route::get('/users/{id}', [UserApiController::class, 'show'])->name('api.users.show');
+
+    Route::get('/invoices', [InvoiceApiController::class, 'index'])->name('api.invoices.index');
+    Route::get('/invoices/statistics', [InvoiceApiController::class, 'statistics'])->name('api.invoices.statistics');
+    Route::get('/invoices/{id}', [InvoiceApiController::class, 'show'])->name('api.invoices.show');
+});
 
 Route::post('/check-email', function (Request $request) {
     $user = \App\Models\User::where('email', $request->email)->first();
