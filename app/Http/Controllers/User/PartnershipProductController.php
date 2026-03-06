@@ -13,7 +13,7 @@ use Inertia\Inertia;
 
 class PartnershipProductController extends Controller
 {
-    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285184012430';
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285111022504';
 
     public function index()
     {
