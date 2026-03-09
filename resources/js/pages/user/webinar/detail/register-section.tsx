@@ -27,19 +27,9 @@ export default function RegisterSection({ webinar }: { webinar: Webinar }) {
     let buttonText: string;
     let warningMessage: string | null = null;
 
-    if (!isLoggedIn) {
-        registrationUrl = webinar.registration_url;
-        buttonText = 'Login untuk Mendaftar';
-        warningMessage = 'Anda harus login terlebih dahulu!';
-    } else if (!isProfileComplete) {
-        registrationUrl = route('profile.edit', { redirect: window.location.href });
-        buttonText = 'Lengkapi Profil untuk Mendaftar';
-        warningMessage = 'Profil Anda belum lengkap!';
-    } else {
-        registrationUrl = webinar.registration_url;
-        buttonText = 'Gabung Sekarang';
-        warningMessage = null;
-    }
+    registrationUrl = webinar.registration_url;
+    buttonText = 'Gabung Sekarang';
+    warningMessage = null;
 
     const deadline = new Date(webinar.registration_deadline);
     const isRegistrationOpen = new Date() < deadline;

@@ -116,7 +116,7 @@ export default function CheckoutSuccess({ invoice }: InvoiceProps) {
                         <p className="text-sm text-gray-500">
                             Jika ada pertanyaan, silakan hubungi customer support kami di{' '}
                             <a
-                                href="https://wa.me/6285184012430"
+                                href="https://wa.me/6285111022504"
                                 className="bg-primary rounded-full px-2 py-1 font-medium text-gray-600 transition-colors hover:text-gray-900"
                                 target="_blank"
                                 rel="noopener noreferrer"

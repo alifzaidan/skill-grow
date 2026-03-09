@@ -19,7 +19,7 @@ export default function Contact() {
                             <p className="text-gray-600 mt-2">Hubungi kami melalui Email</p>
                         </div>
                         <div className="flex flex-col items-center text-center p-6 rounded-xl bg-gradient-to-br from-yellow-100 to-black-50 shadow-md border cursor-pointer">
-                            <a href="https://wa.me/6285184012430" target="_blank" rel="noopener" className="flex flex-col items-center gap-2 text-black hover:underline">
+                            <a href="https://wa.me/6285111022504" target="_blank" rel="noopener" className="flex flex-col items-center gap-2 text-black hover:underline">
                                 <Phone className="w-14 h-14" />
                                 <span className="text-lg font-semibold">WhatsApp</span>
                             </a>

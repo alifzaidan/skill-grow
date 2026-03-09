@@ -33,19 +33,9 @@ export default function RegisterSection({ bootcamp }: { bootcamp: Bootcamp }) {
     let buttonText: string;
     let warningMessage: string | null = null;
 
-    if (!isLoggedIn) {
-        registrationUrl = bootcamp.registration_url;
-        buttonText = 'Login untuk Mendaftar';
-        warningMessage = 'Anda harus login terlebih dahulu!';
-    } else if (!isProfileComplete) {
-        registrationUrl = route('profile.edit', { redirect: window.location.href });
-        buttonText = 'Lengkapi Profil untuk Mendaftar';
-        warningMessage = 'Profil Anda belum lengkap!';
-    } else {
-        registrationUrl = bootcamp.registration_url;
-        buttonText = 'Daftar Sekarang';
-        warningMessage = null;
-    }
+    registrationUrl = bootcamp.registration_url;
+    buttonText = 'Daftar Sekarang';
+    warningMessage = null;
 
     const deadline = new Date(bootcamp.registration_deadline);
     const isRegistrationOpen = new Date() < deadline;

@@ -12,7 +12,7 @@ use Inertia\Inertia;
 
 class WebinarController extends Controller
 {
-    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285184012430';
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285111022504';
 
     public function index()
     {
@@ -105,10 +105,10 @@ class WebinarController extends Controller
             ])->toResponse($request)->setStatusCode(404);
         }
 
-        if (!Auth::check()) {
-            $currentUrl = $request->fullUrl();
-            return redirect()->route('login', ['redirect' => $currentUrl]);
-        }
+        // if (!Auth::check()) {
+        //     $currentUrl = $request->fullUrl();
+        //     return redirect()->route('login', ['redirect' => $currentUrl]);
+        // }
 
         $webinar->load(['tools', 'user', 'category']);
         $hasAccess = false;

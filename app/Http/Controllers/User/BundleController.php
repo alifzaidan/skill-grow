@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class BundleController extends Controller
 {
-    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285184012430';
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285111022504';
 
     public function index()
     {
@@ -206,10 +206,10 @@ class BundleController extends Controller
             ])->toResponse($request)->setStatusCode(404);
         }
 
-        if (!Auth::check()) {
-            $currentUrl = $request->fullUrl();
-            return redirect()->route('login', ['redirect' => $currentUrl]);
-        }
+        // if (!Auth::check()) {
+        //     $currentUrl = $request->fullUrl();
+        //     return redirect()->route('login', ['redirect' => $currentUrl]);
+        // }
 
         if ($bundle->registration_deadline && now()->gt($bundle->registration_deadline)) {
             return redirect()->route('bundle.show', $bundle->slug)

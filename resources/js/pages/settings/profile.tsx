@@ -23,6 +23,7 @@ type ProfileForm = {
     name: string;
     email: string;
     phone_number: string | null;
+    instance: string | null;
     redirect?: string;
 };
 
@@ -34,6 +35,7 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
         name: auth.user.name,
         email: auth.user.email,
         phone_number: (auth.user.phone_number ?? '') as string,
+        instance: (auth.user.instance ?? '') as string,
         redirect: redirectUrl || '',
     });
 
@@ -135,6 +137,22 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                                 <p className="text-muted-foreground -mt-4 text-sm">Profil Anda belum lengkap. Silakan lengkapi nomor telepon Anda.</p>
                             </div>
                         )}
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="instance">Instansi</Label>
+                            <Input
+                                id="instance"
+                                type="text"
+                                className="mt-1 block w-full"
+                                value={data.instance ?? ''}
+                                onChange={(e) => setData('instance', e.target.value)}
+                                required
+                                autoComplete="organization"
+                                placeholder="Masukkan nama instansi Anda"
+                            />
+
+                            <InputError className="mt-2" message={errors.instance} />
+                        </div>
 
                         <div className="flex items-center gap-4">
                             <Button disabled={processing}>Simpan</Button>
