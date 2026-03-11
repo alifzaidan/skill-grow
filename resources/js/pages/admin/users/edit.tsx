@@ -12,6 +12,7 @@ interface EditUserProps {
         name: string;
         email: string;
         phone_number: string;
+        instance: string;
     };
     setOpen: (open: boolean) => void;
 }
@@ -21,10 +22,11 @@ export default function EditUser({ user, setOpen }: EditUserProps) {
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
 
-    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<Required<{ name: string; email: string; phone_number: string }>>({
+    const { data, setData, put, processing, reset, errors, clearErrors } = useForm<Required<{ name: string; email: string; phone_number: string; instance: string }>>({
         name: user.name,
         email: user.email,
         phone_number: user.phone_number,
+        instance: user.instance,
     });
 
     useEffect(() => {
@@ -32,6 +34,7 @@ export default function EditUser({ user, setOpen }: EditUserProps) {
             name: user.name,
             email: user.email,
             phone_number: user.phone_number,
+            instance: user.instance,
         });
         clearErrors();
     }, [user, setData, clearErrors]);
@@ -102,6 +105,21 @@ export default function EditUser({ user, setOpen }: EditUserProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.phone_number} />
+                    
+                    <Label htmlFor="instance" className="sr-only">
+                        Instansi
+                    </Label>
+                    <Input
+                        id="instance"
+                        type="text"
+                        name="instance"
+                        ref={phoneInput}
+                        value={data.instance}
+                        onChange={(e) => setData('instance', e.target.value)}
+                        placeholder="Instansi"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.instance} />
                 </div>
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>

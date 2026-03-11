@@ -9,6 +9,7 @@ import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import {
     BookText,
+    Building,
     Calendar,
     CheckCircle,
     ChevronLeft,
@@ -34,6 +35,7 @@ interface UserData {
     name: string;
     email: string;
     phone_number?: string;
+    instance: string;
     avatar?: string;
     created_at: string;
     roles: Array<{ name: string }>;
@@ -437,6 +439,10 @@ export default function UserShow({ user, invoices, enrollments, stats }: UserSho
                                             <span>{user.phone_number}</span>
                                         </div>
                                     )}
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Building className="text-muted-foreground h-4 w-4" />
+                                        <span>{user.instance}</span>
+                                    </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <Calendar className="text-muted-foreground h-4 w-4" />
                                         <span>Bergabung {formatDate(user.created_at)}</span>
