@@ -201,7 +201,7 @@ class InvoiceController extends Controller
         DB::beginTransaction();
         try {
             $validated = $request->validate([
-                'type' => 'required|in:course,bootcamp,webinar',
+                'type' => 'required|in:course,bootcamp,webinar,bundle',
                 'id' => 'required|string',
                 'discount_amount' => 'nullable|numeric|min:0',
                 'nett_amount' => 'required|numeric|min:0',
