@@ -521,7 +521,7 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
             }
         }
 
-    }, [isLoggedIn, bundle.id, bundle.price, bundleDiscount, transactionFee, totalPrice]);
+    }, [isLoggedIn, bundle.id]);
 
 
     if (isLoggedIn && !isProfileComplete) {
