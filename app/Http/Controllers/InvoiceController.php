@@ -201,7 +201,7 @@ class InvoiceController extends Controller
         DB::beginTransaction();
         try {
             $validated = $request->validate([
-                'type' => 'required|in:course,bootcamp,webinar',
+                'type' => 'required|in:course,bootcamp,webinar,bundle',
                 'id' => 'required|string',
                 'discount_amount' => 'nullable|numeric|min:0',
                 'nett_amount' => 'required|numeric|min:0',
@@ -268,7 +268,9 @@ class InvoiceController extends Controller
             // Validate pricing
             $discountCodeAmount = isset($validated['discount_code_amount']) ? $validated['discount_code_amount'] : 0;
             $expectedNettAmount = $product->price - $discountCodeAmount;
-            $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $validated['transaction_fee'] : 0;
+            $expectedTotal = $expectedNettAmount > 0
+                ? $expectedNettAmount + $validated['transaction_fee']
+                : 0;
 
             if ($validated['nett_amount'] != $expectedNettAmount) {
                 throw new \Exception('Harga nett tidak sesuai');
@@ -430,6 +432,8 @@ class InvoiceController extends Controller
                 'nett_amount' => 'required|numeric|min:0',
                 'transaction_fee' => 'required|numeric|min:0',
                 'total_amount' => 'required|numeric|min:0',
+                'discount_code_id' => 'nullable|string|exists:discount_codes,id',
+                'discount_code_amount' => 'nullable|numeric|min:0',
             ]);
 
             $user = Auth::user();
@@ -466,14 +470,32 @@ class InvoiceController extends Controller
                 ], 200);
             }
 
-            $expectedNettAmount = $bundle->price;
-            $expectedTotal = $expectedNettAmount + $validated['transaction_fee'];
+            // Validate promo code (jika ada)
+            $discountCodeAmount = isset($validated['discount_code_amount']) ? (float) $validated['discount_code_amount'] : 0.0;
+            $discountCode = null;
 
-            if ($validated['nett_amount'] != $expectedNettAmount) {
+            if (!empty($validated['discount_code_id'])) {
+                $discountCode = \App\Models\DiscountCode::find($validated['discount_code_id']);
+
+                if (!$discountCode || !$discountCode->isValid() || !$discountCode->canBeUsedByUser($user->id)) {
+                    throw new \Exception('Kode promo tidak valid atau tidak dapat digunakan');
+                }
+            }
+
+            if ($discountCodeAmount > (float) $bundle->price) {
+                throw new \Exception('Diskon melebihi harga bundle');
+            }
+
+            $expectedNettAmount = max((float) $bundle->price - $discountCodeAmount, 0);
+            $expectedTotal = $expectedNettAmount > 0
+                ? $expectedNettAmount + (float) $validated['transaction_fee']
+                : 0;
+
+            if (abs((float) $validated['nett_amount'] - $expectedNettAmount) > 0.01) {
                 throw new \Exception('Harga nett tidak sesuai');
             }
 
-            if ($validated['total_amount'] != $expectedTotal) {
+            if (abs((float) $validated['total_amount'] - $expectedTotal) > 0.01) {
                 throw new \Exception('Total amount tidak sesuai');
             }
 
@@ -495,6 +517,19 @@ class InvoiceController extends Controller
                 'status' => 'pending',
                 'expires_at' => now()->addHours(24),
             ]);
+
+            // Simpan penggunaan kode diskon (jika ada)
+            if ($discountCode && $discountCodeAmount > 0) {
+                DiscountUsage::create([
+                    'id' => Str::uuid(),
+                    'discount_code_id' => $discountCode->id,
+                    'invoice_id' => $invoice->id,
+                    'user_id' => $user->id,
+                    'discount_amount' => $discountCodeAmount,
+                ]);
+
+                $discountCode->increment('used_count');
+            }
 
             EnrollmentBundle::create([
                 'id' => Str::uuid(),

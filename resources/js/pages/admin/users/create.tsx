@@ -23,10 +23,11 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
         reset,
         errors,
         clearErrors,
-    } = useForm<Required<{ name: string; email: string; phone_number: string; password: string }>>({
+    } = useForm<Required<{ name: string; email: string; phone_number: string; instance: string; password: string }>>({
         name: '',
         email: '',
         phone_number: '',
+        instance: '',
         password: '',
     });
 
@@ -81,6 +82,21 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.email} />
+
+                    <Label htmlFor="instance" className="sr-only">
+                        Instansi
+                    </Label>
+                    <Input
+                        id="instance"
+                        type="text"
+                        name="instance"
+                        ref={emailInput}
+                        value={data.instance}
+                        onChange={(e) => setData('instance', e.target.value)}
+                        placeholder="Instansi"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.instance} />
 
                     <Label htmlFor="phone_number" className="sr-only">
                         Nomor Telepon

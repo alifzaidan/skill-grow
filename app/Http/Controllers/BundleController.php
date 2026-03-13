@@ -126,10 +126,16 @@ class BundleController extends Controller
             ->orderBy('price', 'desc')
             ->get();
 
+        $bundles = Bundle::where('status', 'published')
+            ->select('id', 'title', 'price', 'slug')
+            ->orderBy('price', 'desc')
+            ->get();
+
         return Inertia::render('admin/bundles/create', [
             'courses' => $courses,
             'bootcamps' => $bootcamps,
             'webinars' => $webinars,
+            'bundles' => $bundles,
         ]);
     }
 
