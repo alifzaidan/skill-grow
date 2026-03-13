@@ -200,6 +200,17 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'items',
         header: 'Nama Produk',
+        filterFn: (row, _columnId, filterValue) => {
+            const invoice = row.original;
+            const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
+            const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
+            const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
+            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles];
+            return allTitles.some((title) =>
+                title.toLowerCase().includes(String(filterValue).toLowerCase()),
+            );
+        },
         cell: ({ row }) => {
             const invoice = row.original;
             const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
