@@ -11,7 +11,6 @@ use App\Models\Webinar;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -127,6 +126,9 @@ class WebinarController extends Controller
             'group_url' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
             'tools' => 'nullable|array',
+            'requirement_1' => 'nullable|string',
+            'requirement_2' => 'nullable|string',
+            'requirement_3' => 'nullable|string',
         ]);
 
         $data = $request->all();
@@ -279,6 +281,9 @@ class WebinarController extends Controller
             'group_url' => 'nullable|string',
             'batch' => 'nullable|string|max:255',
             'tools' => 'nullable|array',
+            'requirement_1' => 'nullable|string',
+            'requirement_2' => 'nullable|string',
+            'requirement_3' => 'nullable|string',
         ]);
 
         $webinar = Webinar::findOrFail($id);

@@ -1,8 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useInitials } from '@/hooks/use-initials';
-import { Link } from '@inertiajs/react';
-import { Calendar, ChartArea, Clock, Hash, MapPin, Star, Users } from 'lucide-react';
+import { Calendar, ChartArea, Clock, Hash, MapPin, Users } from 'lucide-react';
 
 interface Bootcamp {
     title: string;
@@ -13,16 +10,15 @@ interface Bootcamp {
     batch?: string | null;
     quota: number;
     schedules?: { schedule_date: string; day: string; start_time: string; end_time: string }[];
-    user?: {
+    mentors?: {
         id: string;
         name: string;
         bio?: string;
         avatar?: string;
-    };
+    }[];
 }
 
 export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
-    const getInitials = useInitials();
     const start = new Date(bootcamp.start_date);
     const end = new Date(bootcamp.end_date);
     const diffMs = end.getTime() - start.getTime();
@@ -94,32 +90,6 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                     </div>
                                 )}
                             </div>
-
-                            {/* Mentor Card in Hero */}
-                            {bootcamp.user && (
-                                <Link
-                                    href={`/mentor/${bootcamp.user.id}`}
-                                    className="relative mb-6 flex items-center gap-4 overflow-hidden rounded-lg border border-gray-200 bg-white p-4 shadow-md transition hover:shadow-lg dark:border-zinc-700 dark:bg-zinc-800"
-                                >
-                                    <div className="pointer-events-none absolute right-0 bottom-0 h-24 w-24 rounded-tl-full bg-gradient-to-tl from-yellow-300 to-transparent opacity-40" />
-                                    <Avatar className="ring-primary/20 relative z-10 h-16 w-16 ring-4">
-                                        <AvatarImage src={bootcamp.user.avatar} alt={bootcamp.user.name} />
-                                        <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                                            {getInitials(bootcamp.user.name)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="relative z-10 flex-1">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Mentor Bootcamp</p>
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{bootcamp.user.name}</h3>
-                                        <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">{bootcamp.user.bio}</p>
-                                        <div className="flex items-center gap-1">
-                                            {[...Array(5)].map((_, i) => (
-                                                <Star key={i} size={14} className="text-yellow-500" fill="currentColor" />
-                                            ))}
-                                        </div>
-                                    </div>
-                                </Link>
-                            )}
 
                             <div className="flex flex-wrap gap-4">
                                 <a href="#register">

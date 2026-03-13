@@ -4,10 +4,18 @@ import { useEffect } from 'react';
 import AboutSection from './about-section';
 import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
+import MentorSection from './mentor-section';
 import RegisterSection from './register-section';
 import RelatedProduct from './related-product';
 import TimelineSection from './timeline-section';
 import ToolsSection from './tools-section';
+
+interface Mentor {
+    id: string;
+    name: string;
+    bio?: string;
+    avatar?: string;
+}
 
 interface Bootcamp {
     id: string;
@@ -32,12 +40,7 @@ interface Bootcamp {
     instructions?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
-    user?: {
-        id: string;
-        name: string;
-        bio?: string;
-        avatar?: string;
-    };
+    mentors?: Mentor[];
     created_at: string | Date;
 }
 
@@ -89,6 +92,7 @@ export default function Bootcamp({
             <HeroSection bootcamp={bootcamp} />
             <BenefitsSection bootcamp={bootcamp} />
             <AboutSection />
+            <MentorSection bootcamp={bootcamp} />
             <TimelineSection bootcamp={bootcamp} />
             <ToolsSection bootcamp={bootcamp} />
             <RegisterSection bootcamp={bootcamp} />

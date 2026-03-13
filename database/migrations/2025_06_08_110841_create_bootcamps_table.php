@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('bootcamps', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignUuid('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignUuid('category_id')->constrained('categories')->onDelete('cascade');
             $table->string('title');
             $table->string('slug')->unique();
@@ -34,6 +34,9 @@ return new class extends Migration
             $table->string('group_url')->nullable();
             $table->boolean('has_submission_link')->default(false);
             $table->enum('status', ['draft', 'published', 'archived', 'hidden'])->default('draft');
+            $table->text('requirement_1')->nullable();
+            $table->text('requirement_2')->nullable();
+            $table->text('requirement_3')->nullable();
             $table->timestamps();
         });
     }

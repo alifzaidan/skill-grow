@@ -605,6 +605,21 @@ class InvoiceController extends Controller
     {
         DB::beginTransaction();
         try {
+            $request->validate([
+                'type' => 'required|string|in:course,bootcamp,webinar',
+                'id' => 'required',
+
+                // New generic proof keys (preferred)
+                'requirement_1_proof' => 'nullable|image|max:2048',
+                'requirement_2_proof' => 'nullable|image|max:2048',
+                'requirement_3_proof' => 'nullable|image|max:2048',
+
+                // Backward compatible keys
+                'ig_follow_proof' => 'nullable|image|max:2048',
+                'tiktok_follow_proof' => 'nullable|image|max:2048',
+                'tag_friend_proof' => 'nullable|image|max:2048',
+            ]);
+
             $userId = Auth::id();
             $type = $request->input('type', 'course');
             $itemId = $request->input('id');
@@ -674,25 +689,22 @@ class InvoiceController extends Controller
             ]);
 
             if ($type === 'webinar' || $type === 'bootcamp') {
+                $proof1 = $request->file('requirement_1_proof') ?? $request->file('ig_follow_proof');
+                $proof2 = $request->file('requirement_2_proof') ?? $request->file('tiktok_follow_proof');
+                $proof3 = $request->file('requirement_3_proof') ?? $request->file('tag_friend_proof');
+
+                if (!$proof1 || !$proof2 || !$proof3) {
+                    throw new \Exception('Harap upload semua bukti yang diperlukan!');
+                }
+
                 $requirementData = [
                     'enrollment_type' => $type,
                     'enrollment_id' => $enrollment->id
                 ];
 
-                if ($request->hasFile('ig_follow_proof')) {
-                    $requirementData['ig_follow_proof'] = $request->file('ig_follow_proof')
-                        ->store('free-requirements/ig', 'public');
-                }
-
-                if ($request->hasFile('tiktok_follow_proof')) {
-                    $requirementData['tiktok_follow_proof'] = $request->file('tiktok_follow_proof')
-                        ->store('free-requirements/tiktok', 'public');
-                }
-
-                if ($request->hasFile('tag_friend_proof')) {
-                    $requirementData['tag_friend_proof'] = $request->file('tag_friend_proof')
-                        ->store('free-requirements/tag', 'public');
-                }
+                $requirementData['ig_follow_proof'] = $proof1->store('free-requirements/requirement-1', 'public');
+                $requirementData['tiktok_follow_proof'] = $proof2->store('free-requirements/requirement-2', 'public');
+                $requirementData['tag_friend_proof'] = $proof3->store('free-requirements/requirement-3', 'public');
 
                 FreeEnrollmentRequirement::create($requirementData);
             }

@@ -45,12 +45,12 @@ interface Bootcamp {
     group_url?: string | null;
     requirements?: string | null;
     curriculum?: string | null;
-    user?: {
+    mentors?: Array<{
         id: string;
         name: string;
         bio?: string;
         avatar?: string;
-    };
+    }>;
     has_submission_link?: boolean;
     created_at: string | Date;
 }
@@ -203,7 +203,7 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                 </p>
             ) : (
                 <p className="text-center text-sm text-red-500">
-                    Bootcamp ini belum diterbitkan. Silahkan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
+                    Bootcamp ini belum diterbitkan. Silakan terbitkan bootcamp terlebih dahulu untuk membagikan link akses bootcamp.
                 </p>
             )}
 
@@ -213,7 +213,7 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                         <div className="flex-1">
                             <h4 className="font-medium text-yellow-800 dark:text-yellow-200">Bootcamp Disembunyikan</h4>
                             <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                                Peserta hanya dapat mengakses bootcamp melalui link langsung, namun bootcamp ini tidak akan muncul di dahsboard. Anda
+                                Peserta hanya dapat mengakses bootcamp melalui link langsung, namun bootcamp ini tidak akan muncul di dashboard. Anda
                                 dapat mempublikasikan kembali bootcamp ini untuk membuatnya terlihat publik.
                             </p>
                         </div>
@@ -451,23 +451,27 @@ export default function BootcampDetail({ bootcamp }: { bootcamp: Bootcamp }) {
                     <TableRow>
                         <TableCell>Pemateri</TableCell>
                         <TableCell>
-                            {bootcamp.user ? (
-                                <div className="flex items-center gap-3">
-                                    {bootcamp.user.avatar ? (
-                                        <img
-                                            src={`/storage/${bootcamp.user.avatar}`}
-                                            alt={bootcamp.user.name}
-                                            className="h-10 w-10 rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
-                                            {getInitials(bootcamp.user.name)}
+                            {bootcamp.mentors && bootcamp.mentors.length > 0 ? (
+                                <div className="flex flex-col gap-3">
+                                    {bootcamp.mentors.map((mentor: { id: string; name: string; bio?: string; avatar?: string }) => (
+                                        <div key={mentor.id} className="flex items-center gap-3">
+                                            {mentor.avatar ? (
+                                                <img
+                                                    src={`/storage/${mentor.avatar}`}
+                                                    alt={mentor.name}
+                                                    className="h-10 w-10 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
+                                                    {getInitials(mentor.name)}
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div className="font-medium">{mentor.name}</div>
+                                                <div className="text-sm text-gray-500">{mentor.bio ?? 'Tidak ada bio'}</div>
+                                            </div>
                                         </div>
-                                    )}
-                                    <div>
-                                        <div className="font-medium">{bootcamp.user.name}</div>
-                                        <div className="text-sm text-gray-500">{bootcamp.user.bio ?? 'Tidak ada bio'}</div>
-                                    </div>
+                                    ))}
                                 </div>
                             ) : (
                                 '-'

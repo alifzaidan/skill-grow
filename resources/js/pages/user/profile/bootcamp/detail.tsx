@@ -65,7 +65,6 @@ interface Bootcamp {
     group_url: string | null;
     status: string;
     schedules: BootcampSchedule[];
-    user_id: string;
     has_submission_link: boolean;
     created_at: string;
     updated_at: string;
