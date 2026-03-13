@@ -84,7 +84,7 @@ class CertificatePdfService
             $participantData = [
                 'participant_name' => $participant->user->name,
                 'certificate_code' => $participant->certificate_code,
-                'participant_issued_at' => $participant->created_at,
+                'participant_issued_at' => $participant->issued_date,
                 'certificate_number' => str_pad($participant->certificate_number, 4, '0', STR_PAD_LEFT),
                 'completion_date' => $participant->created_at->format('d F Y'),
                 'program_name' => $this->getProgramName($certificate),

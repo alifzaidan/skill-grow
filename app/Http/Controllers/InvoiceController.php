@@ -811,6 +811,9 @@ class InvoiceController extends Controller
             if ($invoice->webinarItems->count() > 0) {
                 EnrollmentWebinar::where('invoice_id', $invoice->id)->delete();
             }
+            if ($invoice->bundleEnrollments->count() > 0) {
+                EnrollmentBundle::where('invoice_id', $invoice->id)->delete();
+            }
 
             $userId = $invoice->user_id;
 
