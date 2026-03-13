@@ -330,6 +330,12 @@ export function DataTable<TData, TValue>({ columns, data, filters }: DataTablePr
                     onChange={(event) => table.getColumn('user_name')?.setFilterValue(event.target.value)}
                     className="lg:max-w-sm"
                 />
+                <Input
+                    placeholder="Cari nama produk..."
+                    value={(table.getColumn('items')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table.getColumn('items')?.setFilterValue(event.target.value)}
+                    className="lg:max-w-sm"
+                />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
                     {table.getColumn('status') && <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={status} />}
                     {table.getColumn('payment_type') && (
