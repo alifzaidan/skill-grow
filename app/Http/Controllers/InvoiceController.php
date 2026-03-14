@@ -746,7 +746,7 @@ class InvoiceController extends Controller
 
             $this->addToCertificateParticipants($type, $item->id, $userId);
 
-            $this->sendWhatsAppFreeEnrollment($invoice, $type, $item);
+            // $this->sendWhatsAppFreeEnrollment($invoice, $type, $item);
 
             DB::commit();
 
