@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TransactionsExport;
 use App\Models\AffiliateEarning;
 use App\Models\Bootcamp;
 use App\Models\Bundle;
@@ -28,6 +29,7 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class InvoiceController extends Controller
 {
@@ -1608,7 +1610,8 @@ class InvoiceController extends Controller
             'product_type',
             'bootcamp_id',  
             'webinar_id',   
-            'course_id'     
+            'course_id',
+            'bundle_id'
         ]);
         $filename = 'Laporan_Transaksi';
 
