@@ -25,7 +25,8 @@ class TransactionsExport implements
     protected $productType;
     protected $bootcampId;  
     protected $webinarId;   
-    protected $courseId;    
+    protected $courseId;
+    protected $bundleId;    
 
     public function __construct($filters = [])
     {
@@ -37,6 +38,7 @@ class TransactionsExport implements
         $this->bootcampId = $filters['bootcamp_id'] ?? null;  
         $this->webinarId = $filters['webinar_id'] ?? null;    
         $this->courseId = $filters['course_id'] ?? null;      
+        $this->bundleId = $filters['bundle_id'] ?? null;      
     }
 
     public function query()
@@ -107,7 +109,15 @@ class TransactionsExport implements
                     }
                     break;
                 case 'bundle':
-                    $query->whereHas('bundleEnrollments');
+                    if ($this->bundleId) {
+                        // Filter by specific bundle
+                        $query->whereHas('bundleEnrollments', function($q) {
+                            $q->where('bundle_id', $this->bundleId);
+                        });
+                    } else {
+                        // All bundles
+                        $query->whereHas('bundleEnrollments');
+                    }   
                     break;
             }
         }
@@ -240,10 +250,10 @@ class TransactionsExport implements
 
     private function getProductType($invoice): string
     {
+        if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) return 'Bundle';
         if ($invoice->courseItems && $invoice->courseItems->count() > 0) return 'Kelas Online';
         if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
         if ($invoice->webinarItems && $invoice->webinarItems->count() > 0) return 'Webinar';
-        if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) return 'Bundle';
         return '-';
     }
 }
