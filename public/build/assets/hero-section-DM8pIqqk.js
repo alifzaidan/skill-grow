@@ -1,1 +1,218 @@
-import{j as e}from"./app-YpIYLBeO.js";import{B as r}from"./button-D6jV5iZd.js";import{C as c}from"./calendar-B32WHUcC.js";import{C as x}from"./clock-BZeKVlB4.js";import{M as m}from"./map-pin-BQI3N1Ta.js";import{H as o}from"./hash-qgD1-dvU.js";import{U as g}from"./users-Sr2cL-a6.js";import{C as h}from"./chart-area-DkmbPCIT.js";/* empty css            */import"./index-C4-Of0NU.js";import"./index-Dlk3ksW0.js";import"./utils-B6UgOHOA.js";import"./createLucideIcon-CznZjamP.js";function C({bootcamp:a}){const i=new Date(a.start_date),d=new Date(a.end_date).getTime()-i.getTime(),t=Math.ceil(d/(24*60*60*1e3))+1,l=Math.ceil(t/7);return e.jsxs("section",{className:"to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white",children:[e.jsxs("div",{className:"pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]",children:[e.jsx("div",{className:"bg-primary h-[300px] w-[300px] rounded-full blur-[200px]"}),e.jsx("div",{className:"bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]"})]}),e.jsx("div",{className:"relative mx-auto max-w-7xl px-4",children:e.jsxs("div",{className:"grid grid-cols-1 gap-8 lg:grid-cols-3",children:[e.jsx("div",{className:"col-span-2 space-y-6",children:e.jsxs("div",{children:[e.jsx("h1",{className:"mb-4 text-4xl leading-tight font-bold italic sm:text-5xl",children:a.title}),e.jsx("p",{className:"mb-6 text-lg text-gray-600 dark:text-gray-400",children:a.description||"Bergabunglah dengan bootcamp kami untuk meningkatkan keterampilan Anda dalam bidang teknologi. Pelajari dari para ahli dan tingkatkan karir Anda dengan pengetahuan praktis yang relevan."}),e.jsxs("div",{className:"mb-6 space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800",children:[e.jsxs("div",{className:"flex items-center gap-3",children:[e.jsx(c,{size:20,className:"text-primary dark:text-secondary"}),e.jsxs("div",{children:[e.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400",children:"Periode Bootcamp"}),e.jsxs("p",{className:"text-sm font-semibold",children:[new Date(a.start_date).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})," ","-"," ",new Date(a.end_date).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})]})]})]}),a.schedules&&a.schedules.length>0&&e.jsx("div",{className:"border-t border-gray-200 pt-3 dark:border-zinc-700",children:e.jsxs("div",{className:"flex items-start gap-3",children:[e.jsx(x,{size:20,className:"text-primary dark:text-secondary mt-1"}),e.jsxs("div",{className:"flex-1",children:[e.jsx("p",{className:"mb-2 text-xs text-gray-500 dark:text-gray-400",children:"Jadwal Pertemuan"}),e.jsx("div",{className:"space-y-1",children:a.schedules.map((s,n)=>e.jsxs("p",{className:"text-sm capitalize",children:[s.day,","," ",new Date(s.schedule_date).toLocaleDateString("id-ID",{day:"numeric",month:"short"})," ","- ",s.start_time.slice(0,5)," s/d ",s.end_time.slice(0,5)," WIB"]},n))})]})]})})]}),e.jsxs("div",{className:"flex flex-wrap gap-4",children:[e.jsx("a",{href:"#register",children:e.jsx(r,{size:"lg",children:"Daftar Sekarang"})}),e.jsx("a",{href:"https://wa.me/+6285111022504",target:"_blank",rel:"noopener noreferrer",children:e.jsx(r,{variant:"outline",size:"lg",children:"Hubungi Kami"})})]})]})}),e.jsxs("div",{className:"col-span-1 space-y-4",children:[e.jsx("img",{src:a.thumbnail?`/storage/${a.thumbnail}`:"/assets/images/placeholder.png",alt:a.title,className:"aspect-video w-full rounded-xl object-cover shadow-lg"}),e.jsxs("div",{className:"grid grid-cols-2 gap-3",children:[e.jsxs("div",{className:"flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800",children:[e.jsx(m,{size:20,className:"text-primary dark:text-secondary"}),e.jsxs("div",{children:[e.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400",children:"Lokasi"}),e.jsx("p",{className:"text-sm font-semibold",children:"Online"})]})]}),e.jsxs("div",{className:"flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800",children:[e.jsx(o,{size:20,className:"text-primary dark:text-secondary"}),e.jsxs("div",{children:[e.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400",children:"Batch"}),e.jsxs("p",{className:"text-sm font-semibold",children:["Batch ",a.batch||"1"]})]})]}),e.jsxs("div",{className:"flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800",children:[e.jsx(g,{size:20,className:"text-primary dark:text-secondary"}),e.jsxs("div",{children:[e.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400",children:"Level"}),e.jsx("p",{className:"text-sm font-semibold",children:"Pemula"})]})]}),e.jsxs("div",{className:"flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800",children:[e.jsx(h,{size:20,className:"text-primary dark:text-secondary"}),e.jsxs("div",{children:[e.jsx("p",{className:"text-xs text-gray-500 dark:text-gray-400",children:"Durasi"}),e.jsx("p",{className:"text-sm font-semibold",children:t<7?`${t} Hari`:`${l} Minggu`})]})]})]})]})]})})]})}export{C as default};
+import { j as e } from './app-YpIYLBeO.js';
+import { B as r } from './button-D6jV5iZd.js';
+import { C as c } from './calendar-B32WHUcC.js';
+import { C as h } from './chart-area-DkmbPCIT.js'; /* empty css            */
+import { C as x } from './clock-BZeKVlB4.js';
+import './createLucideIcon-CznZjamP.js';
+import { H as o } from './hash-qgD1-dvU.js';
+import './index-C4-Of0NU.js';
+import './index-Dlk3ksW0.js';
+import { M as m } from './map-pin-BQI3N1Ta.js';
+import { U as g } from './users-Sr2cL-a6.js';
+import './utils-B6UgOHOA.js';
+function C({ bootcamp: a }) {
+    const i = new Date(a.start_date),
+        d = new Date(a.end_date).getTime() - i.getTime(),
+        t = Math.ceil(d / (24 * 60 * 60 * 1e3)) + 1,
+        l = Math.ceil(t / 7);
+    return e.jsxs('section', {
+        className:
+            'to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white',
+        children: [
+            e.jsxs('div', {
+                className:
+                    'pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]',
+                children: [
+                    e.jsx('div', { className: 'bg-primary h-[300px] w-[300px] rounded-full blur-[200px]' }),
+                    e.jsx('div', { className: 'bg-secondary h-[300px] w-[300px] rounded-full blur-[200px]' }),
+                ],
+            }),
+            e.jsx('div', {
+                className: 'relative mx-auto max-w-7xl px-4',
+                children: e.jsxs('div', {
+                    className: 'grid grid-cols-1 gap-8 lg:grid-cols-3',
+                    children: [
+                        e.jsx('div', {
+                            className: 'col-span-2 space-y-6',
+                            children: e.jsxs('div', {
+                                children: [
+                                    e.jsx('h1', { className: 'mb-4 text-4xl leading-tight font-bold italic sm:text-5xl', children: a.title }),
+                                    e.jsx('p', {
+                                        className: 'mb-6 text-lg text-gray-600 dark:text-gray-400',
+                                        children:
+                                            a.description ||
+                                            'Bergabunglah dengan bootcamp kami untuk meningkatkan keterampilan Anda dalam bidang teknologi. Pelajari dari para ahli dan tingkatkan karir Anda dengan pengetahuan praktis yang relevan.',
+                                    }),
+                                    e.jsxs('div', {
+                                        className:
+                                            'mb-6 space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800',
+                                        children: [
+                                            e.jsxs('div', {
+                                                className: 'flex items-center gap-3',
+                                                children: [
+                                                    e.jsx(c, { size: 20, className: 'text-primary dark:text-secondary' }),
+                                                    e.jsxs('div', {
+                                                        children: [
+                                                            e.jsx('p', {
+                                                                className: 'text-xs text-gray-500 dark:text-gray-400',
+                                                                children: 'Periode Bootcamp',
+                                                            }),
+                                                            e.jsxs('p', {
+                                                                className: 'text-sm font-semibold',
+                                                                children: [
+                                                                    new Date(a.start_date).toLocaleDateString('id-ID', {
+                                                                        day: 'numeric',
+                                                                        month: 'long',
+                                                                        year: 'numeric',
+                                                                    }),
+                                                                    ' ',
+                                                                    '-',
+                                                                    ' ',
+                                                                    new Date(a.end_date).toLocaleDateString('id-ID', {
+                                                                        day: 'numeric',
+                                                                        month: 'long',
+                                                                        year: 'numeric',
+                                                                    }),
+                                                                ],
+                                                            }),
+                                                        ],
+                                                    }),
+                                                ],
+                                            }),
+                                            a.schedules &&
+                                                a.schedules.length > 0 &&
+                                                e.jsx('div', {
+                                                    className: 'border-t border-gray-200 pt-3 dark:border-zinc-700',
+                                                    children: e.jsxs('div', {
+                                                        className: 'flex items-start gap-3',
+                                                        children: [
+                                                            e.jsx(x, { size: 20, className: 'text-primary dark:text-secondary mt-1' }),
+                                                            e.jsxs('div', {
+                                                                className: 'flex-1',
+                                                                children: [
+                                                                    e.jsx('p', {
+                                                                        className: 'mb-2 text-xs text-gray-500 dark:text-gray-400',
+                                                                        children: 'Jadwal Pertemuan',
+                                                                    }),
+                                                                    e.jsx('div', {
+                                                                        className: 'space-y-1',
+                                                                        children: a.schedules.map((s, n) =>
+                                                                            e.jsxs(
+                                                                                'p',
+                                                                                {
+                                                                                    className: 'text-sm capitalize',
+                                                                                    children: [
+                                                                                        s.day,
+                                                                                        ',',
+                                                                                        ' ',
+                                                                                        new Date(s.schedule_date).toLocaleDateString('id-ID', {
+                                                                                            day: 'numeric',
+                                                                                            month: 'short',
+                                                                                        }),
+                                                                                        ' ',
+                                                                                        '- ',
+                                                                                        s.start_time.slice(0, 5),
+                                                                                        ' s/d ',
+                                                                                        s.end_time.slice(0, 5),
+                                                                                        ' WIB',
+                                                                                    ],
+                                                                                },
+                                                                                n,
+                                                                            ),
+                                                                        ),
+                                                                    }),
+                                                                ],
+                                                            }),
+                                                        ],
+                                                    }),
+                                                }),
+                                        ],
+                                    }),
+                                    e.jsxs('div', {
+                                        className: 'flex flex-wrap gap-4',
+                                        children: [
+                                            e.jsx('a', { href: '#register', children: e.jsx(r, { size: 'lg', children: 'Daftar Sekarang' }) }),
+                                            e.jsx('a', {
+                                                href: 'https://wa.me/+6285167541152',
+                                                target: '_blank',
+                                                rel: 'noopener noreferrer',
+                                                children: e.jsx(r, { variant: 'outline', size: 'lg', children: 'Hubungi Kami' }),
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                        }),
+                        e.jsxs('div', {
+                            className: 'col-span-1 space-y-4',
+                            children: [
+                                e.jsx('img', {
+                                    src: a.thumbnail ? `/storage/${a.thumbnail}` : '/assets/images/placeholder.png',
+                                    alt: a.title,
+                                    className: 'aspect-video w-full rounded-xl object-cover shadow-lg',
+                                }),
+                                e.jsxs('div', {
+                                    className: 'grid grid-cols-2 gap-3',
+                                    children: [
+                                        e.jsxs('div', {
+                                            className: 'flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800',
+                                            children: [
+                                                e.jsx(m, { size: 20, className: 'text-primary dark:text-secondary' }),
+                                                e.jsxs('div', {
+                                                    children: [
+                                                        e.jsx('p', { className: 'text-xs text-gray-500 dark:text-gray-400', children: 'Lokasi' }),
+                                                        e.jsx('p', { className: 'text-sm font-semibold', children: 'Online' }),
+                                                    ],
+                                                }),
+                                            ],
+                                        }),
+                                        e.jsxs('div', {
+                                            className: 'flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800',
+                                            children: [
+                                                e.jsx(o, { size: 20, className: 'text-primary dark:text-secondary' }),
+                                                e.jsxs('div', {
+                                                    children: [
+                                                        e.jsx('p', { className: 'text-xs text-gray-500 dark:text-gray-400', children: 'Batch' }),
+                                                        e.jsxs('p', { className: 'text-sm font-semibold', children: ['Batch ', a.batch || '1'] }),
+                                                    ],
+                                                }),
+                                            ],
+                                        }),
+                                        e.jsxs('div', {
+                                            className: 'flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800',
+                                            children: [
+                                                e.jsx(g, { size: 20, className: 'text-primary dark:text-secondary' }),
+                                                e.jsxs('div', {
+                                                    children: [
+                                                        e.jsx('p', { className: 'text-xs text-gray-500 dark:text-gray-400', children: 'Level' }),
+                                                        e.jsx('p', { className: 'text-sm font-semibold', children: 'Pemula' }),
+                                                    ],
+                                                }),
+                                            ],
+                                        }),
+                                        e.jsxs('div', {
+                                            className: 'flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800',
+                                            children: [
+                                                e.jsx(h, { size: 20, className: 'text-primary dark:text-secondary' }),
+                                                e.jsxs('div', {
+                                                    children: [
+                                                        e.jsx('p', { className: 'text-xs text-gray-500 dark:text-gray-400', children: 'Durasi' }),
+                                                        e.jsx('p', {
+                                                            className: 'text-sm font-semibold',
+                                                            children: t < 7 ? `${t} Hari` : `${l} Minggu`,
+                                                        }),
+                                                    ],
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            }),
+        ],
+    });
+}
+export { C as default };

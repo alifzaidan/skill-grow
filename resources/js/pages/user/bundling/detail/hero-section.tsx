@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Package, Sparkles } from 'lucide-react';
+import { Package } from 'lucide-react';
 
 interface Product {
     id: string;
@@ -33,11 +33,11 @@ interface HeroSectionProps {
 
 export default function HeroSection({ bundle, discountPercentage }: HeroSectionProps) {
     const deadlineDate = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
-    
+
     // Get first 2 thumbnails from bundle items
     const displayThumbnails = bundle.bundle_items
         .slice(0, 2)
-        .map(item => item.bundleable.thumbnail ? `/storage/${item.bundleable.thumbnail}` : '/assets/images/placeholder.png');
+        .map((item) => (item.bundleable.thumbnail ? `/storage/${item.bundleable.thumbnail}` : '/assets/images/placeholder.png'));
 
     return (
         <section className="to-background from-background via-primary/5 dark:via-primary/10 relative bg-gradient-to-b pt-20 pb-6 text-gray-900 dark:text-white">
@@ -79,7 +79,7 @@ export default function HeroSection({ bundle, discountPercentage }: HeroSectionP
                                 Daftar Sekarang
                             </Button>
                         </a>
-                        <a href="https://wa.me/+6285111022504" target="_blank" rel="noopener noreferrer">
+                        <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
                             <Button size="lg" variant="outline">
                                 Hubungi Kami
                             </Button>
@@ -88,48 +88,32 @@ export default function HeroSection({ bundle, discountPercentage }: HeroSectionP
                 </div>
 
                 <div className="relative hidden h-80 items-center justify-center lg:flex">
-                        {displayThumbnails.length >= 2 ? (
-                            <>
-                                {/* Thumbnail kedua (belakang) */}
-                                <div className="absolute right-0 top-8 z-0 w-64 overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105 hover:rotate-6">
-                                    <img
-                                        src={displayThumbnails[1]}
-                                        alt="Product 2"
-                                        className="w-full h-auto object-contain"
-                                    />
-                                </div>
-                                
-                                {/* Thumbnail pertama (depan) */}
-                                <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105 hover:-rotate-6">
-                                    <img
-                                        src={displayThumbnails[0]}
-                                        alt="Product 1"
-                                        className="w-full h-auto object-contain"
-                                    />
-                                    
-                                    {/* Overlay gradient untuk efek depth */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                                </div>
-                            </>
-                        ) : displayThumbnails.length === 1 ? (
-                            <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl">
-                                <img
-                                    src={displayThumbnails[0]}
-                                    alt="Product 1"
-                                    className="w-full h-auto object-contain"
-                                />
+                    {displayThumbnails.length >= 2 ? (
+                        <>
+                            {/* Thumbnail kedua (belakang) */}
+                            <div className="absolute top-8 right-0 z-0 w-64 overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105 hover:rotate-6">
+                                <img src={displayThumbnails[1]} alt="Product 2" className="h-auto w-full object-contain" />
                             </div>
-                        ) : (
-                            <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl">
-                                <img
-                                    src="/assets/images/placeholder.png"
-                                    alt="Placeholder"
-                                    className="w-full h-auto object-contain"
-                                />
+
+                            {/* Thumbnail pertama (depan) */}
+                            <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-105 hover:-rotate-6">
+                                <img src={displayThumbnails[0]} alt="Product 1" className="h-auto w-full object-contain" />
+
+                                {/* Overlay gradient untuk efek depth */}
+                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                             </div>
-                        )}
-                    </div>
+                        </>
+                    ) : displayThumbnails.length === 1 ? (
+                        <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl">
+                            <img src={displayThumbnails[0]} alt="Product 1" className="h-auto w-full object-contain" />
+                        </div>
+                    ) : (
+                        <div className="relative z-10 w-72 overflow-hidden rounded-2xl shadow-2xl">
+                            <img src="/assets/images/placeholder.png" alt="Placeholder" className="h-auto w-full object-contain" />
+                        </div>
+                    )}
                 </div>
+            </div>
         </section>
     );
 }

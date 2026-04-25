@@ -1589,7 +1589,7 @@ class InvoiceController extends Controller
             'company' => [
                 'name' => 'SkillGrow',
                 'address' => 'Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324',
-                'phone' => '+6285111022504',
+                'phone' => '+6285167541152',
                 'email' => 'skillgrow.id@gmail.com',
                 'website' => 'www.skillgrow.id'
             ]
@@ -1608,8 +1608,8 @@ class InvoiceController extends Controller
             'status',
             'payment_type',
             'product_type',
-            'bootcamp_id',  
-            'webinar_id',   
+            'bootcamp_id',
+            'webinar_id',
             'course_id',
             'bundle_id'
         ]);

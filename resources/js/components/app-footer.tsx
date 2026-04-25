@@ -104,7 +104,7 @@ export default function AppFooter() {
                             </li>
                             <li className="text-sm text-gray-600">
                                 <span className="block">WhatsApp:</span>
-                                <a href="https://wa.me/6285111022504" className="hover:text-primary text-gray-600">
+                                <a href="https://wa.me/6285167541152" className="hover:text-primary text-gray-600">
                                     +62 851-8401-2430
                                 </a>
                             </li>

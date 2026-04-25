@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class BundleController extends Controller
 {
-    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285111022504';
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285167541152';
 
     public function index()
     {

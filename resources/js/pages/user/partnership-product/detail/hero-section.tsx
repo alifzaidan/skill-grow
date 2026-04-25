@@ -43,7 +43,7 @@ export default function HeroSection({ partnershipProduct }: { partnershipProduct
                         <a href="#register">
                             <Button>Daftar Sekarang</Button>
                         </a>
-                        <a href="https://wa.me/+6285111022504" target="_blank" rel="noopener noreferrer">
+                        <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
                             <Button variant="outline">Hubungi Kami</Button>
                         </a>
                         <a href="https://ppppmi.id" target="_blank" rel="noopener noreferrer">

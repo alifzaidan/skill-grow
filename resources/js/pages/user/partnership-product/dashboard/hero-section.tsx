@@ -77,7 +77,7 @@ export default function HeroSection() {
                         <a href="#partnership-products">
                             <Button>Lihat Program Sertifikasi</Button>
                         </a>
-                        <a href="https://wa.me/+6285111022504" target="_blank" rel="noopener noreferrer">
+                        <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
                             <Button variant="outline">Konsultasi Gratis</Button>
                         </a>
                     </div>

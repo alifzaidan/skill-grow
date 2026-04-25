@@ -95,7 +95,7 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 <a href="#register">
                                     <Button size="lg">Daftar Sekarang</Button>
                                 </a>
-                                <a href="https://wa.me/+6285111022504" target="_blank" rel="noopener noreferrer">
+                                <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
                                     <Button variant="outline" size="lg">
                                         Hubungi Kami
                                     </Button>
