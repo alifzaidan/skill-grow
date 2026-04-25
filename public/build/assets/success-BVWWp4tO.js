@@ -1,0 +1,184 @@
+<<<<<<< HEAD:public/build/assets/success-BSMpDF6K.js
+import { $ as c, j as e, L as n } from './app-YpIYLBeO.js';
+import './avatar-B2-w03p6.js';
+import './badge-0iDt5May.js';
+import './breadcrumbs-CsE5J3Ts.js';
+import { B as m } from './button-D6jV5iZd.js';
+import './check-Cqm3K05O.js';
+import './chevron-right-CcB3--ug.js';
+import './circle-check-big-o48eT2iK.js';
+import { C as x } from './circle-check-DFNogc_p.js';
+import './clock-BZeKVlB4.js';
+import './Combination-DForpSOC.js';
+import './command-DBflw03Y.js';
+import { c as d } from './createLucideIcon-CznZjamP.js';
+import './dialog-BJVi_unN.js';
+import './dropdown-menu-B_XxOxPD.js';
+import { F as h } from './file-text-DBWEDfKk.js'; /* empty css            */
+import './floating-ui.react-dom-DhdReOBU.js';
+import './house-DNfH2s_k.js';
+import './icon-CKTb-5Jw.js';
+import './index-BDKJ_NqI.js';
+import './index-C4-Of0NU.js';
+import './index-CB3fLD34.js';
+import './index-CHpEGpGi.js';
+import './index-CYFDEeU-.js';
+import './index-DGgRCLg3.js';
+import './index-DH0kq-eE.js';
+import './index-Dlk3ksW0.js';
+import './index-DltBXwOt.js';
+import './index-DUhKNaAh.js';
+import './index-pYcqEd81.js';
+import './index-xoFH74Sc.js';
+import './monitor-play-BWIPtBC_.js';
+import './presentation-fXhTX9rF.js'; /**
+=======
+import{j as e,L as n,$ as c}from"./app-B9EQy2l3.js";import{B as m}from"./button-tsBQ5x30.js";import{U as p}from"./user-layout-PuPom1nu.js";import{C as x}from"./circle-check-Dr1mYGBx.js";import{c as d}from"./createLucideIcon-DVMaWdHK.js";import{F as h}from"./file-text-D6uWZI7B.js";/* empty css            */import"./index-FOcnKCsB.js";import"./index-D6Sjj0Qe.js";import"./utils-CODBLNBU.js";import"./sonner-DmA5P2fM.js";import"./index-BhAXMsAF.js";import"./index-DG2ovGfT.js";import"./breadcrumbs-CtUAHNwc.js";import"./index-Blw0-eBK.js";import"./Combination-DlGiFaFu.js";import"./x-Hiq79rrp.js";import"./tooltip-BP-Gf3_q.js";import"./index-sgIWSHPb.js";import"./index-DY0P39R0.js";import"./index-Dv-72GWL.js";import"./floating-ui.react-dom-2WPMdk5t.js";import"./index-B7lA4_Vx.js";import"./index-CLiKzACH.js";import"./dropdown-menu-Fs3fLTIU.js";import"./index-DMsT3_UI.js";import"./check-U300oPtx.js";import"./avatar-P2zOQZet.js";import"./use-initials-Co0XxBVs.js";import"./user-CP9A_cOF.js";import"./chevron-right-Cc8CwA1v.js";import"./icon-uecDs5nl.js";import"./index-DoBGrkfF.js";import"./badge-CdEY1T3X.js";import"./command-CiizRU2Q.js";import"./dialog-C_d_ap4X.js";import"./search-DC2sdtJA.js";import"./circle-check-big-BBH4-93L.js";import"./clock-C4ecFZST.js";import"./house-DV-7WYFC.js";import"./monitor-play-DUXcp-h_.js";import"./presentation-TuCgFXPS.js";/**
+>>>>>>> 132845b553d0d9240cb0ef755c0137390a6c9096:public/build/assets/success-BVWWp4tO.js
+ * @license lucide-react v0.475.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+import './search-Di01vbHr.js';
+import './sonner-B23tF3jR.js';
+import './tooltip-CEAXCeAV.js';
+import './use-initials-fKcVvJlK.js';
+import './user-BuBJ2oUL.js';
+import { U as p } from './user-layout--wPUaYS_.js';
+import './utils-B6UgOHOA.js';
+import './x-DAVjUvp5.js';
+const u = [
+        [
+            'path',
+            {
+                d: 'M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z',
+                key: '1vdc57',
+            },
+        ],
+        ['path', { d: 'M5 21h14', key: '11awu3' }],
+    ],
+    f = d('Crown', u);
+function ie({ invoice: t }) {
+    const i = t.course_items ?? [],
+        l = t.bootcamp_items ?? [],
+        o = t.webinar_items ?? [];
+    let r = '',
+        s = '',
+        a = '';
+    return (
+        i.length > 0
+            ? ((r = `Checkout Kelas "${i[0].course.title}" Berhasil!`), (s = `/profile/my-courses/${i[0].course.slug}`), (a = 'Akses Kelas'))
+            : l.length > 0
+              ? ((r = `Checkout Bootcamp "${l[0].bootcamp.title}" Berhasil!`),
+                (s = `/profile/my-bootcamps/${l[0].bootcamp.slug}`),
+                (a = 'Akses Bootcamp'))
+              : o.length > 0
+                ? ((r = `Checkout Webinar "${o[0].webinar.title}" Berhasil!`),
+                  (s = `/profile/my-webinars/${o[0].webinar.slug}`),
+                  (a = 'Akses Webinar'))
+                : ((r = 'Checkout Berhasil!'), (s = '/profile'), (a = 'Lihat Profil')),
+        e.jsxs(p, {
+            children: [
+                e.jsx(n, { title: 'Checkout Berhasil' }),
+                e.jsx('section', {
+                    className: 'min-h-screen w-full bg-gradient-to-br from-green-50 via-white to-blue-50 px-4 py-16',
+                    children: e.jsxs('div', {
+                        className: 'mx-auto flex w-full max-w-4xl flex-col items-center',
+                        children: [
+                            e.jsx('div', {
+                                className: 'mb-6 rounded-full bg-green-100 p-4',
+                                children: e.jsx(x, { className: 'h-18 w-18 text-green-600' }),
+                            }),
+                            e.jsx('h2', { className: 'mb-4 max-w-3xl text-center text-3xl font-bold text-gray-900 italic sm:text-4xl', children: r }),
+                            e.jsxs('div', {
+                                className: 'mb-8 w-full max-w-2xl rounded-2xl border-2 border-green-200 bg-white p-8 shadow-xl',
+                                children: [
+                                    e.jsxs('div', {
+                                        className: 'mb-6 text-center',
+                                        children: [
+                                            e.jsx('div', {
+                                                className: 'mb-4 inline-flex rounded-full bg-green-100 px-4 py-2',
+                                                children: e.jsx('span', {
+                                                    className: 'text-sm font-semibold text-green-700',
+                                                    children: 'Pembayaran Berhasil',
+                                                }),
+                                            }),
+                                            e.jsx('p', {
+                                                className: 'text-gray-600',
+                                                children:
+                                                    'Terima kasih telah menyelesaikan pembayaran. Anda sekarang dapat mengakses produk yang telah dibeli.',
+                                            }),
+                                        ],
+                                    }),
+                                    e.jsxs('div', {
+                                        className: 'mb-6 rounded-lg bg-gray-50 p-4',
+                                        children: [
+                                            e.jsxs('div', {
+                                                className: 'flex items-center justify-between',
+                                                children: [
+                                                    e.jsx('span', { className: 'text-sm text-gray-600', children: 'Total Pembayaran' }),
+                                                    e.jsxs('span', {
+                                                        className: 'text-xl font-bold text-gray-900',
+                                                        children: ['Rp ', t.amount.toLocaleString('id-ID')],
+                                                    }),
+                                                ],
+                                            }),
+                                            e.jsxs('div', {
+                                                className: 'mt-2 flex items-center justify-between',
+                                                children: [
+                                                    e.jsx('span', { className: 'text-sm text-gray-600', children: 'Invoice ID' }),
+                                                    e.jsx('span', { className: 'font-mono text-sm text-gray-900', children: t.invoice_code }),
+                                                ],
+                                            }),
+                                        ],
+                                    }),
+                                    e.jsxs('div', {
+                                        className: 'flex flex-col gap-3',
+                                        children: [
+                                            e.jsx(m, {
+                                                className: 'w-full',
+                                                asChild: !0,
+                                                children: e.jsxs(c, { href: s, children: [e.jsx(f, { className: 'mr-2 h-4 w-4' }), a] }),
+                                            }),
+                                            e.jsx(m, {
+                                                variant: 'outline',
+                                                className: 'w-full',
+                                                asChild: !0,
+                                                children: e.jsxs('a', {
+                                                    href: route('invoice.pdf', { id: t.id }),
+                                                    target: '_blank',
+                                                    rel: 'noopener noreferrer',
+                                                    children: [e.jsx(h, { className: 'mr-2 h-4 w-4' }), 'Unduh Invoice'],
+                                                }),
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            }),
+                            e.jsx('div', {
+                                className: 'text-center',
+                                children: e.jsxs('p', {
+                                    className: 'text-sm text-gray-500',
+                                    children: [
+                                        'Jika ada pertanyaan, silakan hubungi customer support kami di',
+                                        ' ',
+                                        e.jsx('a', {
+                                            href: 'https://wa.me/6285167541152',
+                                            className:
+                                                'bg-primary rounded-full px-2 py-1 font-medium text-gray-600 transition-colors hover:text-gray-900',
+                                            target: '_blank',
+                                            rel: 'noopener noreferrer',
+                                            children: '+62 851-8401-2430',
+                                        }),
+                                    ],
+                                }),
+                            }),
+                        ],
+                    }),
+                }),
+            ],
+        })
+    );
+}
+export { ie as default };
