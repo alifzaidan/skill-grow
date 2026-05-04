@@ -16,7 +16,7 @@ export default function MentorDetail({ mentor }: { mentor: Mentor }) {
 
             <div className="flex items-center gap-4 border-b pb-4">
                 {mentor.avatar ? (
-                    <img src={mentor.avatar} alt={mentor.name} className="h-24 w-24 rounded-full object-cover" />
+                    <img src={`/storage/${mentor.avatar}`} alt={mentor.name} className="h-24 w-24 rounded-full object-cover" />
                 ) : (
                     <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gray-300 text-2xl font-bold text-gray-700">
                         {getInitials(mentor.name)}
