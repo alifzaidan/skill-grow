@@ -135,11 +135,9 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             value={data.instance}
                             onChange={(e) => setData('instance', e.target.value)}
                             disabled={processing}
-                            placeholder="Nama instansi Anda"
+                            placeholder="Masukkan instansi Anda"
+                            required
                         />
-                        <p className="text-xs text-gray-500">
-                            Kosongkan jika tidak memiliki instansi
-                        </p>
                         <InputError message={errors.instance} />
                     </div>
 
