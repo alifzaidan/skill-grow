@@ -175,7 +175,7 @@ class WebinarController extends Controller
     {
         $webinar = Webinar::with(['category', 'user', 'tools'])->findOrFail($id);
 
-        $transactions = Invoice::with([
+        $transactionQuery = Invoice::with([
             'user.referrer',
             'webinarItems' => function ($query) use ($id) {
                 $query->where('webinar_id', $id)
@@ -184,7 +184,14 @@ class WebinarController extends Controller
         ])
             ->whereHas('webinarItems', function ($query) use ($id) {
                 $query->where('webinar_id', $id);
-            })
+            });
+
+        $transactions = (clone $transactionQuery)
+            ->whereDoesntHave('bundleEnrollments')
+            ->latest()
+            ->get();
+
+        $ratingTransactions = (clone $transactionQuery)
             ->latest()
             ->get();
 
@@ -220,7 +227,7 @@ class WebinarController extends Controller
                 ];
             });
 
-        $ratings = $transactions->flatMap(function ($invoice) {
+        $ratings = $ratingTransactions->flatMap(function ($invoice) {
             return $invoice->webinarItems->map(function ($item) use ($invoice) {
                 if ($item->rating && $item->review) {
                     return [
