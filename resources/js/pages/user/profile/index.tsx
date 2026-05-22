@@ -7,13 +7,15 @@ import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { BookTextIcon, ExternalLink, GraduationCap, MessageCircle, MonitorPlay, Play, Presentation, TrendingUp } from 'lucide-react';
+import { BookTextIcon, BriefcaseBusiness, ExternalLink, GraduationCap, MessageCircle, MonitorPlay, Play, Presentation, TrendingUp } from 'lucide-react';
 
 interface Product {
     id: string;
     title: string;
     slug: string;
-    type: 'course' | 'bootcamp' | 'webinar';
+    type: 'course' | 'bootcamp' | 'webinar' | 'certification-program';
+    routeParam?: string;
+    is_scholarship?: boolean;
     progress?: number;
     completed_at?: string;
     start_date?: string;
@@ -29,6 +31,7 @@ interface ProfileProps {
         courses: number;
         bootcamps: number;
         webinars: number;
+        certificationPrograms: number;
         total: number;
     };
     recentProducts: Product[];
@@ -43,6 +46,8 @@ export default function Profile({ stats, recentProducts }: ProfileProps) {
                 return 'Bootcamp';
             case 'webinar':
                 return 'Webinar';
+            case 'certification-program':
+                return 'Sertifikasi Program';
             default:
                 return 'Produk';
         }
@@ -56,6 +61,8 @@ export default function Profile({ stats, recentProducts }: ProfileProps) {
                 return <Presentation className="h-4 w-4" />;
             case 'webinar':
                 return <MonitorPlay className="h-4 w-4" />;
+            case 'certification-program':
+                return <BriefcaseBusiness className="h-4 w-4" />;
             default:
                 return <GraduationCap className="h-4 w-4" />;
         }

@@ -97,6 +97,12 @@ class User extends Authenticatable
         return $this->hasMany(Webinar::class);
     }
 
+    public function certificationPrograms()
+    {
+        return $this->belongsToMany(CertificationProgram::class, 'certification_program_mentors', 'user_id', 'certification_program_id')
+            ->withTimestamps();
+    }
+
     public function articles()
     {
         return $this->hasMany(Article::class);
@@ -140,6 +146,18 @@ class User extends Authenticatable
     {
         return $this->hasManyThrough(
             EnrollmentWebinar::class,
+            Invoice::class,
+            'user_id',
+            'invoice_id',
+            'id',
+            'id'
+        );
+    }
+
+    public function certificationProgramEnrollments()
+    {
+        return $this->hasManyThrough(
+            EnrollmentCertificationProgram::class,
             Invoice::class,
             'user_id',
             'invoice_id',

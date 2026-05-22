@@ -8,53 +8,7 @@ import ProgramSection from './program-section';
 import StudyFlowSection from './study-flow-section';
 import TestimonySection from './testimony-section';
 
-interface Tool {
-    id: string;
-    name: string;
-    description: string;
-    icon: string;
-}
-
-interface Category {
-    id: string;
-    name: string;
-}
-
-interface Product {
-    id: string;
-    title: string;
-    thumbnail: string;
-    slug: string;
-    strikethrough_price: number;
-    price: number;
-    level?: 'beginner' | 'intermediate' | 'advanced';
-    start_date?: string;
-    end_date?: string;
-    start_time?: string;
-    category: Category;
-    type: 'course' | 'bootcamp' | 'webinar';
-    created_at: string;
-}
-
-interface MyProductIds {
-    courses: string[];
-    bootcamps: string[];
-    webinars: string[];
-}
-
-interface HomeProps {
-    tools: Tool[];
-    latestProducts: Product[];
-    myProductIds: MyProductIds;
-    allProducts: Array<{
-        id: string;
-        title: string;
-        type: 'course' | 'bootcamp' | 'webinar';
-        price: number;
-    }>;
-}
-
-export default function Home({ allProducts }: HomeProps) {
+export default function Home() {
     return (
         <UserLayout>
             <Head title="Beranda" />

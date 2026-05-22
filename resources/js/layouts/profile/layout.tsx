@@ -4,7 +4,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { Banknote, BookText, LayoutDashboard, MonitorPlay, Presentation, Settings } from 'lucide-react';
+import { Banknote, BookText, BriefcaseBusiness, LayoutDashboard, MonitorPlay, Presentation, Settings } from 'lucide-react';
 import { type PropsWithChildren } from 'react';
 
 const sidebarNavItems: NavItem[] = [
@@ -27,6 +27,11 @@ const sidebarNavItems: NavItem[] = [
         title: 'Webinar',
         href: '/profile/my-webinars',
         icon: MonitorPlay,
+    },
+    {
+        title: 'Sertifikasi',
+        href: '/profile/my-certification-programs',
+        icon: BriefcaseBusiness,
     },
     {
         title: 'Transaksi',

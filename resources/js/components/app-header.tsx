@@ -40,8 +40,8 @@ const mainNavItems: NavItem[] = [
         href: '/bundle',
     },
     {
-        title: 'Artikel',
-        href: '/article',
+        title: 'Sertifikasi',
+        href: '/certification-programs',
     },
 ];
 

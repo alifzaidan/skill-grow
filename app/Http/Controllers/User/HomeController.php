@@ -5,9 +5,9 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Bootcamp;
 use App\Models\Bundle;
+use App\Models\CertificationProgram;
 use App\Models\Course;
 use App\Models\Invoice;
-use App\Models\PartnershipProduct;
 use App\Models\Promotion;
 use App\Models\Tool;
 use App\Models\Webinar;
@@ -140,25 +140,24 @@ class HomeController extends Controller
                 ];
             });
 
-        // ✅ Add Partnership Products
-        $partnershipProducts = PartnershipProduct::with(['category'])
+        $certificationPrograms = CertificationProgram::with(['category'])
             ->where('status', 'published')
+            ->where('type', '!=', 'scholarship')
             ->orderBy('created_at', 'desc')
             ->take(6)
             ->get()
-            ->map(function ($product) {
+            ->map(function ($cp) {
                 return [
-                    'id' => $product->id,
-                    'title' => $product->title,
-                    'thumbnail' => $product->thumbnail,
-                    'slug' => $product->slug,
-                    'strikethrough_price' => $product->strikethrough_price,
-                    'price' => $product->price,
-                    'registration_deadline' => $product->registration_deadline,
-                    'duration_days' => $product->duration_days,
-                    'category' => $product->category,
-                    'type' => 'partnership',
-                    'created_at' => $product->created_at,
+                    'id' => $cp->id,
+                    'title' => $cp->title,
+                    'thumbnail' => $cp->thumbnail,
+                    'slug' => $cp->slug,
+                    'strikethrough_price' => $cp->strikethrough_price,
+                    'price' => $cp->price,
+                    'registration_deadline' => $cp->registration_deadline,
+                    'category' => $cp->category,
+                    'type' => 'certification-program',
+                    'created_at' => $cp->created_at,
                 ];
             });
 
@@ -168,7 +167,7 @@ class HomeController extends Controller
             ->merge($bootcamps)
             ->merge($webinars)
             ->merge($bundles)
-            ->merge($partnershipProducts)
+            ->merge($certificationPrograms)
             ->sortByDesc('created_at')
             ->take(6)
             ->values();
@@ -178,7 +177,7 @@ class HomeController extends Controller
             ->merge($bootcamps)
             ->merge($webinars)
             ->merge($bundles)
-            ->merge($partnershipProducts)
+            ->merge($certificationPrograms)
             ->map(function ($product) {
                 return [
                     'id' => $product['id'],
@@ -193,7 +192,7 @@ class HomeController extends Controller
             'bootcamps' => [],
             'webinars' => [],
             'bundles' => [],
-            'partnerships' => [],
+            'certificationPrograms' => [],
         ];
 
         if (Auth::check()) {
@@ -243,14 +242,23 @@ class HomeController extends Controller
                 ->values()
                 ->all();
 
-            $myPartnershipIds = [];
+            $myCertificationProgramIds = Invoice::with('certificationProgramItems')
+                ->where('user_id', $userId)
+                ->where('status', 'paid')
+                ->get()
+                ->flatMap(function ($invoice) {
+                    return $invoice->certificationProgramItems->pluck('certification_program_id');
+                })
+                ->unique()
+                ->values()
+                ->all();
 
             $myProductIds = [
                 'courses' => $myCourseIds,
                 'bootcamps' => $myBootcampIds,
                 'webinars' => $myWebinarIds,
                 'bundles' => $myBundleIds,
-                'partnerships' => $myPartnershipIds,
+                'certificationPrograms' => $myCertificationProgramIds,
             ];
         }
 

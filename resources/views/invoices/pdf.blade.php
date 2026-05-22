@@ -292,6 +292,24 @@
                 </tr>
                 @php $subtotal += $item->price; @endphp
             @endforeach
+
+            @foreach ($invoice->certificationProgramItems as $item)
+                <tr>
+                    <td class="text-center">{{ $itemNumber++ }}</td>
+                    <td>
+                        <span class="badge" style="background-color: #198754; color: white;">Sertifikasi Program</span>
+                    </td>
+                    <td>
+                        <strong>{{ $item->certificationProgram->title }}</strong>
+                        @if ($item->certificationProgram->description)
+                            <br><small
+                                style="color: #666;">{{ Str::limit($item->certificationProgram->description, 100) }}</small>
+                        @endif
+                    </td>
+                    <td class="text-right">Rp {{ number_format($item->price, 0, ',', '.') }}</td>
+                </tr>
+                @php $subtotal += $item->price; @endphp
+            @endforeach
         </tbody>
     </table>
 

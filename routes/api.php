@@ -30,15 +30,31 @@ Route::middleware(['auth:sanctum', 'token.ability:external-api'])->group(functio
 
 Route::post('/check-email', function (Request $request) {
     $user = \App\Models\User::where('email', $request->email)->first();
-    
+
+    $response = [
+        'exists' => !!$user,
+    ];
+
     if ($user) {
-        return response()->json([
-            'exists' => true,
-            'name' => $user->name,
-            'phone_number' => $user->phone_number,
-            'instance' => $user->instance,
-        ]);
+        $response['name'] = $user->name;
+        $response['phone_number'] = $user->phone_number;
+        $response['instance'] = $user->instance;
     }
-    
-    return response()->json(['exists' => false]);
+
+    // Check scholarship application status from email (works for both registered and unregistered users)
+    if ($request->program_id) {
+        $program = \App\Models\CertificationProgram::find($request->program_id);
+        if ($program && $program->type === 'scholarship') {
+            $scholarshipApp = \App\Models\CertificationProgramScholarshipApplication::where('certification_program_id', $program->id)
+                ->where('email', $request->email)
+                ->latest()
+                ->first();
+
+            if ($scholarshipApp) {
+                $response['scholarship_application_status'] = $scholarshipApp->status;
+            }
+        }
+    }
+
+    return response()->json($response);
 });
