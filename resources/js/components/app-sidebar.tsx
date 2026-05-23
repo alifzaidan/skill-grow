@@ -13,6 +13,7 @@ import {
     Gift,
     LayoutGrid,
     List,
+    Megaphone,
     MonitorPlay,
     Presentation,
     Proportions,
@@ -105,6 +106,12 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         title: 'Flyer Promosi',
         href: '/admin/promotions',
         icon: Proportions,
+        roles: ['admin'],
+    },
+    {
+        title: 'Broadcast',
+        href: '/admin/broadcasts',
+        icon: Megaphone,
         roles: ['admin'],
     },
     {
