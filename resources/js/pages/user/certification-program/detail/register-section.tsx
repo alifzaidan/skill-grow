@@ -112,15 +112,6 @@ export default function RegisterSection({ program, isEnrolled, scholarshipApplic
                             <Separator className="my-4" />
                             
                             <ul className="mb-4 space-y-2">
-                                {program.mentors.length > 0 && (
-                                    <li className="flex items-center gap-2 text-sm">
-                                        <Users size="16" className="text-primary dark:text-secondary" />
-                                        <p>
-                                            Mentor: <span className="font-medium">{program.mentors.map((m) => m.name).join(', ')}</span>
-                                        </p>
-                                    </li>
-                                )}
-
                                 {firstSchedule && lastSchedule && (
                                     <li className="flex items-center gap-2 text-sm">
                                         <CalendarDays size="16" className="text-primary dark:text-secondary flex-shrink-0" />
