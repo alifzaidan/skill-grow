@@ -11,6 +11,10 @@ class CertificateParticipant extends Model
 
     protected $guarded = ['created_at', 'updated_at'];
 
+    protected $casts = [
+        'grades' => 'array',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -42,7 +46,7 @@ class CertificateParticipant extends Model
         do {
             $year = date('y');
             $randomString = self::generateRandomString(4);
-            $code = 'SGW-' . $year . $randomString;
+            $code = 'AKS-' . $year . $randomString;
         } while (self::where('certificate_code', $code)->exists());
 
         return $code;
