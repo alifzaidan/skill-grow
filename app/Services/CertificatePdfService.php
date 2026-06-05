@@ -16,7 +16,6 @@ class CertificatePdfService
 
     public function __construct()
     {
-        ini_set('memory_limit', '512M');
         $options = new Options();
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isRemoteEnabled', true);
