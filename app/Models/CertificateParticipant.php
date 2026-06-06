@@ -46,7 +46,7 @@ class CertificateParticipant extends Model
         do {
             $year = date('y');
             $randomString = self::generateRandomString(4);
-            $code = 'AKS-' . $year . $randomString;
+            $code = 'SKG-' . $year . $randomString;
         } while (self::where('certificate_code', $code)->exists());
 
         return $code;

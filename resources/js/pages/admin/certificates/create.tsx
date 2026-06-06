@@ -217,7 +217,7 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                             Nomor Sertifikat <span className="text-red-500">*</span>
                                         </FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Contoh: LA12-AKS/VII/2025" {...field} autoComplete="off" />
+                                            <Input placeholder="Contoh: LA12-SKG/VII/2025" {...field} autoComplete="off" />
                                         </FormControl>
                                         <FormDescription>Nomor unik untuk sertifikat ini</FormDescription>
                                         <FormMessage />
@@ -398,9 +398,9 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                                             onSelect={() => {
                                                                                 form.setValue(
                                                                                     getProgramFieldName() as
-                                                                                        | 'course_id'
-                                                                                        | 'bootcamp_id'
-                                                                                        | 'webinar_id',
+                                                                                    | 'course_id'
+                                                                                    | 'bootcamp_id'
+                                                                                    | 'webinar_id',
                                                                                     option.id,
                                                                                 );
                                                                                 setIsProgramPopoverOpen(false);
@@ -530,7 +530,7 @@ export default function CreateCertificate({ designs, signs, courses, bootcamps, 
                                                     </div>
                                                     <p className="text-xs text-muted-foreground">
                                                         Tentukan aspek penilaian yang akan diisi nilainya. Kolom ini akan diselaraskan dengan data Excel nilai yang akan diimport.
-                                                     </p>
+                                                    </p>
 
                                                     <div className="space-y-2">
                                                         {(form.watch('assessment_subjects') || []).map((subject, index) => (

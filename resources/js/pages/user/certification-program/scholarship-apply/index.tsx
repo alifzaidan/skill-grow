@@ -109,7 +109,7 @@ export default function ScholarshipApply({ program }: { program: Program }) {
                     <div className="mb-8 space-y-6 rounded-xl border-0 bg-gradient-to-br from-blue-50 to-indigo-50 p-2 shadow-md md:p-8 dark:from-blue-950/30 dark:to-indigo-950/30">
                         <div className="rounded-lg bg-white/60 p-3 text-center backdrop-blur-sm md:p-6 dark:bg-zinc-800/40">
                             <p className="font-semibold text-gray-900 md:text-lg dark:text-gray-100">
-                                Aksademy membuka Program Beasiswa bagi mahasiswa yang ingin meningkatkan kemampuan dan memperoleh sertifikasi profesional yang dibutuhkan di dunia kerja.
+                                SkillGrow membuka Program Beasiswa bagi mahasiswa yang ingin meningkatkan kemampuan dan memperoleh sertifikasi profesional yang dibutuhkan di dunia kerja.
                             </p>
                         </div>
                         <div>
@@ -157,7 +157,7 @@ export default function ScholarshipApply({ program }: { program: Program }) {
                                         <div className="flex items-center gap-2"><span className="md:text-2xl">🎓</span><h3 className="font-semibold text-gray-900 dark:text-gray-100">Informasi Universitas</h3></div>
                                         <FormField control={form.control} name="university" render={({ field }) => (<FormItem><FormLabel>Nama Universitas *</FormLabel><FormControl><Input {...field} placeholder="Masukkan nama universitas Anda" /></FormControl><FormMessage /></FormItem>)} />
                                         <FormField control={form.control} name="major" render={({ field }) => (<FormItem><FormLabel>Program Studi *</FormLabel><FormControl><Input {...field} placeholder="Contoh: Teknik Informatika, Ekonomi, etc" /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="semester" render={({ field }) => (<FormItem><FormLabel>Semester *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pilih semester Anda" /></SelectTrigger></FormControl><SelectContent>{[1,2,3,4,5,6,7,8].map(s => <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="semester" render={({ field }) => (<FormItem><FormLabel>Semester *</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Pilih semester Anda" /></SelectTrigger></FormControl><SelectContent>{[1, 2, 3, 4, 5, 6, 7, 8].map(s => <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                                         <FormField control={form.control} name="nim" render={({ field }) => (<FormItem><FormLabel>NIM *</FormLabel><FormControl><Input {...field} placeholder="Masukkan NIM Anda" autoComplete="off" /></FormControl><FormMessage /></FormItem>)} />
                                     </div>
 
@@ -166,44 +166,54 @@ export default function ScholarshipApply({ program }: { program: Program }) {
                                         <div className="flex items-center gap-2"><span className="md:text-2xl">📄</span><h3 className="font-semibold text-gray-900 dark:text-gray-100">Dokumen Pendukung</h3></div>
 
                                         {/* KTM */}
-                                        <FormField control={form.control} name="ktm_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><span>📋</span> Foto KTM *</FormLabel><FormControl><div className="space-y-3">
-                                                {ktmPreview && <div className="relative overflow-hidden rounded-lg border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 p-2 dark:from-green-950/30 dark:to-emerald-950/30"><img src={ktmPreview} alt="KTM Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-green-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
-                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setKtmPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-green-400 dark:border-zinc-600" {...field} />
-                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
-                                        ); }} />
+                                        <FormField control={form.control} name="ktm_photo" render={({ field: { onChange, value, ...field } }) => {
+                                            void value; return (
+                                                <FormItem><FormLabel className="flex items-center gap-2"><span>📋</span> Foto KTM *</FormLabel><FormControl><div className="space-y-3">
+                                                    {ktmPreview && <div className="relative overflow-hidden rounded-lg border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 p-2 dark:from-green-950/30 dark:to-emerald-950/30"><img src={ktmPreview} alt="KTM Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-green-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                    <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setKtmPreview); } }} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-green-400 dark:border-zinc-600" {...field} />
+                                                </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                            );
+                                        }} />
 
                                         {/* Transcript */}
-                                        <FormField control={form.control} name="transcript_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><span>📊</span> Foto Transkrip Nilai *</FormLabel><FormControl><div className="space-y-3">
-                                                {transcriptPreview && <div className="relative overflow-hidden rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-2 dark:from-blue-950/30 dark:to-indigo-950/30"><img src={transcriptPreview} alt="Transcript Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-blue-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
-                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setTranscriptPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-blue-400 dark:border-zinc-600" {...field} />
-                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
-                                        ); }} />
+                                        <FormField control={form.control} name="transcript_photo" render={({ field: { onChange, value, ...field } }) => {
+                                            void value; return (
+                                                <FormItem><FormLabel className="flex items-center gap-2"><span>📊</span> Foto Transkrip Nilai *</FormLabel><FormControl><div className="space-y-3">
+                                                    {transcriptPreview && <div className="relative overflow-hidden rounded-lg border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 p-2 dark:from-blue-950/30 dark:to-indigo-950/30"><img src={transcriptPreview} alt="Transcript Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-blue-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                    <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setTranscriptPreview); } }} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-blue-400 dark:border-zinc-600" {...field} />
+                                                </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                            );
+                                        }} />
 
                                         {/* Instagram Follow */}
-                                        <FormField control={form.control} name="instagram_follow_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><span>📱</span> Screenshot Follow Instagram @aksademy *</FormLabel><FormControl><div className="space-y-3">
-                                                {igFollowPreview && <div className="relative overflow-hidden rounded-lg border-2 border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 p-2 dark:from-pink-950/30 dark:to-rose-950/30"><img src={igFollowPreview} alt="IG Follow Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-pink-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
-                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setIgFollowPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-pink-400 dark:border-zinc-600" {...field} />
-                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
-                                        ); }} />
+                                        <FormField control={form.control} name="instagram_follow_photo" render={({ field: { onChange, value, ...field } }) => {
+                                            void value; return (
+                                                <FormItem><FormLabel className="flex items-center gap-2"><span>📱</span> Screenshot Follow Instagram @skillgrow.id *</FormLabel><FormControl><div className="space-y-3">
+                                                    {igFollowPreview && <div className="relative overflow-hidden rounded-lg border-2 border-pink-300 bg-gradient-to-br from-pink-50 to-rose-50 p-2 dark:from-pink-950/30 dark:to-rose-950/30"><img src={igFollowPreview} alt="IG Follow Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-pink-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                    <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setIgFollowPreview); } }} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-pink-400 dark:border-zinc-600" {...field} />
+                                                </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                            );
+                                        }} />
 
                                         {/* TikTok Follow */}
-                                        <FormField control={form.control} name="tiktok_follow_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><span>📱</span> Screenshot Follow TikTok @aksademy *</FormLabel><FormControl><div className="space-y-3">
-                                                {tiktokFollowPreview && <div className="relative overflow-hidden rounded-lg border-2 border-cyan-300 bg-gradient-to-br from-cyan-50 to-teal-50 p-2 dark:from-cyan-950/30 dark:to-teal-950/30"><img src={tiktokFollowPreview} alt="TikTok Follow Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-cyan-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
-                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setTiktokFollowPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-cyan-400 dark:border-zinc-600" {...field} />
-                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
-                                        ); }} />
+                                        <FormField control={form.control} name="tiktok_follow_photo" render={({ field: { onChange, value, ...field } }) => {
+                                            void value; return (
+                                                <FormItem><FormLabel className="flex items-center gap-2"><span>📱</span> Screenshot Follow TikTok @skillgrow.id *</FormLabel><FormControl><div className="space-y-3">
+                                                    {tiktokFollowPreview && <div className="relative overflow-hidden rounded-lg border-2 border-cyan-300 bg-gradient-to-br from-cyan-50 to-teal-50 p-2 dark:from-cyan-950/30 dark:to-teal-950/30"><img src={tiktokFollowPreview} alt="TikTok Follow Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-cyan-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                    <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setTiktokFollowPreview); } }} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-cyan-400 dark:border-zinc-600" {...field} />
+                                                </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                            );
+                                        }} />
 
                                         {/* Comment Tag */}
-                                        <FormField control={form.control} name="comment_tag_photo" render={({ field: { onChange, value, ...field } }) => { void value; return (
-                                            <FormItem><FormLabel className="flex items-center gap-2"><span>👥</span> Screenshot Komentar & Tag 3 Teman *</FormLabel><FormControl><div className="space-y-3">
-                                                {commentTagPreview && <div className="relative overflow-hidden rounded-lg border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-violet-50 p-2 dark:from-purple-950/30 dark:to-violet-950/30"><img src={commentTagPreview} alt="Comment Tag Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-purple-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
-                                                <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setCommentTagPreview); }}} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-purple-400 dark:border-zinc-600" {...field} />
-                                            </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
-                                        ); }} />
+                                        <FormField control={form.control} name="comment_tag_photo" render={({ field: { onChange, value, ...field } }) => {
+                                            void value; return (
+                                                <FormItem><FormLabel className="flex items-center gap-2"><span>👥</span> Screenshot Komentar & Tag 3 Teman *</FormLabel><FormControl><div className="space-y-3">
+                                                    {commentTagPreview && <div className="relative overflow-hidden rounded-lg border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-violet-50 p-2 dark:from-purple-950/30 dark:to-violet-950/30"><img src={commentTagPreview} alt="Comment Tag Preview" className="h-40 w-full rounded object-contain" /><div className="absolute top-2 right-2 rounded-full bg-purple-500 px-2 py-1 text-xs font-semibold text-white">✓ Terpilih</div></div>}
+                                                    <Input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) { onChange(file); handleFilePreview(e, setCommentTagPreview); } }} className="cursor-pointer border-2 border-dashed border-gray-300 py-6 hover:border-purple-400 dark:border-zinc-600" {...field} />
+                                                </div></FormControl><FormDescription className="text-xs">📸 Format: JPG, PNG, WebP (Maks 5MB)</FormDescription><FormMessage /></FormItem>
+                                            );
+                                        }} />
                                     </div>
 
                                     {/* Submit */}

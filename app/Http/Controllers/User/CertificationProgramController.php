@@ -327,7 +327,7 @@ class CertificationProgramController extends Controller
     {
         $adminPhone = $this->formatPhoneNumber(self::ADMIN_WHATSAPP_NUMBER);
 
-        $message = "*[Aksademy - Pendaftaran Sertifikasi Baru]* 🎓\n\n";
+        $message = "*[SkillGrow - Pendaftaran Sertifikasi Baru]* 🎓\n\n";
         $message .= "Halo Admin, ada pendaftaran baru untuk program berikut:\n\n";
         $message .= "• Program: *{$program->title}*\n";
         $message .= "• Nama: *{$name}*\n";
@@ -358,7 +358,7 @@ class CertificationProgramController extends Controller
 
         $userPhone = $this->formatPhoneNumber($phoneNumber);
 
-        $message = "*[Aksademy - Form Beasiswa Berhasil Dikirim]* 🎉\n\n";
+        $message = "*[SkillGrow - Form Beasiswa Berhasil Dikirim]* 🎉\n\n";
         $message .= "Halo *{$name}*,\n\n";
         $message .= "Terima kasih, form beasiswa untuk program *{$program->title}* sudah berhasil kami terima.\n";
         $message .= "Silakan pantau proses berikutnya melalui link pendaftaran ini:\n";
