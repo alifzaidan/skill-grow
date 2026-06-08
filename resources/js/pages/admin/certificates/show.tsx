@@ -73,10 +73,14 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
 
     useEffect(() => {
         if (flash?.success) {
-            toast.success(flash.success);
+            toast.success(flash.success, {
+                style: { whiteSpace: 'pre-line' }
+            });
         }
         if (flash?.error) {
-            toast.error(flash.error);
+            toast.error(flash.error, {
+                style: { whiteSpace: 'pre-line' }
+            });
         }
     }, [flash]);
 
@@ -103,7 +107,7 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             <CertificateDetail certificate={certificate} />
                         </TabsContent>
                         <TabsContent value="participants">
-                            <CertificateParticipants participants={certificate.participants || []} issuedDate={certificate.issued_date} />
+                            <CertificateParticipants certificate={certificate} participants={certificate.participants || []} issuedDate={certificate.issued_date} />
                         </TabsContent>
                     </Tabs>
 
