@@ -46,7 +46,6 @@ class UserController extends Controller
                         'bootcampItems.bootcamp.category:id,name',
                         'webinarItems.webinar.category:id,name',
                         'certificationProgramItems.certificationProgram.category:id,name',
-                        'privateItems.privateClass.category:id,name',
                     ])
                     ->latest('paid_at');
             }])
@@ -77,11 +76,6 @@ class UserController extends Controller
                 foreach ($invoice->certificationProgramItems as $item) {
                     if ($item->certificationProgram && $item->certificationProgram->category) {
                         $purchasedCategories->push($item->certificationProgram->category->name);
-                    }
-                }
-                foreach ($invoice->privateItems as $item) {
-                    if ($item->privateClass && $item->privateClass->category) {
-                        $purchasedCategories->push($item->privateClass->category->name);
                     }
                 }
             }
