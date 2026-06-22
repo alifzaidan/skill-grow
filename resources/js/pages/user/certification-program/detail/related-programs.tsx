@@ -15,6 +15,7 @@ interface RelatedProgram {
     category?: { name: string };
     thumbnail?: string | null;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
 }
 
 export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: RelatedProgram[] }) {
@@ -32,7 +33,8 @@ export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: 
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedPrograms.map((program) => {
-                    const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
+                    const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
+                    const deadlineDate = deadline ? new Date(deadline) : null;
                     return (
                         <Link
                             key={program.id}
