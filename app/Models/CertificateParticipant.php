@@ -46,7 +46,7 @@ class CertificateParticipant extends Model
         do {
             $year = date('y');
             $randomString = self::generateRandomString(4);
-            $code = 'SKG-' . $year . $randomString;
+            $code = 'AKS-' . $year . $randomString;
         } while (self::where('certificate_code', $code)->exists());
 
         return $code;
@@ -68,5 +68,52 @@ class CertificateParticipant extends Model
     private static function getNextCertificateNumber($certificateId)
     {
         return self::where('certificate_id', $certificateId)->count() + 1;
+    }
+
+    /**
+     * Determine if this participant is eligible to view/download the certificate
+     */
+    public function isEligible(): bool
+    {
+        $certificate = $this->certificate;
+        if (!$certificate) {
+            return false;
+        }
+
+        // 1. Course Certificate
+        if ($certificate->course_id) {
+            $enrollment = EnrollmentCourse::with(['invoice'])
+                ->where('course_id', $certificate->course_id)
+                ->whereHas('invoice', function ($query) {
+                    $query->where('user_id', $this->user_id);
+                })->first();
+            
+            return $enrollment && $enrollment->canDownloadCertificate();
+        }
+
+        // 2. Webinar Certificate
+        if ($certificate->webinar_id) {
+            $enrollment = EnrollmentWebinar::with(['invoice'])
+                ->where('webinar_id', $certificate->webinar_id)
+                ->whereHas('invoice', function ($query) {
+                    $query->where('user_id', $this->user_id);
+                })->first();
+
+            return $enrollment && $enrollment->canDownloadCertificate();
+        }
+
+        // 3. Bootcamp Certificate
+        if ($certificate->bootcamp_id) {
+            $enrollment = EnrollmentBootcamp::with(['invoice', 'bootcamp.schedules', 'attendances'])
+                ->where('bootcamp_id', $certificate->bootcamp_id)
+                ->whereHas('invoice', function ($query) {
+                    $query->where('user_id', $this->user_id);
+                })->first();
+
+            return $enrollment && $enrollment->canDownloadCertificate();
+        }
+
+        // Independent or other certificates
+        return true;
     }
 }
