@@ -132,6 +132,7 @@ class UserController extends Controller
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
                 'instance' => $user->instance,
+                'city' => $user->city,
                 'email_verified_at' => $user->email_verified_at,
                 'created_at' => $user->created_at,
                 'courses_count' => $user->courses_count,
@@ -200,6 +201,7 @@ class UserController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'instance' => 'nullable|string|max:255',
             'phone_number' => 'required|string|max:255',
+            'city' => 'nullable|string|max:255',
             'password' => 'required|string|min:8',
         ]);
 
@@ -207,6 +209,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'instance' => $request->instance,
+            'city' => $request->city,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'email_verified_at' => now(),
@@ -317,6 +320,7 @@ class UserController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class . ',email,' . $id,
             'phone_number' => 'required|string|max:255',
             'instance' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
         ]);
 
         $user = User::findOrFail($id);

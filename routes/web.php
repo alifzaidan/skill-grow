@@ -54,6 +54,8 @@ Route::post('/auto-login', function (Request $request) {
         $request->validate([
             'email' => 'required|email',
             'phone_number' => 'required|string',
+            'instance' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
         ]);
 
         $user = User::where('email', $request->email)
@@ -61,10 +63,34 @@ Route::post('/auto-login', function (Request $request) {
             ->first();
 
         if (!$user) {
+            $userByEmail = User::where('email', $request->email)->first();
+            if ($userByEmail && (empty($userByEmail->phone_number) || $userByEmail->phone_number === '')) {
+                $user = $userByEmail;
+            }
+        }
+
+        if (!$user) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email atau nomor telepon tidak sesuai'
             ], 401);
+        }
+
+        $updated = false;
+        if ($request->filled('phone_number') && empty($user->phone_number)) {
+            $user->phone_number = $request->phone_number;
+            $updated = true;
+        }
+        if ($request->filled('instance') && empty($user->instance)) {
+            $user->instance = $request->instance;
+            $updated = true;
+        }
+        if ($request->filled('city') && empty($user->city)) {
+            $user->city = $request->city;
+            $updated = true;
+        }
+        if ($updated) {
+            $user->save();
         }
 
         Auth::login($user, true);
@@ -78,6 +104,8 @@ Route::post('/auto-login', function (Request $request) {
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
+                'instance' => $user->instance,
+                'city' => $user->city,
             ]
         ]);
     } catch (\Exception $e) {
