@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Magnetic } from '@/components/ui/magnetic';
@@ -27,6 +28,7 @@ interface Bundle {
     price: number;
     strikethrough_price: number;
     registration_deadline: string | null;
+    batch?: string | null;
     status: 'draft' | 'published' | 'archived';
     bundle_items: BundleItem[];
     bundle_items_count: number;
@@ -124,6 +126,13 @@ export default function BundlingSection({ bundles }: BundlingSectionProps) {
 
                                 <div className="flex flex-1 flex-col justify-between p-5">
                                     <div>
+                                        {bundle.batch && (
+                                            <div className="mb-2">
+                                                <Badge variant="outline" className="border-primary text-primary font-semibold text-[10px]">
+                                                    {bundle.batch.toLowerCase().includes('batch') ? bundle.batch : `Batch ${bundle.batch}`}
+                                                </Badge>
+                                            </div>
+                                        )}
                                         <h2 className="mb-2 line-clamp-2 text-lg font-bold text-gray-900 dark:text-white">{bundle.title}</h2>
                                         {bundle.short_description && (
                                             <p className="mb-4 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">{bundle.short_description}</p>

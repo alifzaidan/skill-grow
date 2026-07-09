@@ -36,6 +36,7 @@ interface Bundle {
     short_description?: string | null;
     description?: string | null;
     thumbnail?: string | null;
+    batch?: string | null;
     price: number;
     strikethrough_price: number;
     registration_deadline?: string | null;
@@ -575,10 +576,17 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
                                     className="h-32 w-48 rounded-lg object-cover"
                                 />
                                 <div className="flex-1">
-                                    <Badge className="bg-primary mb-2 text-white">
-                                        <Package size={12} className="mr-1" />
-                                        Paket Bundling
-                                    </Badge>
+                                    <div className="mb-2 flex flex-wrap gap-2">
+                                        <Badge className="bg-primary text-white">
+                                            <Package size={12} className="mr-1" />
+                                            Paket Bundling
+                                        </Badge>
+                                        {bundle.batch && (
+                                            <Badge variant="outline" className="border-primary text-primary font-semibold">
+                                                {bundle.batch.toLowerCase().includes('batch') ? bundle.batch : `Batch ${bundle.batch}`}
+                                            </Badge>
+                                        )}
+                                    </div>
                                     <h2 className="mb-2 text-2xl font-bold text-gray-900 italic dark:text-white">{bundle.title}</h2>
                                     {bundle.short_description && (
                                         <p className="text-sm text-gray-600 dark:text-gray-400">{bundle.short_description}</p>
