@@ -135,24 +135,6 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['admin'],
     },
     {
-        title: 'Sertifikat',
-        href: '/admin/certificates',
-        icon: Dock,
-        roles: ['admin'],
-    },
-    {
-        title: 'Kode Diskon',
-        href: '/admin/discount-codes',
-        icon: Banknote,
-        roles: ['admin'],
-    },
-    {
-        title: 'Flyer Promosi',
-        href: '/admin/promotions',
-        icon: Proportions,
-        roles: ['admin'],
-    },
-    {
         title: 'Transaksi',
         href: '/admin/transactions',
         icon: DollarSign,
