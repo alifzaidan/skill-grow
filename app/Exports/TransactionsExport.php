@@ -4,29 +4,26 @@ namespace App\Exports;
 
 use App\Models\Invoice;
 use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
-use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Carbon\Carbon;
 
-class TransactionsExport implements 
-    FromQuery, 
-    WithHeadings, 
-    WithMapping, 
-    WithColumnWidths,
-    WithStyles
+class TransactionsExport implements
+    FromQuery,
+    \Maatwebsite\Excel\Concerns\WithHeadings,
+    \Maatwebsite\Excel\Concerns\WithMapping,
+    \Maatwebsite\Excel\Concerns\WithColumnWidths,
+    \Maatwebsite\Excel\Concerns\WithStyles
 {
     protected $startDate;
     protected $endDate;
     protected $status;
     protected $paymentType;
     protected $productType;
-    protected $bootcampId;  
-    protected $webinarId;   
+    protected $bootcampId;
+    protected $webinarId;
     protected $courseId;
-    protected $bundleId;    
+    protected $bundleId;
+    protected $certificationProgramId;
 
     public function __construct($filters = [])
     {
@@ -35,21 +32,22 @@ class TransactionsExport implements
         $this->status = $filters['status'] ?? null;
         $this->paymentType = $filters['payment_type'] ?? null;
         $this->productType = $filters['product_type'] ?? null;
-        $this->bootcampId = $filters['bootcamp_id'] ?? null;  
-        $this->webinarId = $filters['webinar_id'] ?? null;    
-        $this->courseId = $filters['course_id'] ?? null;      
-        $this->bundleId = $filters['bundle_id'] ?? null;      
+        $this->bootcampId = $filters['bootcamp_id'] ?? null;
+        $this->webinarId = $filters['webinar_id'] ?? null;
+        $this->courseId = $filters['course_id'] ?? null;
+        $this->bundleId = $filters['bundle_id'] ?? null;
+        $this->certificationProgramId = $filters['certification_program_id'] ?? null;
     }
 
     public function query()
     {
         $query = Invoice::with([
-            'user',
-            'referrer',
+            'user.referrer',
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
-            'bundleEnrollments.bundle'
+            'bundleEnrollments.bundle',
+            'certificationProgramItems.certificationProgram'
         ]);
 
         // Apply date filter
@@ -78,7 +76,7 @@ class TransactionsExport implements
                 case 'course':
                     if ($this->courseId) {
                         // Filter by specific course
-                        $query->whereHas('courseItems', function($q) {
+                        $query->whereHas('courseItems', function ($q) {
                             $q->where('course_id', $this->courseId);
                         });
                     } else {
@@ -89,7 +87,7 @@ class TransactionsExport implements
                 case 'bootcamp':
                     if ($this->bootcampId) {
                         // Filter by specific bootcamp
-                        $query->whereHas('bootcampItems', function($q) {
+                        $query->whereHas('bootcampItems', function ($q) {
                             $q->where('bootcamp_id', $this->bootcampId);
                         });
                     } else {
@@ -100,7 +98,7 @@ class TransactionsExport implements
                 case 'webinar':
                     if ($this->webinarId) {
                         // Filter by specific webinar
-                        $query->whereHas('webinarItems', function($q) {
+                        $query->whereHas('webinarItems', function ($q) {
                             $q->where('webinar_id', $this->webinarId);
                         });
                     } else {
@@ -111,13 +109,22 @@ class TransactionsExport implements
                 case 'bundle':
                     if ($this->bundleId) {
                         // Filter by specific bundle
-                        $query->whereHas('bundleEnrollments', function($q) {
+                        $query->whereHas('bundleEnrollments', function ($q) {
                             $q->where('bundle_id', $this->bundleId);
                         });
                     } else {
                         // All bundles
                         $query->whereHas('bundleEnrollments');
-                    }   
+                    }
+                    break;
+                case 'certification_program':
+                    if ($this->certificationProgramId) {
+                        $query->whereHas('certificationProgramItems', function ($q) {
+                            $q->where('certification_program_id', $this->certificationProgramId);
+                        });
+                    } else {
+                        $query->whereHas('certificationProgramItems');
+                    }
                     break;
             }
         }
@@ -134,6 +141,7 @@ class TransactionsExport implements
             'Email',
             'No. HP',
             'Instansi',
+            'Kota Domisili',
             'Nama Produk',
             'Jenis Produk',
             'Harga Asli',
@@ -162,6 +170,7 @@ class TransactionsExport implements
             $invoice->user->email ?? '-',
             $invoice->user->phone_number ?? '-',
             $invoice->user->instance ?? '-',
+            $invoice->user->city ?? '-',
             $this->getProductNames($invoice),
             $this->getProductType($invoice),
             'Rp ' . number_format($invoice->amount, 0, ',', '.'),
@@ -187,19 +196,20 @@ class TransactionsExport implements
             'D' => 30, // Email
             'E' => 15, // No. HP
             'F' => 20, // Instansi
-            'G' => 40, // Nama Produk
-            'H' => 15, // Jenis Produk
-            'I' => 15, // Harga Asli
-            'J' => 15, // Diskon
-            'K' => 12, // Biaya Admin
-            'L' => 15, // Total Bayar
-            'M' => 10, // Status
-            'N' => 15, // Jenis Pembayaran
-            'O' => 18, // Metode Pembayaran
-            'P' => 18, // Channel Pembayaran
-            'Q' => 25, // Afiliasi
-            'R' => 20, // Tanggal Pembelian
-            'S' => 20, // Tanggal Pembayaran
+            'G' => 20, // Kota Domisili
+            'H' => 40, // Nama Produk
+            'I' => 15, // Jenis Produk
+            'J' => 15, // Harga Asli
+            'K' => 15, // Diskon
+            'L' => 12, // Biaya Admin
+            'M' => 15, // Total Bayar
+            'N' => 10, // Status
+            'O' => 15, // Jenis Pembayaran
+            'P' => 18, // Metode Pembayaran
+            'Q' => 18, // Channel Pembayaran
+            'R' => 25, // Afiliasi
+            'S' => 20, // Tanggal Pembelian
+            'T' => 20, // Tanggal Pembayaran
         ];
     }
 
@@ -245,6 +255,12 @@ class TransactionsExport implements
             }
         }
 
+        if ($invoice->certificationProgramItems) {
+            foreach ($invoice->certificationProgramItems as $item) {
+                $names[] = $item->certificationProgram->title ?? '-';
+            }
+        }
+
         return implode(', ', $names) ?: '-';
     }
 
@@ -254,6 +270,7 @@ class TransactionsExport implements
         if ($invoice->courseItems && $invoice->courseItems->count() > 0) return 'Kelas Online';
         if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
         if ($invoice->webinarItems && $invoice->webinarItems->count() > 0) return 'Webinar';
+        if ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) return 'Sertifikasi';
         return '-';
     }
 }

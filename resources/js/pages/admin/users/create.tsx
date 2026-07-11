@@ -14,6 +14,8 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
     const nameInput = useRef<HTMLInputElement>(null);
     const emailInput = useRef<HTMLInputElement>(null);
     const phoneInput = useRef<HTMLInputElement>(null);
+    const instanceInput = useRef<HTMLInputElement>(null);
+    const cityInput = useRef<HTMLInputElement>(null);
 
     const {
         data,
@@ -23,11 +25,12 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
         reset,
         errors,
         clearErrors,
-    } = useForm<Required<{ name: string; email: string; phone_number: string; instance: string; password: string }>>({
+    } = useForm<{ name: string; email: string; phone_number: string; instance: string; city: string; password: string }>({
         name: '',
         email: '',
         phone_number: '',
         instance: '',
+        city: '',
         password: '',
     });
 
@@ -83,21 +86,6 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
                     />
                     <InputError message={errors.email} />
 
-                    <Label htmlFor="instance" className="sr-only">
-                        Instansi
-                    </Label>
-                    <Input
-                        id="instance"
-                        type="text"
-                        name="instance"
-                        ref={emailInput}
-                        value={data.instance}
-                        onChange={(e) => setData('instance', e.target.value)}
-                        placeholder="Instansi"
-                        autoComplete="off"
-                    />
-                    <InputError message={errors.instance} />
-
                     <Label htmlFor="phone_number" className="sr-only">
                         Nomor Telepon
                     </Label>
@@ -115,6 +103,36 @@ export default function CreateUser({ setOpen }: CreateUserProps) {
                         autoComplete="off"
                     />
                     <InputError message={errors.phone_number} />
+
+                    <Label htmlFor="instance" className="sr-only">
+                        Instansi
+                    </Label>
+                    <Input
+                        id="instance"
+                        type="text"
+                        name="instance"
+                        ref={instanceInput}
+                        value={data.instance}
+                        onChange={(e) => setData('instance', e.target.value)}
+                        placeholder="Instansi"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.instance} />
+
+                    <Label htmlFor="city" className="sr-only">
+                        Kota Domisili
+                    </Label>
+                    <Input
+                        id="city"
+                        type="text"
+                        name="city"
+                        ref={cityInput}
+                        value={data.city}
+                        onChange={(e) => setData('city', e.target.value)}
+                        placeholder="Kota Domisili"
+                        autoComplete="off"
+                    />
+                    <InputError message={errors.city} />
 
                     <Label htmlFor="password" className="sr-only">
                         Password

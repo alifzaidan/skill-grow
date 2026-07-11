@@ -5,6 +5,7 @@ use App\Http\Controllers\AffiliateController;
 use App\Http\Controllers\AffiliateEarningController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BootcampController;
+use App\Http\Controllers\BroadcastController;
 use App\Http\Controllers\BundleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CertificateController;
@@ -53,6 +54,8 @@ Route::post('/auto-login', function (Request $request) {
         $request->validate([
             'email' => 'required|email',
             'phone_number' => 'required|string',
+            'instance' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
         ]);
 
         $user = User::where('email', $request->email)
@@ -60,10 +63,34 @@ Route::post('/auto-login', function (Request $request) {
             ->first();
 
         if (!$user) {
+            $userByEmail = User::where('email', $request->email)->first();
+            if ($userByEmail && (empty($userByEmail->phone_number) || $userByEmail->phone_number === '')) {
+                $user = $userByEmail;
+            }
+        }
+
+        if (!$user) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email atau nomor telepon tidak sesuai'
             ], 401);
+        }
+
+        $updated = false;
+        if ($request->filled('phone_number') && empty($user->phone_number)) {
+            $user->phone_number = $request->phone_number;
+            $updated = true;
+        }
+        if ($request->filled('instance') && empty($user->instance)) {
+            $user->instance = $request->instance;
+            $updated = true;
+        }
+        if ($request->filled('city') && empty($user->city)) {
+            $user->city = $request->city;
+            $updated = true;
+        }
+        if ($updated) {
+            $user->save();
         }
 
         Auth::login($user, true);
@@ -77,6 +104,8 @@ Route::post('/auto-login', function (Request $request) {
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
+                'instance' => $user->instance,
+                'city' => $user->city,
             ]
         ]);
     } catch (\Exception $e) {
@@ -108,6 +137,9 @@ Route::get('/bundle/{bundle:slug}', [UserBundleController::class, 'detail'])->na
 Route::get('/certification-programs', [UserCertificationProgramController::class, 'index'])->name('certification-programs.index');
 Route::get('/certification-programs/{program:slug}', [UserCertificationProgramController::class, 'detail'])->name('certification-programs.detail');
 Route::get('/certificate/{code}', [CertificateParticipantController::class, 'show'])->name('certificate.participant.detail');
+Route::get('/certificate/{code}/pdf', [CertificateParticipantController::class, 'viewPdf'])->name('certificate.participant.pdf');
+Route::get('/certificate/{code}/download', [CertificateParticipantController::class, 'downloadPdf'])->name('certificate.participant.download.public');
+Route::get('/check-certificate', [CertificateParticipantController::class, 'checkForm'])->name('certificates.check');
 Route::get('/article', [UserArticleController::class, 'index'])->name('article.index');
 Route::get('/article/{slug}', [UserArticleController::class, 'show'])->name('article.show');
 Route::get('/mentor', [UserMentorController::class, 'index'])->name('mentor.index');
@@ -216,12 +248,19 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
 
     Route::middleware(['role:admin'])->group(function () {
         Route::resource('users', UserController::class);
+        
+        Route::resource('broadcasts', BroadcastController::class);
+        Route::post('broadcasts/{broadcast}/filtered-users', [BroadcastController::class, 'filteredUsers'])->name('broadcasts.filtered-users');
+        Route::post('broadcasts/{broadcast}/send', [BroadcastController::class, 'send'])->name('broadcasts.send');
+        Route::post('broadcasts/{broadcast}/send-single', [BroadcastController::class, 'sendSingle'])->name('broadcasts.send-single');
         Route::resource('certificates', CertificateController::class);
         Route::get('/{certificate}/preview', [CertificateController::class, 'preview'])->name('certificates.preview');
         Route::get('/{certificate}/download-all', [CertificateController::class, 'downloadAll'])->name('certificates.download.all');
         Route::get('/participant/{participant}/download', [CertificateController::class, 'downloadParticipant'])->name('certificates.participant.download');
         Route::get('/certificates/{certificate}/download-grades-template', [CertificateController::class, 'downloadGradesTemplate'])->name('certificates.download-grades-template');
         Route::post('/certificates/{certificate}/import-grades', [CertificateController::class, 'importGrades'])->name('certificates.import-grades');
+        Route::get('/certificates/{certificate}/download-participants-template', [CertificateController::class, 'downloadParticipantsTemplate'])->name('certificates.download-participants-template');
+        Route::post('/certificates/{certificate}/import-manual-participants', [CertificateController::class, 'importManualParticipants'])->name('certificates.import-manual-participants');
         Route::resource('certificate-designs', CertificateDesignController::class);
         Route::resource('certificate-signs', CertificateSignController::class);
 
@@ -252,6 +291,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::post('/certification-programs/{program}/applications/{application}/reject', [CertificationProgramController::class, 'rejectApplication'])->name('certification-programs.applications.reject');
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/approve', [CertificationProgramController::class, 'approveScholarshipApplication'])->name('certification-programs.scholarship-applications.approve');
         Route::post('/certification-programs/{program}/scholarship-applications/{application}/reject', [CertificationProgramController::class, 'rejectScholarshipApplication'])->name('certification-programs.scholarship-applications.reject');
+        Route::post('/certification-programs/{program}/duplicate', [CertificationProgramController::class, 'duplicate'])->name('certification-programs.duplicate');
 
         Route::resource('bundles', BundleController::class);
         Route::post('/bundles/{bundle}/publish', [BundleController::class, 'publish'])->name('bundles.publish');
@@ -288,8 +328,9 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate'])->prefix('
         Route::get('webinars/{webinar}', [WebinarController::class, 'show'])->name('webinars.show');
     });
 
-    Route::middleware(['role:affiliate|mentor'])->group(function () {
+    Route::middleware(['role:affiliate|mentor|admin'])->group(function () {
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
+        Route::get('affiliate-earnings/export', [AffiliateEarningController::class, 'export'])->name('earnings.export');
     });
 });
 

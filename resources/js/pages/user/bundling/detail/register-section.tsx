@@ -17,6 +17,7 @@ interface Bundle {
     thumbnail?: string | null;
     registration_deadline?: string | null;
     registration_url: string;
+    batch?: string | null;
     bundle_items_count: number;
 }
 
@@ -128,6 +129,14 @@ export default function RegisterSection({
 
                         {/* Bundle Info */}
                         <ul className="mb-3 space-y-1.5 md:mb-4 md:space-y-2">
+                            {bundle.batch && (
+                                <li className="flex items-center gap-2 text-xs md:text-sm">
+                                    <Calendar size="14" className="flex-shrink-0 text-primary md:h-4 md:w-4 dark:text-secondary" />
+                                    <p>
+                                        Batch: <span className="font-semibold">{bundle.batch.toLowerCase().includes('batch') ? bundle.batch : `Batch ${bundle.batch}`}</span>
+                                    </p>
+                                </li>
+                            )}
                             <li className="flex items-center gap-2 text-xs md:text-sm">
                                 <Package size="14" className="flex-shrink-0 text-primary md:h-4 md:w-4 dark:text-secondary" />
                                 <p>Total {bundle.bundle_items_count} Program Pembelajaran</p>

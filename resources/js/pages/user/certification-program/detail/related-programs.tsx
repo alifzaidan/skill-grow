@@ -15,9 +15,16 @@ interface RelatedProgram {
     category?: { name: string };
     thumbnail?: string | null;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
 }
 
-export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: RelatedProgram[] }) {
+export default function RelatedPrograms({
+    relatedPrograms,
+    approvedScholarshipProgramIds = [],
+}: {
+    relatedPrograms: RelatedProgram[];
+    approvedScholarshipProgramIds?: string[];
+}) {
     if (!relatedPrograms || relatedPrograms.length === 0) return null;
 
     const formatRupiah = (amount: number) =>
@@ -32,7 +39,8 @@ export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: 
 
             <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedPrograms.map((program) => {
-                    const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
+                    const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
+                    const deadlineDate = deadline ? new Date(deadline) : null;
                     return (
                         <Link
                             key={program.id}
@@ -57,16 +65,22 @@ export default function RelatedPrograms({ relatedPrograms }: { relatedPrograms: 
                                 </div>
 
                                 <div className="w-full border-t p-4">
-                                    {program.price === 0 ? (
-                                        <p className="mb-2 text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
-                                    ) : (
-                                        <div className="mb-2">
-                                            {program.strikethrough_price && program.strikethrough_price > 0 && (
-                                                <p className="text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</p>
-                                            )}
-                                            <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{formatRupiah(program.price)}</p>
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        const isApprovedScholarship = program.type === 'scholarship' && approvedScholarshipProgramIds?.includes(program.id);
+                                        const isScholarshipNotApproved = program.type === 'scholarship' && !isApprovedScholarship;
+                                        const displayPrice = isScholarshipNotApproved ? 0 : program.price;
+
+                                        return displayPrice === 0 ? (
+                                            <p className="mb-2 text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
+                                        ) : (
+                                            <div className="mb-2">
+                                                {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
+                                                    <p className="text-sm text-red-500 line-through">{formatRupiah(program.strikethrough_price)}</p>
+                                                )}
+                                                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">{formatRupiah(displayPrice)}</p>
+                                            </div>
+                                        );
+                                    })()}
                                     {deadlineDate && (
                                         <div className="flex items-center gap-2 text-sm">
                                             <Calendar size="16" className="text-red-500" />

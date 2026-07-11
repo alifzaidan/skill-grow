@@ -66,6 +66,7 @@ interface GuestFormData {
     email: string;
     phone_number: string;
     instance: string;
+    city: string;
 }
 
 interface PendingCheckoutData {
@@ -106,11 +107,12 @@ export default function Register({
               email?: string;
               phone_number?: string;
               instance?: string;
+              city?: string;
           }
         | null
         | undefined;
     const isLoggedIn = !!user;
-    const isProfileComplete = !!(isLoggedIn && user?.phone_number && user?.instance);
+    const isProfileComplete = !!(isLoggedIn && user?.phone_number && user?.instance && user?.city);
 
     const [isLoading, setIsLoading] = useState(false);
     const [isDocumentDialogOpen, setIsDocumentDialogOpen] = useState(false);
@@ -128,12 +130,15 @@ export default function Register({
         email: user?.email ?? '',
         phone_number: user?.phone_number ?? '',
         instance: user?.instance ?? '',
+        city: user?.city ?? '',
     });
 
     const formatRupiah = (amount: number) =>
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
-    const displayPrice = isScholarship && program.scholarship_price ? program.scholarship_price : program.price;
+    const isApprovedScholarship = scholarshipApplication?.status === 'approved' || guestScholarshipStatus === 'approved';
+    const isScholarshipNotApproved = program.type === 'scholarship' && !isApprovedScholarship;
+    const displayPrice = isScholarshipNotApproved ? 0 : (isScholarship && program.scholarship_price ? program.scholarship_price : program.price);
     const deadline = program.registration_deadline ? new Date(program.registration_deadline) : null;
     const getDate = (s: Schedule) => s.schedule_date || s.start_date || '';
     const requiresDocumentUpload = program.type === 'regular' && !!program.document_required && !isScholarship;
@@ -152,9 +157,10 @@ export default function Register({
         const hasEmail = !!guestFormData.email;
         const hasPhone = !!guestFormData.phone_number;
         const hasNameOrEmailExists = !!guestFormData.name || emailExists;
-        const hasInstanceOrEmailExists = !!guestFormData.instance || emailExists || guestScholarshipStatus === 'approved';
+        const hasInstance = !!guestFormData.instance || guestScholarshipStatus === 'approved';
+        const hasCity = !!guestFormData.city;
 
-        return hasEmail && hasPhone && hasNameOrEmailExists && hasInstanceOrEmailExists;
+        return hasEmail && hasPhone && hasNameOrEmailExists && hasInstance && hasCity;
     }, [isLoggedIn, guestFormData, emailExists, guestScholarshipStatus]);
 
     const validatePromoCode = useCallback(async () => {
@@ -236,6 +242,8 @@ export default function Register({
                         ...prev,
                         name: data.name || prev.name,
                         phone_number: data.phone_number || prev.phone_number,
+                        instance: data.instance || prev.instance,
+                        city: data.city || prev.city,
                     }));
                 } else {
                     setEmailExists(false);
@@ -302,8 +310,8 @@ export default function Register({
             return false;
         }
 
-        if (!emailExists && !guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
+        if (!guestFormData.instance || !guestFormData.city) {
+            toast.error('Instansi dan Kota Domisili wajib diisi.');
             return false;
         }
 
@@ -314,6 +322,8 @@ export default function Register({
                 const loginResponse = await axios.post(route('auto-login'), {
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
                 });
 
                 const loginData = loginResponse.data;
@@ -334,6 +344,7 @@ export default function Register({
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
                     instance: guestFormData.instance,
+                    city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
                 });
@@ -512,8 +523,8 @@ export default function Register({
             return;
         }
 
-        if (!emailExists && !guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
+        if (!guestFormData.instance || !guestFormData.city) {
+            toast.error('Instansi dan Kota Domisili wajib diisi.');
             return;
         }
 
@@ -524,6 +535,8 @@ export default function Register({
                 const loginResponse = await axios.post(route('auto-login'), {
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
                 });
 
                 const loginData = loginResponse.data;
@@ -544,6 +557,7 @@ export default function Register({
                     email: guestFormData.email,
                     phone_number: guestFormData.phone_number,
                     instance: guestFormData.instance,
+                    city: guestFormData.city,
                     password: guestFormData.phone_number,
                     password_confirmation: guestFormData.phone_number,
                 });
@@ -650,7 +664,7 @@ export default function Register({
                         <User size={64} className="text-orange-500" />
                         <h2 className="text-xl font-bold">Profil Belum Lengkap</h2>
                         <p className="text-sm text-gray-500">
-                            Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu untuk mendaftar.
+                            Profil Anda belum lengkap! Harap lengkapi nomor telepon, instansi, dan kota domisili terlebih dahulu untuk mendaftar.
                         </p>
                         <Button asChild className="w-full max-w-md">
                             <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
@@ -895,7 +909,7 @@ export default function Register({
                                                 autoComplete="tel"
                                                 value={guestFormData.phone_number}
                                                 onChange={(event) => updateGuestForm('phone_number', event.target.value)}
-                                                disabled={emailExists}
+                                                disabled={isLoading}
                                                 placeholder="08xxxxxxxxxx"
                                             />
                                             {!emailExists && (
@@ -905,7 +919,7 @@ export default function Register({
                                             )}
                                             {emailExists && (
                                                 <p className="text-xs text-blue-600">
-                                                    Pastikan nomor telepon sesuai dengan yang terdaftar
+                                                    Pastikan data yang muncul sesuai. Jika belum, silakan hubungi admin.
                                                 </p>
                                             )}
                                         </div>
@@ -918,8 +932,22 @@ export default function Register({
                                                 autoComplete="organization"
                                                 value={guestFormData.instance}
                                                 onChange={(event) => updateGuestForm('instance', event.target.value)}
-                                                disabled={emailExists}
+                                                disabled={isLoading}
                                                 placeholder="Instansi atau perusahaan Anda"
+                                                required
+                                            />
+                                        </div>
+                                        <div className="grid gap-2 pb-2">
+                                            <Label htmlFor="guest-city">Kota Domisili</Label>
+                                            <Input
+                                                id="guest-city"
+                                                type="text"
+                                                tabIndex={5}
+                                                autoComplete="address-level2"
+                                                value={guestFormData.city}
+                                                onChange={(event) => updateGuestForm('city', event.target.value)}
+                                                disabled={isLoading}
+                                                placeholder="Kota domisili Anda"
                                                 required
                                             />
                                         </div>
@@ -1004,7 +1032,7 @@ export default function Register({
                                             </div>
 
                                             <div className="space-y-2 rounded-lg border bg-blue-50/50 p-4">
-                                                {program.strikethrough_price && program.strikethrough_price > 0 && (
+                                                {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
                                                     <>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-gray-600">Harga Asli</span>

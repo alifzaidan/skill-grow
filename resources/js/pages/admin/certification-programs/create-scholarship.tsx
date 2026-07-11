@@ -9,6 +9,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useInitials } from '@/hooks/use-initials';
@@ -48,9 +49,26 @@ interface Mentor {
     avatar?: string;
 }
 
+interface SocializationSchedule {
+    id: string;
+    title?: string;
+    schedule_date: string;
+    day: string;
+    start_time: string;
+    end_time: string;
+}
+
+interface RegularProgram {
+    id: string;
+    title: string;
+    batch: string | null;
+    schedules: SocializationSchedule[];
+}
+
 interface CreateScholarshipProps {
     categories: Category[];
     mentors: Mentor[];
+    regular_programs?: RegularProgram[];
 }
 
 const formSchema = z
@@ -68,8 +86,8 @@ const formSchema = z
         price: z.number().min(0),
         scholarship_price: z.number().min(0),
         scholarship_flow: z.string().nullable(),
-        registration_deadline: z.string().nonempty('Deadline pendaftaran harus diisi'),
-        socialization_registration_deadline: z.string().nonempty('Deadline aplikasi beasiswa harus diisi'),
+        registration_deadline: z.string().nonempty('Deadline pembelian sertifikasi harus diisi'),
+        socialization_registration_deadline: z.string().nonempty('Deadline pendaftaran sosialisasi harus diisi'),
         group_url: z.string().nullable(),
         socialization_group_url: z.string().nullable(),
         status: z.enum(['draft', 'published', 'archived']),
@@ -89,7 +107,7 @@ const formSchema = z
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function CreateScholarshipCertificationProgram({ categories, mentors }: CreateScholarshipProps) {
+export default function CreateScholarshipCertificationProgram({ categories, mentors, regular_programs = [] }: CreateScholarshipProps) {
     const [preview, setPreview] = useState<string | null>(null);
     const [thumbnailError, setThumbnailError] = useState(false);
     const [schedules, setSchedules] = useState<BootcampSchedule[]>([]);
@@ -99,6 +117,7 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
     const [openScholarshipDeadlineCalendar, setOpenScholarshipDeadlineCalendar] = useState(false);
     const [isItemPopoverOpen, setIsItemPopoverOpen] = useState(false);
     const [isMentorPopoverOpen, setIsMentorPopoverOpen] = useState(false);
+    const [selectedRegularProgramId, setSelectedRegularProgramId] = useState<string>('');
     const getInitials = useInitials();
 
     const form = useForm<FormValues>({
@@ -155,6 +174,12 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
             socialization_group_url: '',
             status: 'draft',
         },
+    });
+
+    const scholarshipBatch = parseInt(form.watch('batch') ?? '', 10);
+    const filteredRegularPrograms = regular_programs.filter((p) => {
+        const regularBatch = parseInt(p.batch ?? '', 10);
+        return !isNaN(scholarshipBatch) && !isNaN(regularBatch) && regularBatch > scholarshipBatch;
     });
 
     function onSubmit(values: FormValues) {
@@ -552,19 +577,84 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                         </div>
                                     )}
 
-                                    <FormField
-                                        control={form.control}
-                                        name="batch"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Batch</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="e.g., 22" {...field} value={field.value || ''} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <FormField
+                                            control={form.control}
+                                            name="batch"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Batch</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="e.g., 22"
+                                                            {...field}
+                                                            value={field.value || ''}
+                                                            onChange={(e) => {
+                                                                field.onChange(e);
+                                                                // Reset pilihan program regular jika batch berubah
+                                                                setSelectedRegularProgramId('');
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium">
+                                                Ambil Jadwal Pelaksanaan dari Program Regular
+                                            </Label>
+                                            <Select
+                                                value={selectedRegularProgramId}
+                                                onValueChange={(val) => {
+                                                    setSelectedRegularProgramId(val);
+                                                    const chosen = regular_programs.find((p) => p.id === val);
+                                                    if (chosen) {
+                                                        const mapped: BootcampSchedule[] = chosen.schedules.map((s) => ({
+                                                            id: undefined,
+                                                            title: s.title ?? '',
+                                                            schedule_date: s.schedule_date,
+                                                            day: s.day,
+                                                            start_time: s.start_time,
+                                                            end_time: s.end_time,
+                                                        }));
+                                                        setSchedules(mapped);
+                                                    }
+                                                }}
+                                                disabled={isNaN(scholarshipBatch) || filteredRegularPrograms.length === 0}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue
+                                                        placeholder={
+                                                            isNaN(scholarshipBatch)
+                                                                ? 'Isi batch dulu'
+                                                                : filteredRegularPrograms.length === 0
+                                                                  ? 'Tidak ada program'
+                                                                  : 'Pilih program regular'
+                                                        }
+                                                    />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {filteredRegularPrograms.map((p) => (
+                                                        <SelectItem key={p.id} value={p.id}>
+                                                            {p.title} {p.batch ? `(Batch ${p.batch})` : ''}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {selectedRegularProgramId && (
+                                                <p className="text-muted-foreground text-xs">
+                                                    ✓ Jadwal pelaksanaan telah diisi otomatis. Anda masih bisa mengeditnya.
+                                                </p>
+                                            )}
+                                            {!isNaN(scholarshipBatch) && filteredRegularPrograms.length === 0 && (
+                                                <p className="text-muted-foreground text-xs">
+                                                    Tidak ada program regular dengan batch &gt; {scholarshipBatch}.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
 
                                     <FormField
                                         control={form.control}
@@ -670,78 +760,6 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                 <h3 className="mb-4 font-medium">Jadwal & Deadline</h3>
 
                                 <div className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="registration_deadline"
-                                        render={({ field }) => {
-                                            const dateVal = field.value ? new Date(field.value) : null;
-                                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                                            const dayLabel = dateVal ? dayNames[dateVal.getDay()] : null;
-                                            return (
-                                                <FormItem className="flex flex-col">
-                                                    <FormLabel>
-                                                        Deadline Pendaftaran <span className="text-red-500">*</span>
-                                                    </FormLabel>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Popover open={openRegDeadlineCalendar} onOpenChange={setOpenRegDeadlineCalendar}>
-                                                            <PopoverTrigger asChild>
-                                                                <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        type="button"
-                                                                        className="w-36 justify-between font-normal"
-                                                                    >
-                                                                        {dateVal
-                                                                            ? dateVal.toLocaleDateString('id-ID', {
-                                                                                  day: 'numeric',
-                                                                                  month: 'short',
-                                                                                  year: 'numeric',
-                                                                              })
-                                                                            : 'Pilih tanggal'}
-                                                                        <CalendarFold className="ml-auto h-4 w-4 opacity-50" />
-                                                                    </Button>
-                                                                </FormControl>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                                                                <Calendar
-                                                                    mode="single"
-                                                                    selected={dateVal || undefined}
-                                                                    captionLayout="dropdown"
-                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
-                                                                    onSelect={(date) => {
-                                                                        const prev = field.value ? new Date(field.value) : new Date();
-                                                                        const time = prev.toTimeString().split(' ')[0];
-                                                                        const dateStr = date
-                                                                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-                                                                            : '';
-                                                                        field.onChange(dateStr && time ? `${dateStr}T${time}` : '');
-                                                                        setOpenRegDeadlineCalendar(false);
-                                                                    }}
-                                                                />
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                        <Input
-                                                            type="time"
-                                                            step="60"
-                                                            value={dateVal ? dateVal.toTimeString().slice(0, 5) : '23:59'}
-                                                            onChange={(e) => {
-                                                                const prev = field.value ? new Date(field.value) : new Date();
-                                                                const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
-                                                                field.onChange(`${dateStr}T${e.target.value || '00:00'}:00`);
-                                                            }}
-                                                            className="bg-background w-28 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
-                                                        />
-                                                        {dayLabel && (
-                                                            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700">
-                                                                {dayLabel}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            );
-                                        }}
-                                    />
 
                                     <FormField
                                         control={form.control}
@@ -753,7 +771,7 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                             return (
                                                 <FormItem className="flex flex-col">
                                                     <FormLabel>
-                                                        Deadline Aplikasi Beasiswa <span className="text-red-500">*</span>
+                                                        Deadline Pendaftaran Sosialisasi <span className="text-red-500">*</span>
                                                     </FormLabel>
                                                     <div className="flex flex-wrap gap-2">
                                                         <Popover
@@ -819,13 +837,86 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                                         }}
                                     />
 
-                                    <CertificationProgramScheduleInput value={schedules} onChange={setSchedules} label="Jadwal Pelaksanaan" />
-
+                                    <FormField
+                                        control={form.control}
+                                        name="registration_deadline"
+                                        render={({ field }) => {
+                                            const dateVal = field.value ? new Date(field.value) : null;
+                                            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                                            const dayLabel = dateVal ? dayNames[dateVal.getDay()] : null;
+                                            return (
+                                                <FormItem className="flex flex-col">
+                                                    <FormLabel>
+                                                        Deadline Pembelian Sertifikasi <span className="text-red-500">*</span>
+                                                    </FormLabel>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Popover open={openRegDeadlineCalendar} onOpenChange={setOpenRegDeadlineCalendar}>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        type="button"
+                                                                        className="w-36 justify-between font-normal"
+                                                                    >
+                                                                        {dateVal
+                                                                            ? dateVal.toLocaleDateString('id-ID', {
+                                                                                  day: 'numeric',
+                                                                                  month: 'short',
+                                                                                  year: 'numeric',
+                                                                              })
+                                                                            : 'Pilih tanggal'}
+                                                                        <CalendarFold className="ml-auto h-4 w-4 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+                                                                <Calendar
+                                                                    mode="single"
+                                                                    selected={dateVal || undefined}
+                                                                    captionLayout="dropdown"
+                                                                    endMonth={new Date(new Date().getFullYear() + 10, 11)}
+                                                                    onSelect={(date) => {
+                                                                        const prev = field.value ? new Date(field.value) : new Date();
+                                                                        const time = prev.toTimeString().split(' ')[0];
+                                                                        const dateStr = date
+                                                                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                                                                            : '';
+                                                                        field.onChange(dateStr && time ? `${dateStr}T${time}` : '');
+                                                                        setOpenRegDeadlineCalendar(false);
+                                                                    }}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Input
+                                                            type="time"
+                                                            step="60"
+                                                            value={dateVal ? dateVal.toTimeString().slice(0, 5) : '23:59'}
+                                                            onChange={(e) => {
+                                                                const prev = field.value ? new Date(field.value) : new Date();
+                                                                const dateStr = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`;
+                                                                field.onChange(`${dateStr}T${e.target.value || '00:00'}:00`);
+                                                            }}
+                                                            className="bg-background w-28 appearance-none [&::-webkit-calendar-picker-indicator]:hidden"
+                                                        />
+                                                        {dayLabel && (
+                                                            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-700">
+                                                                {dayLabel}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            );
+                                        }}
+                                    />
+                                    
                                     <CertificationProgramScheduleInput
                                         value={socializationSchedules}
                                         onChange={setSocializationSchedules}
                                         label="Jadwal Sosialisasi"
                                     />
+
+                                    <CertificationProgramScheduleInput value={schedules} onChange={setSchedules} label="Jadwal Pelaksanaan" />
 
                                     <FormField
                                         control={form.control}

@@ -39,6 +39,7 @@ Route::post('/check-email', function (Request $request) {
         $response['name'] = $user->name;
         $response['phone_number'] = $user->phone_number;
         $response['instance'] = $user->instance;
+        $response['city'] = $user->city;
     }
 
     // Check scholarship application status from email (works for both registered and unregistered users)

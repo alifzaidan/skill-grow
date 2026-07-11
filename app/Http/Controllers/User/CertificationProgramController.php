@@ -18,23 +18,34 @@ class CertificationProgramController extends Controller
 {
     use WablasTrait;
 
-    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285142505794';
-    private const ADMIN_WHATSAPP_NUMBER = '6285142505794';
+    private const ADMIN_WHATSAPP_URL = 'https://wa.me/+6285167541152';
+    private const ADMIN_WHATSAPP_NUMBER = '6285167541152';
 
     public function index()
     {
         $categories = Category::all();
         $programs = CertificationProgram::with(['category'])
             ->where('status', 'published')
-            ->where('type', '!=', 'scholarship')
             ->where(function ($query) {
-                $query->whereNull('registration_deadline')
-                    ->orWhere('registration_deadline', '>=', now());
+                $query->where(function ($q) {
+                    $q->where('type', 'scholarship')
+                        ->where(function ($sq) {
+                            $sq->whereNull('socialization_registration_deadline')
+                                ->orWhere('socialization_registration_deadline', '>=', now());
+                        });
+                })->orWhere(function ($q) {
+                    $q->where('type', 'regular')
+                        ->where(function ($rq) {
+                            $rq->whereNull('registration_deadline')
+                                ->orWhere('registration_deadline', '>=', now());
+                        });
+                });
             })
             ->orderBy('registration_deadline', 'asc')
             ->get();
 
         $myProgramIds = [];
+        $approvedScholarshipProgramIds = [];
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
@@ -47,12 +58,18 @@ class CertificationProgramController extends Controller
                 ->unique()
                 ->values()
                 ->all();
+
+            $approvedScholarshipProgramIds = \App\Models\CertificationProgramScholarshipApplication::where('email', Auth::user()->email)
+                ->where('status', 'approved')
+                ->pluck('certification_program_id')
+                ->toArray();
         }
 
         return Inertia::render('user/certification-program/dashboard/index', [
             'categories' => $categories,
             'programs' => $programs,
             'myProgramIds' => $myProgramIds,
+            'approvedScholarshipProgramIds' => $approvedScholarshipProgramIds,
         ]);
     }
 
@@ -75,12 +92,28 @@ class CertificationProgramController extends Controller
             ->where('status', 'published')
             ->where('category_id', $program->category_id)
             ->where('id', '!=', $program->id)
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('type', 'scholarship')
+                        ->where(function ($sq) {
+                            $sq->whereNull('socialization_registration_deadline')
+                                ->orWhere('socialization_registration_deadline', '>=', now());
+                        });
+                })->orWhere(function ($q) {
+                    $q->where('type', 'regular')
+                        ->where(function ($rq) {
+                            $rq->whereNull('registration_deadline')
+                                ->orWhere('registration_deadline', '>=', now());
+                        });
+                });
+            })
             ->orderBy('registration_deadline', 'asc')
             ->limit(3)
             ->get();
 
         $myProgramIds = [];
         $scholarshipApplication = null;
+        $approvedScholarshipProgramIds = [];
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
@@ -100,6 +133,11 @@ class CertificationProgramController extends Controller
                     ->latest()
                     ->first();
             }
+
+            $approvedScholarshipProgramIds = \App\Models\CertificationProgramScholarshipApplication::where('email', Auth::user()->email)
+                ->where('status', 'approved')
+                ->pluck('certification_program_id')
+                ->toArray();
         }
 
         return Inertia::render('user/certification-program/detail/index', [
@@ -107,6 +145,7 @@ class CertificationProgramController extends Controller
             'relatedPrograms' => $relatedPrograms,
             'myProgramIds' => $myProgramIds,
             'scholarshipApplication' => $scholarshipApplication,
+            'approvedScholarshipProgramIds' => $approvedScholarshipProgramIds,
         ]);
     }
 

@@ -129,7 +129,7 @@ export default function ScholarshipApply({ program }: { program: Program }) {
                             <p className="mb-3 text-xs font-semibold md:text-sm">📞 Untuk informasi lebih lanjut, silakan hubungi:</p>
                             <div className="space-y-1">
                                 <p className="text-sm">📧 <span className="font-medium">aksarateknologimandiri@gmail.com</span></p>
-                                <p className="text-sm">💬 <span className="font-medium">+6285142505794</span></p>
+                                <p className="text-sm">💬 <span className="font-medium">+6285167541152</span></p>
                             </div>
                         </div>
                     </div>

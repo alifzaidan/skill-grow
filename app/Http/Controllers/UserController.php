@@ -32,17 +32,22 @@ class UserController extends Controller
                     $query->whereHas('invoice', function ($q) {
                         $q->where('status', 'paid');
                     });
+                },
+                'certificationProgramEnrollments as certification_programs_count' => function ($query) {
+                    $query->whereHas('invoice', function ($q) {
+                        $q->where('status', 'paid');
+                    });
                 }
             ])
             ->with(['invoices' => function ($query) {
                 $query->where('status', 'paid')
                     ->with([
-                        'courseItems.course:id,title,price',
-                        'bootcampItems.bootcamp:id,title,price',
-                        'webinarItems.webinar:id,title,price'
+                        'courseItems.course.category:id,name',
+                        'bootcampItems.bootcamp.category:id,name',
+                        'webinarItems.webinar.category:id,name',
+                        'certificationProgramItems.certificationProgram.category:id,name',
                     ])
-                    ->latest('paid_at')
-                    ->limit(1);
+                    ->latest('paid_at');
             }])
             ->latest()
             ->get();
@@ -50,28 +55,68 @@ class UserController extends Controller
         $usersData = $users->map(function ($user) {
             $lastPurchase = $user->invoices->first();
 
+            $purchasedCategories = collect();
+
+            foreach ($user->invoices as $invoice) {
+                foreach ($invoice->courseItems as $item) {
+                    if ($item->course && $item->course->category) {
+                        $purchasedCategories->push($item->course->category->name);
+                    }
+                }
+                foreach ($invoice->bootcampItems as $item) {
+                    if ($item->bootcamp && $item->bootcamp->category) {
+                        $purchasedCategories->push($item->bootcamp->category->name);
+                    }
+                }
+                foreach ($invoice->webinarItems as $item) {
+                    if ($item->webinar && $item->webinar->category) {
+                        $purchasedCategories->push($item->webinar->category->name);
+                    }
+                }
+                foreach ($invoice->certificationProgramItems as $item) {
+                    if ($item->certificationProgram && $item->certificationProgram->category) {
+                        $purchasedCategories->push($item->certificationProgram->category->name);
+                    }
+                }
+            }
+
             $purchasedItems = [];
             if ($lastPurchase) {
                 foreach ($lastPurchase->courseItems as $item) {
-                    $purchasedItems[] = [
-                        'type' => 'course',
-                        'title' => $item->course->title,
-                        'price' => $item->course->price,
-                    ];
+                    if ($item->course) {
+                        $purchasedItems[] = [
+                            'type' => 'course',
+                            'title' => $item->course->title,
+                            'price' => $item->course->price,
+                        ];
+                    }
                 }
                 foreach ($lastPurchase->bootcampItems as $item) {
-                    $purchasedItems[] = [
-                        'type' => 'bootcamp',
-                        'title' => $item->bootcamp->title,
-                        'price' => $item->bootcamp->price,
-                    ];
+                    if ($item->bootcamp) {
+                        $purchasedItems[] = [
+                            'type' => 'bootcamp',
+                            'title' => $item->bootcamp->title,
+                            'price' => $item->bootcamp->price,
+                        ];
+                    }
                 }
                 foreach ($lastPurchase->webinarItems as $item) {
-                    $purchasedItems[] = [
-                        'type' => 'webinar',
-                        'title' => $item->webinar->title,
-                        'price' => $item->webinar->price,
-                    ];
+                    if ($item->webinar) {
+                        $purchasedItems[] = [
+                            'type' => 'webinar',
+                            'title' => $item->webinar->title,
+                            'price' => $item->webinar->price,
+                        ];
+                    }
+                }
+                foreach ($lastPurchase->certificationProgramItems as $item) {
+                    if ($item->certificationProgram) {
+                        $purchasedItems[] = [
+                            'type' => 'certification_program',
+                            'title' => $item->certificationProgram->title,
+                            'price' => $item->certificationProgram->price,
+                        ];
+                    }
                 }
             }
 
@@ -79,6 +124,7 @@ class UserController extends Controller
             if ($user->courses_count > 0) $programTypes[] = 'course';
             if ($user->bootcamps_count > 0) $programTypes[] = 'bootcamp';
             if ($user->webinars_count > 0) $programTypes[] = 'webinar';
+            if ($user->certification_programs_count > 0) $programTypes[] = 'certification_program';
 
             return [
                 'id' => $user->id,
@@ -86,17 +132,20 @@ class UserController extends Controller
                 'email' => $user->email,
                 'phone_number' => $user->phone_number,
                 'instance' => $user->instance,
+                'city' => $user->city,
                 'email_verified_at' => $user->email_verified_at,
                 'created_at' => $user->created_at,
                 'courses_count' => $user->courses_count,
                 'bootcamps_count' => $user->bootcamps_count,
                 'webinars_count' => $user->webinars_count,
-                'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count,
+                'certification_programs_count' => $user->certification_programs_count,
+                'total_enrollments' => $user->courses_count + $user->bootcamps_count + $user->webinars_count + $user->certification_programs_count,
                 'program_types' => $programTypes,
+                'purchased_categories' => $purchasedCategories->unique()->values()->all(),
                 'last_purchase_date' => $lastPurchase?->paid_at,
                 'last_purchase_items' => $purchasedItems,
                 'last_purchase_total' => $lastPurchase?->nett_amount,
-                'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count) > 0,
+                'has_enrollments' => ($user->courses_count + $user->bootcamps_count + $user->webinars_count + $user->certification_programs_count) > 0,
             ];
         });
 
@@ -136,6 +185,7 @@ class UserController extends Controller
         return Inertia::render('admin/users/index', [
             'users' => $usersData,
             'statistics' => $statistics,
+            'categories' => \App\Models\Category::select('id', 'name')->get(),
         ]);
     }
 
@@ -151,6 +201,7 @@ class UserController extends Controller
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class,
             'instance' => 'nullable|string|max:255',
             'phone_number' => 'required|string|max:255',
+            'city' => 'nullable|string|max:255',
             'password' => 'required|string|min:8',
         ]);
 
@@ -158,6 +209,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'instance' => $request->instance,
+            'city' => $request->city,
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'email_verified_at' => now(),
@@ -266,8 +318,9 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:' . User::class . ',email,' . $id,
-            'instance' => 'nullable|string|max:255',
             'phone_number' => 'required|string|max:255',
+            'instance' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
         ]);
 
         $user = User::findOrFail($id);

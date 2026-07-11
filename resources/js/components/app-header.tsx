@@ -10,7 +10,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookText, Home, Menu, MonitorPlay, Presentation, User } from 'lucide-react';
+import { Badge, BookText, Home, Menu, MonitorPlay, Presentation, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SearchCommand } from './search-command';
 
@@ -43,6 +43,11 @@ const mainNavItems: NavItem[] = [
         title: 'Sertifikasi',
         href: '/certification-programs',
     },
+    {
+        title: 'Cek Sertifikat',
+        href: '/check-certificate',
+    },
+
 ];
 
 const mobileNavItems = [
@@ -70,6 +75,11 @@ const mobileNavItems = [
         title: 'Bundling',
         href: '/bundle',
         icon: Presentation,
+    },
+    {
+        title: 'Cek Sertifikat',
+        href: '/check-certificate',
+        icon: Badge,
     },
 ];
 

@@ -62,6 +62,7 @@ interface EditDiscountCodeProps {
         bootcamps: Product[];
         webinars: Product[];
         bundles: Product[];
+        certification_programs: Product[];
     };
 }
 
@@ -269,6 +270,15 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                     return registrationEnd >= discountStartDate;
                 });
 
+            case 'certification_program':
+                return products.certification_programs.filter((program) => {
+                    if (selectedProductIds.includes(program.id)) return false;
+
+                    if (!program.registration_deadline || !discountStartDate) return true;
+                    const registrationEnd = parseISO(program.registration_deadline);
+                    return registrationEnd >= discountStartDate;
+                });
+
             default:
                 return [];
         }
@@ -284,6 +294,8 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                 return 'Webinar';
             case 'bundle':
                 return 'Bundle';
+            case 'certification_program':
+                return 'Program Sertifikasi';
             default:
                 return type;
         }
@@ -674,21 +686,32 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                             Bundle
                                         </FormLabel>
                                     </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="certification_program"
+                                            checked={watchApplicableTypes.includes('certification_program')}
+                                            onCheckedChange={(checked) => handleApplicableTypeChange('certification_program', !!checked)}
+                                        />
+                                        <FormLabel htmlFor="certification_program" className="text-sm font-normal">
+                                            Program Sertifikasi
+                                        </FormLabel>
+                                    </div>
                                 </div>
                                 <p className="text-muted-foreground text-sm">Kosong = berlaku untuk semua produk</p>
 
-                                {(watchApplicableTypes.includes('bootcamp') || watchApplicableTypes.includes('webinar')) || watchApplicableTypes.includes('bundle') && (<div className="rounded-md bg-blue-50 p-3">
-                                    <div className="flex items-start">
-                                        <AlertCircle className="mt-0.5 mr-2 h-4 w-4 text-blue-600" />
-                                        <div>
-                                            <p className="text-xs font-medium text-blue-800">Catatan:</p>
-                                            <p className="text-xs text-blue-700">
-                                                Bootcamp dan webinar yang dapat dipilih hanya yang pendaftarannya masih berlaku setelah tanggal
-                                                mulai diskon.
-                                            </p>
+                                {(watchApplicableTypes.includes('bootcamp') || watchApplicableTypes.includes('webinar')) && (
+                                    <div className="rounded-md bg-blue-50 p-3">
+                                        <div className="flex items-start">
+                                            <AlertCircle className="mt-0.5 mr-2 h-4 w-4 text-blue-600" />
+                                            <div>
+                                                <p className="text-xs font-medium text-blue-800">Catatan:</p>
+                                                <p className="text-xs text-blue-700">
+                                                    Bootcamp dan webinar yang dapat dipilih hanya yang pendaftarannya masih berlaku setelah tanggal
+                                                    mulai diskon.
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
                                 )}
                             </div>
 
@@ -723,6 +746,9 @@ export default function EditDiscountCode({ discountCode, products }: EditDiscoun
                                                                 )}
                                                                 {watchApplicableTypes.includes('bundle') && (
                                                                     <SelectItem value="bundle">Bundle</SelectItem>
+                                                                )}
+                                                                {watchApplicableTypes.includes('certification_program') && (
+                                                                    <SelectItem value="certification_program">Program Sertifikasi</SelectItem>
                                                                 )}
                                                             </SelectContent>
                                                         </Select>

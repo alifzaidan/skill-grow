@@ -19,7 +19,7 @@ import { DataTableViewOptions } from '@/components/data-table-view-option';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Archive, BookMarked, Eye, EyeOff, FileEdit, GraduationCap, X } from 'lucide-react';
+import { AlertCircle, Archive, BookMarked, CheckCircle2, Eye, EyeOff, FileEdit, GraduationCap, HelpCircle, X } from 'lucide-react';
 import React from 'react';
 
 export const programTypes = [
@@ -34,6 +34,16 @@ export const programStatuses = [
     { value: 'hidden', label: 'Hidden', icon: EyeOff },
 ];
 
+export const recordingStatuses = [
+    { value: 'full', label: 'Lengkap', icon: CheckCircle2 },
+    { value: 'partial', label: 'Sebagian', icon: AlertCircle },
+    { value: 'none', label: 'Belum Ada', icon: HelpCircle },
+];
+
+type ProgramWithBatch = {
+    batch?: string;
+};
+
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
@@ -44,6 +54,22 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
     const [rowSelection, setRowSelection] = React.useState({});
+
+    const batchOptions = React.useMemo(() => {
+        const batches = new Set<string>();
+        data.forEach((item) => {
+            const program = item as TData & ProgramWithBatch;
+            if (program.batch) {
+                batches.add(program.batch);
+            }
+        });
+        return Array.from(batches)
+            .sort()
+            .map((batch) => ({
+                label: batch,
+                value: batch,
+            }));
+    }, [data]);
 
     const table = useReactTable({
         data,
@@ -71,11 +97,15 @@ export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData
                     className="lg:max-w-sm"
                 />
                 <div className="flex flex-col items-center gap-2 lg:flex-row">
-                    {table.getColumn('type') && (
-                        <DataTableFacetedFilter column={table.getColumn('type')} title="Tipe" options={programTypes} />
+                    {table.getColumn('type') && <DataTableFacetedFilter column={table.getColumn('type')} title="Tipe" options={programTypes} />}
+                    {table.getColumn('batch') && batchOptions.length > 0 && (
+                        <DataTableFacetedFilter column={table.getColumn('batch')} title="Batch" options={batchOptions} />
                     )}
                     {table.getColumn('status') && (
                         <DataTableFacetedFilter column={table.getColumn('status')} title="Status" options={programStatuses} />
+                    )}
+                    {table.getColumn('recording_status') && (
+                        <DataTableFacetedFilter column={table.getColumn('recording_status')} title="Status Rekaman" options={recordingStatuses} />
                     )}
                     {isFiltered && (
                         <Button onClick={() => table.resetColumnFilters()} className="h-8 px-2 lg:px-3">

@@ -26,6 +26,7 @@ interface Program {
     strikethrough_price?: number;
     thumbnail?: string | null;
     registration_deadline?: string;
+    socialization_registration_deadline?: string;
 }
 
 interface MyProgramIds {
@@ -36,9 +37,10 @@ interface CertificationProgramSectionProps {
     categories: Category[];
     programs: Program[];
     myProgramIds?: string[] | MyProgramIds;
+    approvedScholarshipProgramIds?: string[];
 }
 
-export default function CertificationProgramSection({ categories, programs, myProgramIds }: CertificationProgramSectionProps) {
+export default function CertificationProgramSection({ categories, programs, myProgramIds, approvedScholarshipProgramIds = [] }: CertificationProgramSectionProps) {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
@@ -148,8 +150,11 @@ export default function CertificationProgramSection({ categories, programs, myPr
                     </div>
                 ) : (
                     visiblePrograms.map((program) => {
-                        const displayPrice = program.type === 'scholarship' ? (program.scholarship_price ?? program.price) : program.price;
-                        const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
+                        const isApprovedScholarship = program.type === 'scholarship' && approvedScholarshipProgramIds?.includes(program.id);
+                        const isScholarshipNotApproved = program.type === 'scholarship' && !isApprovedScholarship;
+                        const displayPrice = isScholarshipNotApproved ? 0 : (program.type === 'scholarship' ? (program.scholarship_price ?? program.price) : program.price);
+                        const deadline = program.type === 'scholarship' ? program.socialization_registration_deadline : program.registration_deadline;
+                        const deadlineDate = deadline ? new Date(deadline) : null;
                         const hasAccess = hasProgramAccess(program.id);
                         const programUrl = hasAccess
                             ? `/profile/my-certification-programs/${program.slug}`
@@ -197,7 +202,7 @@ export default function CertificationProgramSection({ categories, programs, myPr
                                                 <p className="mb-2 text-lg font-semibold text-green-600 dark:text-green-400">Gratis</p>
                                             ) : (
                                                 <div className="mb-2">
-                                                    {program.strikethrough_price && program.strikethrough_price > 0 && (
+                                                    {!isScholarshipNotApproved && program.strikethrough_price && program.strikethrough_price > 0 && (
                                                         <p className="text-sm text-red-500 line-through">
                                                             {formatRupiah(program.strikethrough_price)}
                                                         </p>

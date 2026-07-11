@@ -47,12 +47,31 @@ interface EnrollmentWebinar {
     price: number;
 }
 
+interface CertificationProgram {
+    title: string;
+}
+interface EnrollmentCertification {
+    certification_program: CertificationProgram;
+    price: number;
+}
+
+interface Bundle {
+    title: string;
+}
+interface BundleEnrollment {
+    bundle: Bundle;
+    price: number;
+}
+
 interface Invoice {
     invoice_code: string;
+    nett_amount: number;
     user: User;
     course_items: EnrollmentCourse[];
     bootcamp_items: EnrollmentBootcamp[];
     webinar_items: EnrollmentWebinar[];
+    bundle_enrollments: BundleEnrollment[];
+    certification_program_items: EnrollmentCertification[];
 }
 
 export type Earning = {
@@ -74,7 +93,9 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
                 const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
                 const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
                 const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
-                const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles];
+                const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
+                const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
+                const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
                 const fullTitleString = allTitles.join(', ');
 
                 return (
@@ -94,10 +115,7 @@ export const getColumns = (isAdmin: boolean): ColumnDef<Earning>[] => {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
             cell: ({ row }) => {
                 const invoice = row.original.invoice;
-                const coursePrices = invoice.course_items?.map((item) => item.price) || [];
-                const bootcampPrices = invoice.bootcamp_items?.map((item) => item.price) || [];
-                const webinarPrices = invoice.webinar_items?.map((item) => item.price) || [];
-                const totalPrice = [...coursePrices, ...bootcampPrices, ...webinarPrices].reduce((sum, price) => sum + price, 0);
+                const totalPrice = invoice.nett_amount;
 
                 // Format total harga sebagai mata uang Rupiah
                 const formatted = new Intl.NumberFormat('id-ID', {

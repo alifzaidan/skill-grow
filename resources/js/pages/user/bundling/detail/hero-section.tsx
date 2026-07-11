@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Package } from 'lucide-react';
+import { Calendar, Package, Sparkles } from 'lucide-react';
 
 interface Product {
     id: string;
@@ -22,6 +22,7 @@ interface Bundle {
     thumbnail?: string | null;
     short_description?: string | null;
     registration_deadline?: string | null;
+    batch?: string | null;
     bundle_items_count: number;
     bundle_items: BundleItem[];
 }
@@ -48,19 +49,27 @@ export default function HeroSection({ bundle, discountPercentage }: HeroSectionP
 
             <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-2">
                 <div>
-                    {/* <div className="mb-4 flex flex-wrap items-center gap-3">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
                         <span className="text-primary border-primary bg-background mb-4 inline-flex w-fit items-center gap-2 rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                             <Sparkles size={14} className="mr-1" />
                             Paket Bundling
                         </span>
-                        <span className="text-secondary border-secondary bg-background mb-4 inline-flex w-fit items-center rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
-                            {discountPercentage > 0 && `Hemat ${discountPercentage}%`}
-                        </span>
+                        {bundle.batch && (
+                            <span className="text-secondary border-secondary bg-background mb-4 inline-flex w-fit items-center gap-2 rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-4 py-1 text-sm font-medium shadow-xs">
+                                <Calendar size={14} className="mr-1" />
+                                {bundle.batch.toLowerCase().includes('batch') ? bundle.batch : `Batch ${bundle.batch}`}
+                            </span>
+                        )}
+                        {discountPercentage > 0 && (
+                            <span className="text-secondary border-secondary bg-background mb-4 inline-flex w-fit items-center rounded-full border bg-gradient-to-t from-[#FED6AD] to-white px-3 py-1 text-sm font-medium shadow-xs hover:text-[#FF925B]">
+                                Hemat {discountPercentage}%
+                            </span>
+                        )}
                         <span className="text-primary border-primary bg-background mb-4 inline-flex w-fit items-center gap-2 rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
                             <Package size={14} className="mr-1" />
                             {bundle.bundle_items_count} Program
                         </span>
-                    </div> */}
+                    </div>
 
                     <h1 className="mb-4 text-4xl leading-tight font-bold italic sm:text-5xl">{bundle.title}</h1>
 

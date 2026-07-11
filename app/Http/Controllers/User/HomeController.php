@@ -142,7 +142,21 @@ class HomeController extends Controller
 
         $certificationPrograms = CertificationProgram::with(['category'])
             ->where('status', 'published')
-            ->where('type', '!=', 'scholarship')
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('type', 'scholarship')
+                        ->where(function ($sq) {
+                            $sq->whereNull('socialization_registration_deadline')
+                                ->orWhere('socialization_registration_deadline', '>=', now());
+                        });
+                })->orWhere(function ($q) {
+                    $q->where('type', 'regular')
+                        ->where(function ($rq) {
+                            $rq->whereNull('registration_deadline')
+                                ->orWhere('registration_deadline', '>=', now());
+                        });
+                });
+            })
             ->orderBy('created_at', 'desc')
             ->take(6)
             ->get()
@@ -154,7 +168,10 @@ class HomeController extends Controller
                     'slug' => $cp->slug,
                     'strikethrough_price' => $cp->strikethrough_price,
                     'price' => $cp->price,
+                    'program_type' => $cp->type,
+                    'scholarship_price' => $cp->scholarship_price,
                     'registration_deadline' => $cp->registration_deadline,
+                    'socialization_registration_deadline' => $cp->socialization_registration_deadline,
                     'category' => $cp->category,
                     'type' => 'certification-program',
                     'created_at' => $cp->created_at,
