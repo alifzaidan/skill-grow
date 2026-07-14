@@ -732,7 +732,7 @@ class InvoiceController extends Controller
                 'table' => 'invoices',
                 'field' => 'invoice_code',
                 'length' => 11,
-                'reset_on_prefix_change'  => true,
+                'reset_on_prefix_change' => true,
                 'prefix' => 'SGW-' . date('y')
             ]);
 
@@ -1009,13 +1009,13 @@ class InvoiceController extends Controller
             }
 
             $successStatuses = ['SUCCESS', 'PAID', 'COMPLETED'];
-            $isSuccess = in_array(strtoupper((string)$status), $successStatuses);
+            $isSuccess = in_array(strtoupper((string) $status), $successStatuses);
 
             if ($isSuccess && $invoice->status === 'pending') {
                 $invoice->update([
-                    'paid_at'         => Carbon::now('Asia/Jakarta'),
-                    'status'          => 'paid',
-                    'payment_method'  => $channel,
+                    'paid_at' => Carbon::now('Asia/Jakarta'),
+                    'status' => 'paid',
+                    'payment_method' => $channel,
                     'payment_channel' => $channel,
                 ]);
 
@@ -1034,15 +1034,15 @@ class InvoiceController extends Controller
 
                 Log::info('DOKU Callback: Payment successful', [
                     'invoice_code' => $invoiceCode,
-                    'invoice_id'   => $invoice->id,
-                    'type'         => $invoice->getInvoiceType(),
+                    'invoice_id' => $invoice->id,
+                    'type' => $invoice->getInvoiceType(),
                 ]);
             } elseif (!$isSuccess && $invoice->status === 'pending') {
                 $invoice->update(['status' => 'failed']);
                 $this->sendWhatsAppPaymentFailed($invoice);
                 Log::info('DOKU Callback: Payment failed', [
                     'invoice_code' => $invoiceCode,
-                    'status'       => $status,
+                    'status' => $status,
                 ]);
             }
 
@@ -1341,7 +1341,7 @@ class InvoiceController extends Controller
             $bundle = $typeInfo['item'];
             $hasGroupUrl = false;
             $groupLinks = "";
-            
+
             foreach ($bundle->bundleItems as $item) {
                 $program = $item->bundleable;
                 if ($program && !empty($program->group_url)) {
@@ -1681,7 +1681,10 @@ class InvoiceController extends Controller
             'bootcamp_id',
             'webinar_id',
             'course_id',
-            'bundle_id'
+            'bundle_id',
+            'certification_program_id',
+            'title',
+            'user_name'
         ]);
         $filename = 'Laporan_Transaksi';
 
