@@ -31,6 +31,8 @@ class Invoice extends Model
         return $this->hasMany(EnrollmentWebinar::class);
     }
 
+
+
     public function certificationProgramItems()
     {
         return $this->hasMany(EnrollmentCertificationProgram::class);
@@ -82,6 +84,8 @@ class Invoice extends Model
             return 'webinar';
         }
 
+
+
         if ($this->certificationProgramItems->count() > 0) {
             return 'certification_program';
         }
@@ -132,6 +136,8 @@ class Invoice extends Model
             ];
         }));
 
+
+
         $items = $items->merge($this->certificationProgramItems()->with('certificationProgram')->get()->map(function ($item) {
             return [
                 'type' => 'certification_program',
@@ -169,6 +175,8 @@ class Invoice extends Model
 
             case 'webinar':
                 return $this->webinarItems()->where('webinar_id', $productId)->exists();
+
+
 
             case 'bundle':
                 return $this->bundleEnrollments()->where('bundle_id', $productId)->exists();
@@ -218,5 +226,10 @@ class Invoice extends Model
             'expired' => 'gray',
             default => 'gray',
         };
+    }
+
+    public function referralUser()
+    {
+        return $this->belongsTo(User::class, 'referral_user_id');
     }
 }

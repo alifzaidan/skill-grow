@@ -14,15 +14,22 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignUuid('referred_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->bigInteger('discount_amount')->default(0);
             $table->bigInteger('amount');
             $table->bigInteger('nett_amount');
+            $table->bigInteger('points_redeemed')->default(0);
+            $table->foreignUuid('referral_user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->bigInteger('transaction_fee')->default(0);
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->string('invoice_code');
-            $table->string('invoice_url')->nullable(); //xendit
-            $table->string('payment_method')->nullable(); //xendit
-            $table->string('payment_channel')->nullable(); //xendit
-            $table->timestamp('paid_at')->nullable(); //callback
+            $table->string('invoice_url')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('payment_channel')->nullable();
+            $table->string('payment_reference')->nullable();
+            $table->string('va_number')->nullable();
+            $table->string('qr_code_url')->nullable();
+            $table->timestamp('paid_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });

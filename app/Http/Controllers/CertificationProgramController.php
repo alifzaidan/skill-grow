@@ -195,7 +195,8 @@ class CertificationProgramController extends Controller
         }
 
         $transactionQuery = Invoice::with([
-            'user.referrer',
+            'user',
+            'referrer',
             'certificationProgramItems' => function ($query) use ($id) {
                 $query->where('certification_program_id', $id);
             }
@@ -225,22 +226,11 @@ class CertificationProgramController extends Controller
             ? 'admin/certification-programs/edit-scholarship'
             : 'admin/certification-programs/edit-regular';
 
-        $data = [
+        return Inertia::render($view, [
             'program' => $program,
             'categories' => $categories,
             'mentors' => $mentors,
-        ];
-
-        if ($program->type === 'scholarship') {
-            $data['regular_programs'] = CertificationProgram::where('type', 'regular')
-                ->with(['schedules' => function ($q) {
-                    $q->orderBy('schedule_date');
-                }])
-                ->orderByRaw('CAST(batch AS UNSIGNED) ASC')
-                ->get(['id', 'title', 'batch']);
-        }
-
-        return Inertia::render($view, $data);
+        ]);
     }
 
     public function update(Request $request, string $id)
@@ -432,7 +422,7 @@ class CertificationProgramController extends Controller
 
         if ($application->user?->phone_number) {
             $phoneNumber = $this->formatPhoneNumber($application->user->phone_number);
-            $message = "*[SkillGrow - Pendaftaran Sertifikasi Disetujui]* 🎉\n\n";
+            $message = "*[Kompeten - Pendaftaran Sertifikasi Disetujui]* 🎉\n\n";
             $message .= "Halo *{$application->user->name}*,\n\n";
             $message .= "Selamat! Pendaftaran Anda untuk program *{$program->title}* telah kami setujui.\n\n";
             $message .= "Langkah selanjutnya:\n";
@@ -479,7 +469,7 @@ class CertificationProgramController extends Controller
 
         if ($application->user?->phone_number) {
             $phoneNumber = $this->formatPhoneNumber($application->user->phone_number);
-            $message = "*[SkillGrow - Pendaftaran Sertifikasi Ditolak]*\n\n";
+            $message = "*[Kompeten - Pendaftaran Sertifikasi Ditolak]*\n\n";
             $message .= "Hai *{$application->user->name}*,\n\n";
             $message .= "Mohon maaf, pendaftaran Sertifikasi *{$program->title}* Anda belum dapat kami terima.\n\n";
             $message .= "Terima kasih atas ketertarikannya.\n\n";
@@ -518,7 +508,7 @@ class CertificationProgramController extends Controller
             $phoneNumber = $this->formatPhoneNumber($application->phone);
             $paymentUrl = url('/certification-programs/' . $program->slug . '/register?scholarship=1');
 
-            $message = "*[SkillGrow - Pengumuman Beasiswa]* 🎉\n\n";
+            $message = "*[Kompeten - Pengumuman Beasiswa]* 🎉\n\n";
             $message .= "Hai Kak *{$application->name}*,\n\n";
             $message .= "Selamat! Anda dinyatakan *LOLOS* sebagai penerima Beasiswa *{$program->title}*.\n\n";
             $message .= "Silakan lanjutkan dengan langkah berikut:\n";
@@ -563,7 +553,7 @@ class CertificationProgramController extends Controller
         if (!empty($application->phone)) {
             $phoneNumber = $this->formatPhoneNumber($application->phone);
 
-            $message = "*[SkillGrow - Pengumuman Beasiswa]*\n\n";
+            $message = "*[Kompeten - Pengumuman Beasiswa]*\n\n";
             $message .= "Hai Kak *{$application->name}*,\n\n";
             $message .= "Mohon maaf, Anda belum lolos sebagai penerima Beasiswa *{$program->title}*.\n\n";
             $message .= "Terima kasih atas partisipasi dan ketertarikannya pada program ini.\n\n";

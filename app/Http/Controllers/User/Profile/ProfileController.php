@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\User\Profile;
 
 use App\Http\Controllers\Controller;
-use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCertificationProgram;
+use App\Models\EnrollmentBootcamp;
 use App\Models\EnrollmentCourse;
 use App\Models\EnrollmentWebinar;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +33,7 @@ class ProfileController extends Controller
         })->count();
 
         // Ambil enrollment courses dengan progress
-        $enrolledCourses = EnrollmentCourse::with(['course:id,title,slug', 'invoice'])
+        $enrolledCourses = EnrollmentCourse::with(['course:id,title,slug,group_url', 'invoice'])
             ->whereHas('invoice', function ($query) use ($userId) {
                 $query->where('user_id', $userId)->where('status', 'paid');
             })
@@ -45,6 +45,7 @@ class ProfileController extends Controller
                     'id' => $enrollment->course->id,
                     'title' => $enrollment->course->title,
                     'slug' => $enrollment->course->slug,
+                    'group_url' => $enrollment->course->group_url,
                     'type' => 'course',
                     'progress' => $enrollment->progress,
                     'completed_at' => $enrollment->completed_at,
@@ -133,6 +134,32 @@ class ProfileController extends Controller
                 'total' => $courseCount + $bootcampCount + $webinarCount + $certificationProgramCount,
             ],
             'recentProducts' => $recentProducts,
+        ]);
+    }
+
+    public function referral()
+    {
+        $user = Auth::user();
+        $userId = $user->id;
+
+        $transactions = \App\Models\PointTransaction::where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalReferralsCount = \App\Models\Invoice::where('referral_user_id', $userId)
+            ->where('status', 'paid')
+            ->count();
+
+        $totalPointsEarned = \App\Models\PointTransaction::where('user_id', $userId)
+            ->where('amount', '>', 0)
+            ->sum('amount');
+
+        return Inertia::render('user/profile/referral', [
+            'referralCode' => $user->referral_code,
+            'pointBalance' => (int) $user->point_balance,
+            'totalReferrals' => $totalReferralsCount,
+            'totalEarned' => (int) $totalPointsEarned,
+            'transactions' => $transactions,
         ]);
     }
 }

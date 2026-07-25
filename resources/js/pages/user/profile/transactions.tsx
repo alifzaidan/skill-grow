@@ -38,6 +38,19 @@ interface EnrollmentWebinar {
     price: number;
 }
 
+interface CertificationProgram {
+    id: string;
+    title: string;
+    slug: string;
+}
+
+interface EnrollmentCertificationProgram {
+    id: string;
+    certificationProgram: CertificationProgram;
+    price: number;
+    is_scholarship: boolean;
+}
+
 interface Invoice {
     id: string;
     invoice_code: string;
@@ -47,9 +60,14 @@ interface Invoice {
     paid_at: string | null;
     payment_channel: string | null;
     payment_method: string | null;
-    course_items: EnrollmentCourse[];
-    bootcamp_items: EnrollmentBootcamp[];
-    webinar_items: EnrollmentWebinar[];
+    course_items?: EnrollmentCourse[];
+    courseItems?: EnrollmentCourse[];
+    bootcamp_items?: EnrollmentBootcamp[];
+    bootcampItems?: EnrollmentBootcamp[];
+    webinar_items?: EnrollmentWebinar[];
+    webinarItems?: EnrollmentWebinar[];
+    certificationProgramItems?: EnrollmentCertificationProgram[];
+    certification_program_items?: EnrollmentCertificationProgram[];
     created_at: string;
 }
 

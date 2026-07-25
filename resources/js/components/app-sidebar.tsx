@@ -135,6 +135,29 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
         roles: ['admin', 'affiliate'],
     },
     {
+        title: 'Referral & Poin',
+        href: '#',
+        icon: Gift,
+        roles: ['admin'],
+        items: [
+            {
+                title: 'Pengaturan',
+                href: '/admin/referral/settings',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Laporan Performa',
+                href: '/admin/referral/report',
+                roles: ['admin'],
+            } as any,
+            {
+                title: 'Riwayat Transaksi',
+                href: '/admin/referral/transactions',
+                roles: ['admin'],
+            } as any,
+        ],
+    },
+    {
         title: 'Transaksi',
         href: '/admin/transactions',
         icon: DollarSign,
