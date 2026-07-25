@@ -50,7 +50,7 @@ class User extends Authenticatable
         static::creating(function ($user) {
             if (empty($user->referral_code)) {
                 do {
-                    $code = 'AKSA-' . strtoupper(\Illuminate\Support\Str::random(6));
+                    $code = 'SKIL-' . strtoupper(\Illuminate\Support\Str::random(6));
                 } while (static::where('referral_code', $code)->exists());
                 $user->referral_code = $code;
             }

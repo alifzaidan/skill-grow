@@ -203,3 +203,54 @@ test('admin can update settings and adjust user points', function () {
         ->and($tx->type)->toBe('adjustment')
         ->and($tx->description)->toBe('Admin manual correction bonus');
 });
+
+test('user registration validates affiliate_code and referral_code columns correctly', function () {
+    $referrer = User::factory()->create([
+        'referral_code' => 'SKIL-XYZ999',
+        'affiliate_code' => 'AFF-CODE-123',
+    ]);
+
+    // 1. Check with a valid referral_code passed to affiliate_code field
+    $response = $this->post('/register', [
+        'name' => 'Referral Tester A',
+        'email' => 'ref_tester_a@example.com',
+        'phone_number' => '081234567891',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'affiliate_code' => 'SKIL-XYZ999',
+    ]);
+    $response->assertRedirect();
+    $this->assertAuthenticated();
+    $newUserA = User::where('email', 'ref_tester_a@example.com')->first();
+    expect($newUserA->referred_by_user_id)->toBe($referrer->id);
+
+    Auth::logout();
+
+    // 2. Check with a valid affiliate_code passed to affiliate_code field
+    $response = $this->post('/register', [
+        'name' => 'Referral Tester B',
+        'email' => 'ref_tester_b@example.com',
+        'phone_number' => '081234567892',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'affiliate_code' => 'AFF-CODE-123',
+    ]);
+    $response->assertRedirect();
+    $this->assertAuthenticated();
+    $newUserB = User::where('email', 'ref_tester_b@example.com')->first();
+    expect($newUserB->referred_by_user_id)->toBe($referrer->id);
+
+    Auth::logout();
+
+    // 3. Check with an invalid code
+    $response = $this->postJson('/register', [
+        'name' => 'Referral Tester C',
+        'email' => 'ref_tester_c@example.com',
+        'phone_number' => '081234567893',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'affiliate_code' => 'INVALID_CODE',
+    ]);
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['affiliate_code']);
+});

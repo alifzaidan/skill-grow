@@ -42,7 +42,7 @@
         content="Skillgrow adalah platform edukasi digital yang menyediakan layanan pembelajaran kelas online.">
     <meta name="keywords"
         content="Skillgrow, platform edukasi, pembelajaran online, kelas online, pengembangan keterampilan, kursus digital">
-    <meta name="author" content="Aksara Teknologi Mandiri">
+    <meta name="author" content="Skill Grow">
     <meta name="robots" content="index, follow">
 
     <meta property="og:title" content="Skillgrow">

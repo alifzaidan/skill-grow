@@ -48,7 +48,7 @@ export default function Referral({
     };
 
     const handleShareWhatsApp = () => {
-        const text = `Hai! Belajar di Aksara Edu menggunakan kode referral saya ${referralCode} atau klik link berikut untuk daftar dan dapatkan bonus poin langsung: ${shareUrl}`;
+        const text = `Hai! Belajar di Skilgrow menggunakan kode referral saya ${referralCode} atau klik link berikut untuk daftar dan dapatkan bonus poin langsung: ${shareUrl}`;
         window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
     };
 
@@ -77,7 +77,7 @@ export default function Referral({
                 <div className="space-y-6">
                     <Heading
                         title="Program Referral & Reward Point"
-                        description="Undang teman belajar bersama di Aksara Edu dan kumpulkan koin reward untuk potongan harga."
+                        description="Undang teman belajar bersama di Skilgrow dan kumpulkan koin reward untuk potongan harga."
                     />
 
                     {/* Top Section: Referral Link & Code sharing */}

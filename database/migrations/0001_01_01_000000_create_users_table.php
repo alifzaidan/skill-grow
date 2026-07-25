@@ -17,7 +17,7 @@ return new class extends Migration
             $table->bigInteger('point_balance')->default(0);
             $table->string('google_id')->nullable()->unique();
             $table->string('github_id')->nullable()->unique();
-            // $table->foreignUuid('referred_by_user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignUuid('referred_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();

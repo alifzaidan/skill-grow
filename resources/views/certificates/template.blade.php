@@ -517,11 +517,11 @@
                     @if ($certificate->sign)
                         <div class="signature-name">{{ $certificate->sign->name }}</div>
                         <div class="signature-title">
-                            {{ $certificate->sign->position ?? 'Direktur Aksara Digital' }}
+                            {{ $certificate->sign->position ?? 'Direktur Skill Grow' }}
                         </div>
                     @else
                         <div class="signature-name">Direktur</div>
-                        <div class="signature-title">Aksara Teknologi Mandiri</div>
+                        <div class="signature-title">Skill Grow</div>
                     @endif
                 </div>
 

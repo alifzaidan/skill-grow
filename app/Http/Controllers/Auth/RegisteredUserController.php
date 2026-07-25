@@ -47,7 +47,18 @@ class RegisteredUserController extends Controller
             'instance' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'affiliate_code' => 'nullable|string|exists:users,affiliate_code',
+            'affiliate_code' => [
+                'nullable',
+                'string',
+                function ($attribute, $value, $fail) {
+                    $exists = User::where('affiliate_code', $value)
+                        ->orWhere('referral_code', $value)
+                        ->exists();
+                    if (!$exists) {
+                        $fail('The selected affiliate code is invalid.');
+                    }
+                }
+            ],
         ]);
 
         $affiliateCode = $request->affiliate_code
@@ -56,7 +67,9 @@ class RegisteredUserController extends Controller
 
         $referred_by_user_id = null;
         if ($affiliateCode) {
-            $affiliateUser = User::where('affiliate_code', $affiliateCode)->first();
+            $affiliateUser = User::where('affiliate_code', $affiliateCode)
+                ->orWhere('referral_code', $affiliateCode)
+                ->first();
             if ($affiliateUser) {
                 $referred_by_user_id = $affiliateUser->id;
             }

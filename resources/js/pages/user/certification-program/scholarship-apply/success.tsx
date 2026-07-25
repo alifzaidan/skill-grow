@@ -157,7 +157,7 @@ export default function ScholarshipSuccess({ program }: { program: Program }) {
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                             Ada pertanyaan atau butuh bantuan?{' '}
                             <a
-                                href="mailto:aksarateknologimandiri@gmail.com"
+                                href="mailto:skilgrow@gmail.com"
                                 className="font-semibold text-blue-600 hover:underline dark:text-blue-400"
                             >
                                 Hubungi kami
