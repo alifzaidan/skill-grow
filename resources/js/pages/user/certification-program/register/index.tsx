@@ -190,12 +190,13 @@ export default function Register({
           })
         : ["Sesi Pelatihan Utama", "Ujian Sertifikasi Kompetensi"];
 
+    const transactionFee = 5000;
     const basePrice = displayPrice;
     const discountAmount = discountData?.valid ? discountData.discount_amount : 0;
     const maxPointsAllowed = basePrice - discountAmount;
 
     const finalCertificationPrice = basePrice - discountAmount - (pointsChecked ? pointsToUse : 0);
-    const totalPrice = finalCertificationPrice;
+    const totalPrice = isScholarshipNotApproved ? 0 : (finalCertificationPrice > 0 ? finalCertificationPrice + transactionFee : 0);
 
     const updateGuestForm = (field: keyof GuestFormData, value: string) => {
         setGuestFormData((prev) => ({ ...prev, [field]: value }));
@@ -546,6 +547,7 @@ export default function Register({
             overridePointsToUse?: number,
             retryCount = 0
         ): Promise<void> => {
+            const transactionFee = 5000;
             const originalDiscountAmount =
                 program.strikethrough_price && program.strikethrough_price > 0 ? program.strikethrough_price - program.price : 0;
             const promoDiscountAmount = discountData?.valid ? discountData.discount_amount : 0;
@@ -553,16 +555,17 @@ export default function Register({
             
             const pointsDeduction = overridePointsChecked !== undefined ? (overridePointsChecked ? (overridePointsToUse || 0) : 0) : (pointsChecked ? pointsToUse : 0);
             const finalNettAmount = activeFinalPrice - pointsDeduction;
-            const activeTotalPrice = finalNettAmount;
+            const activeTotalPrice = finalNettAmount > 0 ? finalNettAmount + transactionFee : 0;
 
             const invoiceData: Record<string, string | number> = {
                 type: 'certification_program',
                 id: program.id,
                 discount_amount: originalDiscountAmount + promoDiscountAmount,
                 nett_amount: finalNettAmount,
-                transaction_fee: 0,
+                transaction_fee: transactionFee,
                 total_amount: activeTotalPrice,
                 isScholarship: isScholarship ? 1 : 0,
+                is_scholarship: isScholarship ? 1 : 0,
                 points_redeemed: pointsDeduction,
             };
 
@@ -1436,12 +1439,21 @@ export default function Register({
                                         <>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Harga Program</span>
-                                                <span className="font-semibold text-gray-500 line-through">{formatRupiah(displayPrice)}</span>
+                                                <span className="font-semibold text-gray-800">{formatRupiah(displayPrice)}</span>
                                             </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Diskon Voucher</span>
+                                                <span className="font-semibold text-green-600">-{formatRupiah(discountData.discount_amount)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Biaya Admin</span>
+                                                <span className="font-semibold text-gray-800">{formatRupiah(transactionFee)}</span>
+                                            </div>
+                                            <Separator className="my-2" />
                                             <div className="flex items-center justify-between text-base">
                                                 <span className="font-bold text-gray-900">Total Pembayaran</span>
                                                 <span className="text-[#FA5F25] text-xl font-bold italic">
-                                                    {displayPrice - discountData.discount_amount <= 0 ? 'GRATIS' : formatRupiah(displayPrice - discountData.discount_amount)}
+                                                    {formatRupiah(totalPrice)}
                                                 </span>
                                             </div>
                                             <p className="text-[10px] text-green-600 text-right">Sudah termasuk diskon {discountData.discount_code.formatted_value}</p>
@@ -1450,23 +1462,47 @@ export default function Register({
                                         <>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-600">Harga Program</span>
-                                                <span className="font-semibold text-gray-500 line-through">{formatRupiah(displayPrice)}</span>
+                                                <span className="font-semibold text-gray-800">{formatRupiah(displayPrice)}</span>
                                             </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Potongan Poin</span>
+                                                <span className="font-semibold text-green-600">-{formatRupiah(pointsToUse)}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-600">Biaya Admin</span>
+                                                <span className="font-semibold text-gray-800">{formatRupiah(transactionFee)}</span>
+                                            </div>
+                                            <Separator className="my-2" />
                                             <div className="flex items-center justify-between text-base">
                                                 <span className="font-bold text-gray-900">Total Pembayaran</span>
                                                 <span className="text-[#FA5F25] text-xl font-bold italic">
-                                                    {displayPrice - pointsToUse <= 0 ? 'GRATIS' : formatRupiah(displayPrice - pointsToUse)}
+                                                    {formatRupiah(totalPrice)}
                                                 </span>
                                             </div>
                                             <p className="text-[10px] text-green-600 text-right">Sudah termasuk potongan poin {formatRupiah(pointsToUse)}</p>
                                         </>
                                     ) : (
-                                        <div className="flex items-center justify-between text-base">
-                                            <span className="font-bold text-gray-900">Total Pembayaran</span>
-                                            <span className="text-[#FA5F25] text-xl font-bold italic">
-                                                {displayPrice > 0 ? formatRupiah(displayPrice) : 'GRATIS'}
-                                            </span>
-                                        </div>
+                                        <>
+                                            {!isScholarshipNotApproved && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Harga Program</span>
+                                                    <span className="font-semibold text-gray-800">{formatRupiah(displayPrice)}</span>
+                                                </div>
+                                            )}
+                                            {displayPrice > 0 && (
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600">Biaya Admin</span>
+                                                    <span className="font-semibold text-gray-800">{formatRupiah(transactionFee)}</span>
+                                                </div>
+                                            )}
+                                            <Separator className="my-2" />
+                                            <div className="flex items-center justify-between text-base">
+                                                <span className="font-bold text-gray-900">Total Pembayaran</span>
+                                                <span className="text-[#FA5F25] text-xl font-bold italic">
+                                                    {displayPrice > 0 ? formatRupiah(totalPrice) : 'GRATIS'}
+                                                </span>
+                                            </div>
+                                        </>
                                     )}
                                 </div>
 
