@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignUuid('referred_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->bigInteger('discount_amount')->default(0);
             $table->bigInteger('amount');
             $table->bigInteger('nett_amount');
