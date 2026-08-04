@@ -85,7 +85,17 @@ class InvoiceController extends Controller
 
         // Apply product type filter
         if ($productType && !empty($productType)) {
-            $invoicesQuery->whereHas($productType . 'Items');
+            $relationMap = [
+                'course' => 'courseItems',
+                'bootcamp' => 'bootcampItems',
+                'webinar' => 'webinarItems',
+                'private' => 'privateItems',
+                'bundle' => 'bundleEnrollments',
+                'certification_program' => 'certificationProgramItems',
+                'certification' => 'certificationProgramItems',
+            ];
+            $relation = $relationMap[$productType] ?? (\Illuminate\Support\Str::camel($productType) . 'Items');
+            $invoicesQuery->whereHas($relation);
         }
 
         // Get filtered invoices
@@ -1186,6 +1196,42 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Mendapatkan nomor telepon user dari invoice atau fallback ke pendaftaran beasiswa sertifikasi jika di profile user belum ada.
+     *
+     * @param Invoice $invoice
+     * @return string|null
+     */
+    private function getPhoneNumberForInvoice(Invoice $invoice): ?string
+    {
+        $user = $invoice->user;
+        if (!$user) {
+            return null;
+        }
+
+        if (!empty($user->phone_number)) {
+            return $user->phone_number;
+        }
+
+        // Fallback untuk pendaftaran beasiswa sertifikasi program
+        $invoice->loadMissing('certificationProgramItems');
+        if ($invoice->certificationProgramItems->count() > 0) {
+            $certItem = $invoice->certificationProgramItems->first();
+            if ($certItem) {
+                $scholarshipApp = CertificationProgramScholarshipApplication::where('certification_program_id', $certItem->certification_program_id)
+                    ->where('email', $user->email)
+                    ->latest()
+                    ->first();
+                if ($scholarshipApp && !empty($scholarshipApp->phone)) {
+                    $user->update(['phone_number' => $scholarshipApp->phone]);
+                    return $scholarshipApp->phone;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Kirim notifikasi WhatsApp setelah pembayaran berhasil
      *
      * @param Invoice $invoice
@@ -1194,14 +1240,17 @@ class InvoiceController extends Controller
     private function sendWhatsAppNotification(Invoice $invoice)
     {
         try {
-            $user = $invoice->user;
+            $phoneNumberRaw = $this->getPhoneNumberForInvoice($invoice);
 
-            if (!$user->phone_number) {
-                Log::warning('User does not have phone number', ['user_id' => $user->id, 'invoice_code' => $invoice->invoice_code]);
+            if (!$phoneNumberRaw) {
+                Log::warning('User does not have phone number for WhatsApp notification', [
+                    'user_id' => $invoice->user_id,
+                    'invoice_code' => $invoice->invoice_code
+                ]);
                 return;
             }
 
-            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $phoneNumber = $this->formatPhoneNumber($phoneNumberRaw);
             $message = $this->createWhatsAppMessage($invoice);
 
             $waData = [
@@ -1217,7 +1266,7 @@ class InvoiceController extends Controller
             if ($sent) {
                 Log::info('WhatsApp notification sent successfully', [
                     'invoice_code' => $invoice->invoice_code,
-                    'user_id' => $user->id,
+                    'user_id' => $invoice->user_id,
                     'phone' => $phoneNumber
                 ]);
             }
@@ -1238,13 +1287,14 @@ class InvoiceController extends Controller
     private function sendWhatsAppPaymentFailed(Invoice $invoice)
     {
         try {
-            $user = $invoice->user;
+            $phoneNumberRaw = $this->getPhoneNumberForInvoice($invoice);
 
-            if (!$user->phone_number) {
+            if (!$phoneNumberRaw) {
                 return;
             }
 
-            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $user = $invoice->user;
+            $phoneNumber = $this->formatPhoneNumber($phoneNumberRaw);
 
             $itemType = 'Program';
             if ($invoice->courseItems->count() > 0) {
@@ -1254,7 +1304,7 @@ class InvoiceController extends Controller
             } elseif ($invoice->webinarItems->count() > 0) {
                 $itemType = 'Webinar';
             } elseif ($invoice->certificationProgramItems->count() > 0) {
-                $itemType = 'Sertifikasi Program';
+                $itemType = 'Program Sertifikasi';
             }
 
             $message = "*[Skillgrow - Pembayaran {$itemType} Gagal]*\n\n";
@@ -1290,11 +1340,19 @@ class InvoiceController extends Controller
      */
     private function createWhatsAppMessage(Invoice $invoice): string
     {
+        $invoice->loadMissing([
+            'user',
+            'discountUsage.discountCode',
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle.bundleItems.bundleable'
+        ]);
+
         $user = $invoice->user;
         $loginUrl = route('login');
         $profileUrl = route('profile.index');
-
-        $invoice->load('discountUsage.discountCode');
 
         $itemType = null;
         $itemData = null;
@@ -1309,7 +1367,7 @@ class InvoiceController extends Controller
                 'icon' => '📦',
                 'name' => 'Paket Bundling',
                 'menu' => 'Dashboard',
-                'title' => $bundle->title,
+                'title' => $bundle->title ?? '-',
                 'item' => $bundle
             ];
         } elseif ($invoice->courseItems->count() > 0) {
@@ -1319,7 +1377,7 @@ class InvoiceController extends Controller
                 'icon' => '📚',
                 'name' => 'Kelas Online',
                 'menu' => 'Kelas Saya',
-                'title' => $itemData->course->title,
+                'title' => $itemData->course->title ?? '-',
                 'item' => $itemData->course
             ];
         } elseif ($invoice->bootcampItems->count() > 0) {
@@ -1329,7 +1387,7 @@ class InvoiceController extends Controller
                 'icon' => '🎯',
                 'name' => 'Bootcamp',
                 'menu' => 'Bootcamp Saya',
-                'title' => $itemData->bootcamp->title,
+                'title' => $itemData->bootcamp->title ?? '-',
                 'item' => $itemData->bootcamp
             ];
         } elseif ($invoice->webinarItems->count() > 0) {
@@ -1339,18 +1397,18 @@ class InvoiceController extends Controller
                 'icon' => '📺',
                 'name' => 'Webinar',
                 'menu' => 'Webinar Saya',
-                'title' => $itemData->webinar->title,
+                'title' => $itemData->webinar->title ?? '-',
                 'item' => $itemData->webinar
             ];
         } elseif ($invoice->certificationProgramItems->count() > 0) {
             $itemType = 'certification_program';
             $itemData = $invoice->certificationProgramItems->first();
             $typeInfo = [
-                'icon' => '🧾',
-                'name' => 'Sertifikasi Program',
+                'icon' => '🎓',
+                'name' => 'Program Sertifikasi',
                 'menu' => 'Sertifikasi Saya',
-                'title' => $itemData->certificationProgram->title,
-                'item' => $itemData->certificationProgram
+                'title' => ($itemData && $itemData->certificationProgram) ? $itemData->certificationProgram->title : '-',
+                'item' => $itemData ? $itemData->certificationProgram : null
             ];
         }
 
@@ -1452,7 +1510,7 @@ class InvoiceController extends Controller
         } elseif ($itemType === 'certification_program') {
             $program = $typeInfo['item'];
 
-            if (!empty($program->group_url)) {
+            if (!empty($program) && !empty($program->group_url)) {
                 $message .= "*Join Group Sertifikasi:*\n";
                 $message .= "👥 {$program->group_url}\n\n";
                 $message .= "⚠️ *Penting:*\n";
@@ -1484,17 +1542,17 @@ class InvoiceController extends Controller
     private function sendWhatsAppFreeEnrollment(Invoice $invoice, string $type, $item)
     {
         try {
-            $user = $invoice->user;
+            $phoneNumberRaw = $this->getPhoneNumberForInvoice($invoice);
 
-            if (!$user->phone_number) {
+            if (!$phoneNumberRaw) {
                 Log::warning('User does not have phone number for free enrollment', [
-                    'user_id' => $user->id,
+                    'user_id' => $invoice->user_id,
                     'invoice_code' => $invoice->invoice_code
                 ]);
                 return;
             }
 
-            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $phoneNumber = $this->formatPhoneNumber($phoneNumberRaw);
             $message = $this->createWhatsAppMessage($invoice);
 
             $waData = [
