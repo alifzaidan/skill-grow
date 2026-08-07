@@ -144,4 +144,23 @@ class ReferralAdminController extends Controller
             ]);
         }
     }
+
+    public function searchUsers(Request $request)
+    {
+        $query = trim($request->input('q', ''));
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $users = User::select('id', 'name', 'email', 'point_balance')
+            ->where(function ($q) use ($query) {
+                $q->where('email', 'like', "%{$query}%")
+                  ->orWhere('name', 'like', "%{$query}%");
+            })
+            ->orderBy('email')
+            ->limit(15)
+            ->get();
+
+        return response()->json($users);
+    }
 }
