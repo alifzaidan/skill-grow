@@ -39,6 +39,8 @@ interface ScholarshipApplication {
     instagram_follow_photo?: string | null;
     tiktok_follow_photo?: string | null;
     comment_tag_photo?: string | null;
+    whatsapp_share_photo?: string | null;
+    instagram_story_photo?: string | null;
     status: string;
     created_at: string;
 }
@@ -473,6 +475,8 @@ function ScholarshipDetailModal({
         { label: 'Follow Instagram', path: app.instagram_follow_photo },
         { label: 'Follow TikTok', path: app.tiktok_follow_photo },
         { label: 'Komentar & Tag', path: app.comment_tag_photo },
+        { label: 'Share WA Group', path: app.whatsapp_share_photo },
+        { label: 'Story Instagram', path: app.instagram_story_photo },
     ];
 
     return (
@@ -643,7 +647,15 @@ export default function CertificationProgramApplications({ applications, program
 
                         // Count uploaded docs for scholarship
                         const docCount = isScholarship
-                            ? [scholarshipApp.ktm_photo, scholarshipApp.transcript_photo, scholarshipApp.instagram_follow_photo, scholarshipApp.tiktok_follow_photo, scholarshipApp.comment_tag_photo].filter(Boolean).length
+                            ? [
+                                  scholarshipApp.ktm_photo,
+                                  scholarshipApp.transcript_photo,
+                                  scholarshipApp.instagram_follow_photo,
+                                  scholarshipApp.tiktok_follow_photo,
+                                  scholarshipApp.comment_tag_photo,
+                                  scholarshipApp.whatsapp_share_photo,
+                                  scholarshipApp.instagram_story_photo,
+                              ].filter(Boolean).length
                             : null;
 
                         return (
@@ -659,7 +671,7 @@ export default function CertificationProgramApplications({ applications, program
                                         {isScholarship && docCount !== null && (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
                                                 <FileText className="h-3 w-3" />
-                                                {docCount}/5 dokumen
+                                                {docCount}/7 dokumen
                                             </span>
                                         )}
                                         {!isScholarship && regularApp.document_attachment && (
