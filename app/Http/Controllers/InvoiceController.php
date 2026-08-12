@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Haruncpi\LaravelIdGenerator\IdGenerator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Facades\Excel;
 class InvoiceController extends Controller
 {
@@ -358,6 +359,20 @@ class InvoiceController extends Controller
                 $referralUserId = $validationResult['referrer']->id;
             }
 
+            // Affiliate tracking via URL ref / session / request payload
+            $affiliateCode = $request->input('affiliate_code') ?? session('referral_code');
+            if ($affiliateCode && $affiliateCode !== 'SGW2025') {
+                $affiliateUser = User::where('affiliate_code', $affiliateCode)
+                    ->orWhere('referral_code', $affiliateCode)
+                    ->first();
+                if ($affiliateUser && $affiliateUser->id !== $userId) {
+                    $buyer = Auth::user();
+                    if ($buyer && Schema::hasColumn('users', 'referred_by_user_id') && empty($buyer->referred_by_user_id)) {
+                        $buyer->update(['referred_by_user_id' => $affiliateUser->id]);
+                    }
+                }
+            }
+
             $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
 
             if ($nettAmount != $expectedNettAmount) {
@@ -550,6 +565,20 @@ class InvoiceController extends Controller
                 }
                 
                 $referralUserId = $validationResult['referrer']->id;
+            }
+
+            // Affiliate tracking via URL ref / session / request payload
+            $affiliateCode = $request->input('affiliate_code') ?? session('referral_code');
+            if ($affiliateCode && $affiliateCode !== 'SGW2025') {
+                $affiliateUser = User::where('affiliate_code', $affiliateCode)
+                    ->orWhere('referral_code', $affiliateCode)
+                    ->first();
+                if ($affiliateUser && $affiliateUser->id !== $userId) {
+                    $buyer = Auth::user();
+                    if ($buyer && Schema::hasColumn('users', 'referred_by_user_id') && empty($buyer->referred_by_user_id)) {
+                        $buyer->update(['referred_by_user_id' => $affiliateUser->id]);
+                    }
+                }
             }
 
             $expectedTotal = $expectedNettAmount > 0 ? $expectedNettAmount + $transactionFee : 0;
@@ -1568,7 +1597,7 @@ class InvoiceController extends Controller
             if ($sent) {
                 Log::info('WhatsApp free enrollment notification sent successfully', [
                     'invoice_code' => $invoice->invoice_code,
-                    'user_id' => $user->id,
+                    'user_id' => $invoice->user_id,
                     'phone' => $phoneNumber,
                     'type' => $type
                 ]);
