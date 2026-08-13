@@ -310,12 +310,8 @@ export default function CheckoutBundle({ bundle, hasAccess, pendingInvoiceUrl, r
 
         if (refFromUrl) {
             sessionStorage.setItem('referral_code', refFromUrl);
-            setCodeType('referral');
-            setPromoCode(refFromUrl);
-        } else if (referralInfo.code) {
+        } else if (referralInfo?.code) {
             sessionStorage.setItem('referral_code', referralInfo.code);
-            setCodeType('referral');
-            setPromoCode(referralInfo.code);
         }
     }, [referralInfo]);
 
