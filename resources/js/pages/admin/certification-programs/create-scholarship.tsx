@@ -181,7 +181,6 @@ export default function CreateScholarshipCertificationProgram({ categories, ment
                             <li>Grup diskusi dan konsultasi</li>
                             <li>Free Remedial sampai lulus (khusus Brevet)</li>
                             <li>Free Ujian Bergelar CFTR</li>
-                            <li>Akses Aplikasi sekolahpajak.id</li>
                             <li>Dibimbing Tax Expert</li>
                         </ul>`,
             terms_conditions: `<ul>

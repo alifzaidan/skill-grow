@@ -14,10 +14,56 @@ use Inertia\Inertia;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::role('user')
-            ->withCount([
+        $query = User::role('user');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone_number', 'like', "%{$search}%")
+                    ->orWhere('instance', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%");
+            });
+        }
+
+        // ✅ Calculate Statistics efficiently using database aggregates
+        $baseQuery = User::role('user');
+        $totalUsers = (clone $baseQuery)->count();
+        $verifiedUsers = (clone $baseQuery)->whereNotNull('email_verified_at')->count();
+        $unverifiedUsers = (clone $baseQuery)->whereNull('email_verified_at')->count();
+
+        // Users with purchases
+        $usersWithPurchases = (clone $baseQuery)->whereHas('invoices', function ($q) {
+            $q->where('status', 'paid');
+        })->count();
+        $activeUsers = $usersWithPurchases;
+        $inactiveUsers = max(0, $totalUsers - $activeUsers);
+
+        // Revenue calculation
+        $totalRevenue = Invoice::where('status', 'paid')->sum('nett_amount');
+        $averageRevenuePerUser = $usersWithPurchases > 0 ? $totalRevenue / $usersWithPurchases : 0;
+
+        $statistics = [
+            'overview' => [
+                'total_users' => $totalUsers,
+                'active_users' => $activeUsers,
+                'inactive_users' => $inactiveUsers,
+                'verified_users' => $verifiedUsers,
+                'unverified_users' => $unverifiedUsers,
+                'activity_rate' => $totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100, 1) : 0,
+            ],
+            'purchases' => [
+                'users_with_purchases' => $usersWithPurchases,
+                'avg_revenue_per_user' => round($averageRevenuePerUser, 0),
+                'conversion_rate' => $totalUsers > 0 ? round(($usersWithPurchases / $totalUsers) * 100, 1) : 0,
+            ],
+        ];
+
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $users = $query->withCount([
                 'courseEnrollments as courses_count' => function ($query) {
                     $query->whereHas('invoice', function ($q) {
                         $q->where('status', 'paid');
@@ -50,9 +96,10 @@ class UserController extends Controller
                     ->latest('paid_at');
             }])
             ->latest()
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
 
-        $usersData = $users->map(function ($user) {
+        $users->through(function ($user) {
             $lastPurchase = $user->invoices->first();
 
             $purchasedCategories = collect();
@@ -151,43 +198,14 @@ class UserController extends Controller
             ];
         });
 
-        // ✅ Simplified Statistics
-        $totalUsers = $users->count();
-        $verifiedUsers = $users->whereNotNull('email_verified_at')->count();
-        $unverifiedUsers = $users->whereNull('email_verified_at')->count();
-
-        // Active users (have at least one enrollment)
-        $activeUsers = $usersData->where('has_enrollments', true)->count();
-        $inactiveUsers = $totalUsers - $activeUsers;
-
-        // Users with purchases
-        $usersWithPurchases = $usersData->whereNotNull('last_purchase_date')->count();
-
-        // Get all paid invoices for revenue calculation
-        $allInvoices = Invoice::where('status', 'paid')->get();
-        $totalRevenue = $allInvoices->sum('nett_amount');
-        $averageRevenuePerUser = $usersWithPurchases > 0 ? $totalRevenue / $usersWithPurchases : 0;
-
-        $statistics = [
-            'overview' => [
-                'total_users' => $totalUsers,
-                'active_users' => $activeUsers,
-                'inactive_users' => $inactiveUsers,
-                'verified_users' => $verifiedUsers,
-                'unverified_users' => $unverifiedUsers,
-                'activity_rate' => $totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100, 1) : 0,
-            ],
-            'purchases' => [
-                'users_with_purchases' => $usersWithPurchases,
-                'avg_revenue_per_user' => round($averageRevenuePerUser, 0),
-                'conversion_rate' => $totalUsers > 0 ? round(($usersWithPurchases / $totalUsers) * 100, 1) : 0,
-            ],
-        ];
-
         return Inertia::render('admin/users/index', [
-            'users' => $usersData,
+            'users' => $users,
             'statistics' => $statistics,
             'categories' => \App\Models\Category::select('id', 'name')->get(),
+            'filters' => [
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
+            ],
         ]);
     }
 

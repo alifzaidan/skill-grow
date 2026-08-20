@@ -52,8 +52,8 @@ class InvoiceController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
-            'certificationProgramItems.certificationProgram',
-            'bundleEnrollments.bundle'
+            'bundleEnrollments.bundle',
+            'certificationProgramItems.certificationProgram'
         ]);
 
         // Apply date filter jika ada
@@ -90,7 +90,6 @@ class InvoiceController extends Controller
                 'course' => 'courseItems',
                 'bootcamp' => 'bootcampItems',
                 'webinar' => 'webinarItems',
-                'private' => 'privateItems',
                 'bundle' => 'bundleEnrollments',
                 'certification_program' => 'certificationProgramItems',
                 'certification' => 'certificationProgramItems',
@@ -99,57 +98,46 @@ class InvoiceController extends Controller
             $invoicesQuery->whereHas($relation);
         }
 
-        // Get filtered invoices
-        $invoices = $invoicesQuery->orderBy('created_at', 'desc')->get();
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $invoicesQuery->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone_number', 'like', "%{$search}%");
+                    });
+            });
+        }
 
-        // ✅ Calculate Statistics (berdasarkan data yang sudah difilter)
-        $totalTransactions = $invoices->count();
-        $paidTransactions = $invoices->where('status', 'paid')->count();
-        $pendingTransactions = $invoices->where('status', 'pending')->count();
-        $failedTransactions = $invoices->where('status', 'failed')->count();
+        // ✅ Calculate Statistics efficiently using database aggregates
+        $statsBase = (clone $invoicesQuery);
+        $totalTransactions = (clone $statsBase)->count();
+        $paidTransactions = (clone $statsBase)->where('status', 'paid')->count();
+        $pendingTransactions = (clone $statsBase)->where('status', 'pending')->count();
+        $failedTransactions = (clone $statsBase)->where('status', 'failed')->count();
 
         // Revenue statistics
-        $totalRevenue = $invoices->where('status', 'paid')->sum('nett_amount');
-        $totalGross = $invoices->where('status', 'paid')->sum('amount');
-        $totalDiscount = $invoices->where('status', 'paid')->sum('discount_amount');
+        $totalRevenue = (clone $statsBase)->where('status', 'paid')->sum('nett_amount');
+        $totalGross = (clone $statsBase)->where('status', 'paid')->sum('amount');
+        $totalDiscount = (clone $statsBase)->where('status', 'paid')->sum('discount_amount');
 
         // Free vs Paid
-        $freeEnrollments = $invoices->where('status', 'paid')->where('nett_amount', 0)->count();
-        $paidEnrollments = $invoices->where('status', 'paid')->where('nett_amount', '>', 0)->count();
+        $freeEnrollments = (clone $statsBase)->where('status', 'paid')->where('nett_amount', 0)->count();
+        $paidEnrollments = (clone $statsBase)->where('status', 'paid')->where('nett_amount', '>', 0)->count();
 
         // Product Type Breakdown
-        $courseTransactions = $invoices->filter(fn($inv) => $inv->courseItems->count() > 0)->count();
-        $bootcampTransactions = $invoices->filter(fn($inv) => $inv->bootcampItems->count() > 0)->count();
-        $webinarTransactions = $invoices->filter(fn($inv) => $inv->webinarItems->count() > 0)->count();
-        $bundleTransactions = $invoices->filter(fn($inv) => $inv->bundleEnrollments->count() > 0)->count();
+        $courseTransactions = (clone $statsBase)->whereHas('courseItems')->count();
+        $bootcampTransactions = (clone $statsBase)->whereHas('bootcampItems')->count();
+        $webinarTransactions = (clone $statsBase)->whereHas('webinarItems')->count();
+        $bundleTransactions = (clone $statsBase)->whereHas('bundleEnrollments')->count();
 
-        $affiliateTransactions = $invoices->filter(fn($inv) => $inv->referred_by_user_id !== null)->count();
-        $affiliateRevenue = $invoices
-            ->where('status', 'paid')
-            ->filter(fn($inv) => $inv->referred_by_user_id !== null)
-            ->sum('nett_amount');
+        $todayTransactions = (clone $statsBase)->whereDate('paid_at', Carbon::today())->count();
+        $todayRevenue = (clone $statsBase)->where('status', 'paid')->whereDate('paid_at', Carbon::today())->sum('nett_amount');
 
-        $todayTransactions = $invoices->filter(function ($inv) {
-            return Carbon::parse($inv->paid_at)->isToday();
-        })->count();
-
-        $todayRevenue = $invoices
-            ->where('status', 'paid')
-            ->filter(function ($inv) {
-                return Carbon::parse($inv->paid_at)->isToday();
-            })
-            ->sum('nett_amount');
-
-        $thisMonthTransactions = $invoices->filter(function ($inv) {
-            return Carbon::parse($inv->paid_at)->isCurrentMonth();
-        })->count();
-
-        $thisMonthRevenue = $invoices
-            ->where('status', 'paid')
-            ->filter(function ($inv) {
-                return Carbon::parse($inv->paid_at)->isCurrentMonth();
-            })
-            ->sum('nett_amount');
+        $thisMonthTransactions = (clone $statsBase)->whereYear('paid_at', Carbon::now()->year)->whereMonth('paid_at', Carbon::now()->month)->count();
+        $thisMonthRevenue = (clone $statsBase)->where('status', 'paid')->whereYear('paid_at', Carbon::now()->year)->whereMonth('paid_at', Carbon::now()->month)->sum('nett_amount');
 
         $averageTransactionValue = $paidEnrollments > 0
             ? $totalRevenue / $paidEnrollments
@@ -191,6 +179,10 @@ class InvoiceController extends Controller
             ],
         ];
 
+        // Paginate invoices per page
+        $perPage = min(100, max(5, (int) $request->input('per_page', 10)));
+        $invoices = $invoicesQuery->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
+
         return Inertia::render('admin/transactions/index', [
             'invoices' => $invoices,
             'statistics' => $statistics,
@@ -200,6 +192,8 @@ class InvoiceController extends Controller
                 'status' => $status,
                 'payment_type' => $paymentType,
                 'product_type' => $productType,
+                'search' => $request->input('search'),
+                'per_page' => $perPage,
             ],
         ]);
     }

@@ -102,6 +102,7 @@ const allNavItems: (NavItem & { roles: string[] })[] = [
                 title: 'Sertifikat',
                 href: '/admin/certificates',
                 roles: ['admin'],
+                activeUrls: ['/admin/certificates', '/admin/certificate-designs', '/admin/certificate-signs'],
             } as any,
         ],
     },
