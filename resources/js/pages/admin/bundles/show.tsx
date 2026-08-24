@@ -94,9 +94,13 @@ interface ShowProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, discountAmount, discountPercentage, flash }: ShowProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageBundle = canManage('bundles') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -208,11 +212,11 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                 <h1 className="mb-4 text-2xl font-semibold">Detail {bundle.title}</h1>
 
                 {/* ...existing code... */}
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManageBundle ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageBundle ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail Bundling</TabsTrigger>
-                            {!isAffiliate && (
+                            {canManageBundle && (
                                 <TabsTrigger value="enrollments">
                                     Pembelian
                                     {totalEnrollments > 0 && (
@@ -663,7 +667,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                     </Tabs>
 
                     {/* Sidebar Actions */}
-                    {!isAffiliate && (
+                    {canManageBundle && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Aksi & Pengaturan</h2>
                             <div className="space-y-4 rounded-lg border p-4">

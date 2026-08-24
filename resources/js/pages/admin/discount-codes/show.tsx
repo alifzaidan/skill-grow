@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/use-permission';
 
 interface DiscountCodeData {
     id: string;
@@ -168,18 +169,20 @@ const getProductTypeName = (type: string) => {
 };
 
 export default function DiscountCodeShow({ discountCode }: DiscountCodeShowProps) {
+    const { canManage } = usePermission();
+    const canManageDiscountCodes = canManage('discount-codes');
     const [copied, setCopied] = useState(false);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: '/admin/dashboard' },
         { title: 'Kode Diskon', href: '/admin/discount-codes' },
-        { title: discountCode.code, href: `/admin/discount-codes/${discountCode.id}` },
+        { title: discountCode.name, href: `/admin/discount-codes/${discountCode.id}` },
     ];
 
     const copyCode = () => {
         navigator.clipboard.writeText(discountCode.code);
         setCopied(true);
-        toast.success('Kode diskon berhasil disalin!');
+        toast.success('Kode diskon berhasil disalin ke clipboard');
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -187,25 +190,25 @@ export default function DiscountCodeShow({ discountCode }: DiscountCodeShowProps
 
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Detail Kode Diskon - ${discountCode.code}`} />
+            <Head title={`Detail Kode Diskon - ${discountCode.name}`} />
 
             <div className="space-y-6 px-4 py-4 md:px-6">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <div>
-                            <h1 className="text-2xl font-semibold">Detail Kode Diskon</h1>
-                            <p className="text-muted-foreground text-sm">Informasi lengkap dan statistik penggunaan</p>
-                        </div>
+                    <div>
+                        <h1 className="text-2xl font-semibold">Detail Kode Diskon</h1>
+                        <p className="text-muted-foreground text-sm">Informasi lengkap tentang kode diskon #{discountCode.code}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={route('discount-codes.edit', discountCode.id)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                            </Link>
-                        </Button>
-                    </div>
+                    {canManageDiscountCodes && (
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={route('discount-codes.edit', discountCode.id)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -46,7 +46,11 @@ interface TransactionsProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function PointTransactions({ transactions, users: initialUsers, filters }: TransactionsProps) {
+    const { canManage } = usePermission();
+    const canManageReferral = canManage('referral');
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
@@ -175,9 +179,9 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                     </p>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
+                <div className={`grid gap-6 ${canManageReferral ? 'lg:grid-cols-3' : 'grid-cols-1'}`}>
                     {/* Left: Point Transactions Table */}
-                    <div className="lg:col-span-2 space-y-4">
+                    <div className={`${canManageReferral ? 'lg:col-span-2' : 'col-span-1'} space-y-4`}>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Riwayat Ledger Poin</CardTitle>
@@ -202,7 +206,7 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                                                         key={idx}
                                                         href={link.url}
                                                         className={`px-2.5 py-1 text-xs border rounded-md ${
-                                                            link.active
+                                                             link.active
                                                                 ? 'bg-primary text-primary-foreground font-bold'
                                                                 : 'bg-background text-foreground hover:bg-muted'
                                                         }`}
@@ -218,8 +222,9 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                     </div>
 
                     {/* Right: Manual Adjustment Form */}
-                    <div className="space-y-4">
-                        <form onSubmit={handleAdjust}>
+                    {canManageReferral && (
+                        <div className="space-y-4">
+                            <form onSubmit={handleAdjust}>
                             <Card className="border-border">
                                 <CardHeader>
                                     <CardTitle className="text-foreground flex items-center gap-2">
@@ -351,8 +356,9 @@ export default function PointTransactions({ transactions, users: initialUsers, f
                             </Card>
                         </form>
                     </div>
-                </div>
+                )}
             </div>
-        </AdminLayout>
-    );
+        </div>
+    </AdminLayout>
+);
 }

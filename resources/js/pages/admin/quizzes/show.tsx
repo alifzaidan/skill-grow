@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePermission } from '@/hooks/use-permission';
 import AdminLayout from '@/layouts/admin-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -55,16 +56,17 @@ interface QuizzesProps {
 }
 
 export default function Quizzes({ course, quiz, submissions = [], flash }: QuizzesProps) {
+    const { canManage } = usePermission();
+    const canManageCourses = canManage('courses');
     const [importModalOpen, setImportModalOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        quiz_id: quiz.id,
         file: null as File | null,
     });
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Kelas Online',
+            title: 'Kelas',
             href: route('courses.index'),
         },
         {
@@ -78,20 +80,27 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
     ];
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0] || null;
-        setData('file', file);
+        if (e.target.files && e.target.files[0]) {
+            setData('file', e.target.files[0]);
+        }
     };
 
     const handleImportSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        post(route('questions.import'), {
+        if (!data.file) {
+            toast.error('Pilih file terlebih dahulu');
+            return;
+        }
+
+        post(route('questions.import', { course: course.id, quiz: quiz.id }), {
             onSuccess: () => {
                 setImportModalOpen(false);
                 reset();
+                toast.success('Soal berhasil diimport');
             },
             onError: () => {
-                // Error sudah ditangani oleh flash message
+                toast.error('Gagal mengimport soal');
             },
         });
     };
@@ -126,102 +135,106 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                     <div className="order-first lg:order-last">
                         <h2 className="my-2 text-lg font-medium">Informasi Quiz</h2>
                         <div className="rounded-lg border p-4">
-                            <Button asChild className="w-full hover:cursor-pointer">
-                                <Link href={route('questions.create', { course: course.id, quiz: quiz.id })}>
-                                    Tambah Pertanyaan
-                                    <Plus />
-                                </Link>
-                            </Button>
-                            <div className="mt-2 grid grid-cols-3 gap-2">
-                                <Button
-                                    variant="outline"
-                                    asChild
-                                    className="w-full border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 text-xs px-2 sm:text-sm"
-                                >
-                                    <a href="/assets/templates/template_import_soal.xlsx" className="">
-                                        <Download className="mr-1 h-4 w-4" />
-                                        Template
-                                    </a>
-                                </Button>
-                                <Dialog open={importModalOpen} onOpenChange={setImportModalOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button variant="outline" className="w-full text-xs px-2 sm:text-sm">
-                                            <FileUp className="mr-1 h-4 w-4" />
-                                            Import
+                            {canManageCourses && (
+                                <>
+                                    <Button asChild className="w-full hover:cursor-pointer">
+                                        <Link href={route('questions.create', { course: course.id, quiz: quiz.id })}>
+                                            Tambah Pertanyaan
+                                            <Plus />
+                                        </Link>
+                                    </Button>
+                                    <div className="mt-2 grid grid-cols-3 gap-2">
+                                        <Button
+                                            variant="outline"
+                                            asChild
+                                            className="w-full border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 text-xs px-2 sm:text-sm"
+                                        >
+                                            <a href="/assets/templates/template_import_soal.xlsx" className="">
+                                                <Download className="mr-1 h-4 w-4" />
+                                                Template
+                                            </a>
                                         </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px]">
-                                        <form onSubmit={handleImportSubmit}>
-                                            <DialogHeader>
-                                                <DialogTitle>Import Soal dari Excel</DialogTitle>
-                                                <DialogDescription>
-                                                    Upload file Excel (.xlsx, .xls, .csv) yang berisi data soal untuk diimport ke dalam quiz "
-                                                    {quiz.title}
-                                                    ".
-                                                </DialogDescription>
-                                            </DialogHeader>
+                                        <Dialog open={importModalOpen} onOpenChange={setImportModalOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" className="w-full text-xs px-2 sm:text-sm">
+                                                    <FileUp className="mr-1 h-4 w-4" />
+                                                    Import
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-[425px]">
+                                                <form onSubmit={handleImportSubmit}>
+                                                    <DialogHeader>
+                                                        <DialogTitle>Import Soal dari Excel</DialogTitle>
+                                                        <DialogDescription>
+                                                            Upload file Excel (.xlsx, .xls, .csv) yang berisi data soal untuk diimport ke dalam quiz "
+                                                            {quiz.title}
+                                                            ".
+                                                        </DialogDescription>
+                                                    </DialogHeader>
 
-                                            <div className="grid gap-4 py-4">
-                                                <div className="grid gap-2">
-                                                    <Label htmlFor="file">File Excel</Label>
-                                                    <Input
-                                                        id="file"
-                                                        type="file"
-                                                        accept=".xlsx,.xls,.csv"
-                                                        onChange={handleFileChange}
-                                                        className="file:rounded file:border-0 file:bg-blue-50 file:px-2 hover:cursor-pointer hover:file:bg-blue-100"
-                                                    />
-                                                    {errors?.file && <p className="text-sm text-red-500">{errors.file}</p>}
-                                                </div>
-
-                                                {data.file && (
-                                                    <div className="rounded-md bg-green-50 p-3">
-                                                        <div className="flex items-center">
-                                                            <Upload className="mr-2 h-4 w-4 text-green-600" />
-                                                            <span className="text-sm font-medium text-green-700">{data.file.name}</span>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid gap-2">
+                                                            <Label htmlFor="file">File Excel</Label>
+                                                            <Input
+                                                                id="file"
+                                                                type="file"
+                                                                accept=".xlsx,.xls,.csv"
+                                                                onChange={handleFileChange}
+                                                                className="file:rounded file:border-0 file:bg-blue-50 file:px-2 hover:cursor-pointer hover:file:bg-blue-100"
+                                                            />
+                                                            {errors?.file && <p className="text-sm text-red-500">{errors.file}</p>}
                                                         </div>
-                                                        <p className="mt-1 text-xs text-green-600">File siap untuk diimport</p>
-                                                    </div>
-                                                )}
-                                            </div>
 
-                                            <DialogFooter>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    onClick={() => setImportModalOpen(false)}
-                                                    disabled={processing}
-                                                >
-                                                    Batal
-                                                </Button>
-                                                <Button type="submit" disabled={processing || !data.file}>
-                                                    {processing ? (
-                                                        <>
-                                                            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                                                            Mengimport...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <Upload className="mr-2 h-4 w-4" />
-                                                            Import Soal
-                                                        </>
-                                                    )}
-                                                </Button>
-                                            </DialogFooter>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
-                                <Button
-                                    variant="outline"
-                                    asChild
-                                    className="w-full border-green-200 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 text-xs px-2 sm:text-sm"
-                                >
-                                    <a href={route('questions.export', { course: course.id, quiz: quiz.id })}>
-                                        <FileOutput className="mr-1 h-4 w-4" />
-                                        Export
-                                    </a>
-                                </Button>
-                            </div>
+                                                        {data.file && (
+                                                            <div className="rounded-md bg-green-50 p-3">
+                                                                <div className="flex items-center">
+                                                                    <Upload className="mr-2 h-4 w-4 text-green-600" />
+                                                                    <span className="text-sm font-medium text-green-700">{data.file.name}</span>
+                                                                </div>
+                                                                <p className="mt-1 text-xs text-green-600">File siap untuk diimport</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <DialogFooter>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => setImportModalOpen(false)}
+                                                            disabled={processing}
+                                                        >
+                                                            Batal
+                                                        </Button>
+                                                        <Button type="submit" disabled={processing || !data.file}>
+                                                            {processing ? (
+                                                                <>
+                                                                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                                                                    Mengimport...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Upload className="mr-2 h-4 w-4" />
+                                                                    Import Soal
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    </DialogFooter>
+                                                </form>
+                                            </DialogContent>
+                                        </Dialog>
+                                        <Button
+                                            variant="outline"
+                                            asChild
+                                            className="w-full border-green-200 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700 text-xs px-2 sm:text-sm"
+                                        >
+                                            <a href={route('questions.export', { course: course.id, quiz: quiz.id })}>
+                                                <FileOutput className="mr-1 h-4 w-4" />
+                                                Export
+                                            </a>
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
                             <h3 className="mt-4 text-lg font-semibold">{quiz.title}</h3>
                             <p className="text-muted-foreground text-sm">
                                 {quiz.instructions ? quiz.instructions : 'Belum ada instruksi yang ditampilkan ke peserta.'}

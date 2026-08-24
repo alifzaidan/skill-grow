@@ -13,9 +13,13 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Edit, Folder, Trash } from 'lucide-react';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function CertificationProgramActions({ program }: { program: CertificationProgram }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageProgram = canManage('certification-programs') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('certification-programs.destroy', program.id));
@@ -37,7 +41,7 @@ export default function CertificationProgramActions({ program }: { program: Cert
                 </TooltipContent>
             </Tooltip>
 
-            {!isAffiliate && (
+            {canManageProgram && (
                 <>
                     <Tooltip>
                         <TooltipTrigger asChild>

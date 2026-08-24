@@ -50,7 +50,12 @@ interface UserProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function Users({ users, statistics, flash, categories, filters }: UserProps) {
+    const { can, canManage } = usePermission();
+    const canManageUser = canManage('users');
+    const canViewBroadcasts = can('broadcasts.view') || can('broadcasts.manage');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
 
@@ -73,21 +78,25 @@ export default function Users({ users, statistics, flash, categories, filters }:
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua pengguna.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" asChild>
-                            <Link href={route('broadcasts.index')}>
-                                <Megaphone className="mr-1 h-4 w-4" />
-                                Broadcast
-                            </Link>
-                        </Button>
-                        <Dialog open={open} onOpenChange={setOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="hover:cursor-pointer">
-                                    Tambah Pengguna
-                                    <Plus />
-                                </Button>
-                            </DialogTrigger>
-                            <CreateUser setOpen={setOpen} />
-                        </Dialog>
+                        {canViewBroadcasts && (
+                            <Button variant="outline" asChild>
+                                <Link href={route('broadcasts.index')}>
+                                    <Megaphone className="mr-1 h-4 w-4" />
+                                    Broadcast
+                                </Link>
+                            </Button>
+                        )}
+                        {canManageUser && (
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="hover:cursor-pointer">
+                                        Tambah Pengguna
+                                        <Plus />
+                                    </Button>
+                                </DialogTrigger>
+                                <CreateUser setOpen={setOpen} />
+                            </Dialog>
+                        )}
                     </div>
                 </div>
 

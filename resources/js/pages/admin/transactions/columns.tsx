@@ -82,13 +82,17 @@ export interface Invoice {
     created_at: string;
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 function ActionsCell({ row }: { row: Row<Invoice> }) {
+    const { canManage } = usePermission();
+    const canManageTransactions = canManage('transactions');
     const invoice = row.original;
     const user = invoice.user;
     let whatsappUrl = '';
 
-    if (user?.phone_number) {
-        let phoneNumber = user.phone_number.replace(/\D/g, '');
+    if (invoice.user?.phone_number) {
+        let phoneNumber = invoice.user.phone_number.replace(/\D/g, '');
         if (phoneNumber.startsWith('0')) {
             phoneNumber = '62' + phoneNumber.substring(1);
         }
@@ -143,7 +147,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
                 </Tooltip>
             )}
 
-            {invoice.status === 'pending' && (
+            {canManageTransactions && invoice.status === 'pending' && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

@@ -47,9 +47,13 @@ interface CertificationProgramsProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function CertificationPrograms({ programs, statistics, available_batches, flash, filters }: CertificationProgramsProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageProgram = canManage('certification-programs') && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
@@ -70,7 +74,7 @@ export default function CertificationPrograms({ programs, statistics, available_
                         <h1 className="text-2xl font-semibold">Program Sertifikasi</h1>
                         <p className="text-muted-foreground text-sm">Ringkasan dan daftar semua program sertifikasi.</p>
                     </div>
-                    {!isAffiliate && (
+                    {canManageProgram && (
                         <div className="flex gap-2">
                             <Button asChild variant="outline">
                                 <Link href={route('certification-programs.create', { type: 'scholarship' })}>

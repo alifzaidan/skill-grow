@@ -33,7 +33,12 @@ export interface Certificate {
     webinar?: { id: string; title: string };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 const CertificateActions = ({ certificate }: { certificate: Certificate }) => {
+    const { canManage } = usePermission();
+    const canManageCertificate = canManage('certificates');
+
     const handleDelete = () => {
         router.delete(route('certificates.destroy', certificate.id));
     };
@@ -53,10 +58,11 @@ const CertificateActions = ({ certificate }: { certificate: Certificate }) => {
                 </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div>
-                        <DeleteConfirmDialog
+            {canManageCertificate && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <DeleteConfirmDialog
                             trigger={
                                 <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
                                     <Trash />
@@ -73,6 +79,7 @@ const CertificateActions = ({ certificate }: { certificate: Certificate }) => {
                     <p>Hapus Sertifikat</p>
                 </TooltipContent>
             </Tooltip>
+            )}
         </div>
     );
 };

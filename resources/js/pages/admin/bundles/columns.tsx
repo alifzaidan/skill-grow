@@ -37,9 +37,13 @@ export type Bundle = {
     created_at: string;
 };
 
+import { usePermission } from '@/hooks/use-permission';
+
 function BundleActions({ bundle }: { bundle: Bundle }) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const canManageBundle = canManage('bundles') && !isAffiliate;
 
     const handleDelete = () => {
         router.delete(route('bundles.destroy', bundle.id));
@@ -60,7 +64,7 @@ function BundleActions({ bundle }: { bundle: Bundle }) {
                     <p>Lihat Detail</p>
                 </TooltipContent>
             </Tooltip>
-            {!isAffiliate && (
+            {canManageBundle && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>

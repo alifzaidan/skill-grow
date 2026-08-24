@@ -10,6 +10,7 @@ import { id } from 'date-fns/locale';
 import { Award, CircleX, Copy, Plus, Send, SquarePen, Trash } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/use-permission';
 import { CourseRating } from './columns-ratings';
 import { Invoice } from './columns-transactions';
 import CourseDetail from './show-details';
@@ -72,10 +73,12 @@ interface CourseProps {
 
 export default function ShowCourse({ course, transactions, ratings, certificate, flash }: CourseProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const role = auth.role[0];
     const isAdmin = role === 'admin';
     const isMentor = role === 'mentor';
     const isAffiliate = role === 'affiliate';
+    const canManageCourse = canManage('courses') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -105,7 +108,7 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
     };
 
     const canPublish = () => {
-        if (isAdmin) {
+        if (isAdmin || canManage('courses')) {
             return !!certificate;
         }
         return course.status !== 'draft';
@@ -119,7 +122,7 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                         Silakan tunggu admin untuk mempublikasikan kelas Anda.
                     </div>
                 );
-            } else if (isAdmin && !certificate) {
+            } else if ((isAdmin || canManage('courses')) && !certificate) {
                 return (
                     <div className="mb-4 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">
                         Sertifikat belum dibuat. Silakan buat sertifikat terlebih dahulu sebelum menerbitkan kelas.
@@ -136,8 +139,8 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${course.title}`}</h1>
 
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
+                <div className={`${canManageCourse ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageCourse ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             {!isAffiliate && (
@@ -176,7 +179,7 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                         )}
                     </Tabs>
 
-                    {!isAffiliate && (
+                    {canManageCourse && (
                         <div>
                             <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
                             <div className="space-y-4 rounded-lg border p-4">

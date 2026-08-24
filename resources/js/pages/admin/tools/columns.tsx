@@ -13,11 +13,17 @@ import { Edit, Trash } from 'lucide-react';
 import { useState } from 'react';
 import EditTool from './edit';
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ToolsActions({ tool }: { tool: Tool }) {
+    const { canManage } = usePermission();
+    const canManageTools = canManage('tools');
     const [open, setOpen] = useState(false);
     const handleDelete = () => {
         router.delete(route('tools.destroy', tool.id));
     };
+
+    if (!canManageTools) return null;
 
     return (
         <div className="flex items-center justify-center gap-2">

@@ -11,6 +11,7 @@ import { id } from 'date-fns/locale';
 import { Archive, Calendar, CircleX, Clock, Copy, Eye, FileText, Send, SquarePen, Trash, User } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/use-permission';
 
 interface Category {
     id: string;
@@ -50,9 +51,12 @@ interface ShowProps {
 
 export default function ShowArticle({ article, flash }: ShowProps) {
     const { auth } = usePage<SharedData>().props;
+    const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const isAdmin = auth.role.includes('admin');
     const isMentor = auth.role.includes('mentor');
+    const canManageArticle = canManage('articles') && !isAffiliate;
+    const canPublishArticle = isAdmin || canManage('articles');
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -103,8 +107,8 @@ export default function ShowArticle({ article, flash }: ShowProps) {
                     </div>
                 </div>
 
-                <div className={`${!isAffiliate ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
-                    <div className="lg:col-span-2">
+                <div className={`${canManageArticle ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <div className={canManageArticle ? "lg:col-span-2" : "w-full"}>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Detail Artikel</CardTitle>

@@ -34,7 +34,12 @@ interface SettingsProps {
     };
 }
 
+import { usePermission } from '@/hooks/use-permission';
+
 export default function ReferralSettings({ settings, flash }: SettingsProps) {
+    const { canManage } = usePermission();
+    const canManageReferral = canManage('referral');
+
     const { data, setData, post, processing, errors } = useForm({
         referral_reward: settings.referral_reward,
         buyer_reward: settings.buyer_reward,
@@ -144,12 +149,14 @@ export default function ReferralSettings({ settings, flash }: SettingsProps) {
                                 />
                             </div>
                         </CardContent>
-                        <CardFooter className="justify-end border-t bg-muted/20 px-6 py-4">
-                            <Button type="submit" disabled={processing} className="gap-2">
-                                <Save className="h-4 w-4" />
-                                {processing ? 'Menyimpan...' : 'Simpan Pengaturan'}
-                            </Button>
-                        </CardFooter>
+                        {canManageReferral && (
+                            <CardFooter className="justify-end border-t bg-muted/20 px-6 py-4">
+                                <Button type="submit" disabled={processing} className="gap-2">
+                                    <Save className="h-4 w-4" />
+                                    {processing ? 'Menyimpan...' : 'Simpan Pengaturan'}
+                                </Button>
+                            </CardFooter>
+                        )}
                     </Card>
                 </form>
             </div>

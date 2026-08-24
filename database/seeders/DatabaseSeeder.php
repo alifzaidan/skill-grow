@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         Role::firstOrCreate(['name' => 'admin']);
+        Role::firstOrCreate(['name' => 'staff']);
         Role::firstOrCreate(['name' => 'affiliate']);
         Role::firstOrCreate(['name' => 'mentor']);
         Role::firstOrCreate(['name' => 'user']);
@@ -42,6 +43,7 @@ class DatabaseSeeder extends Seeder
         $adminAffiliate->assignRole('affiliate');
 
         $this->call([
+            StaffPermissionSeeder::class,
             ToolSeeder::class,
             CategorySeeder::class,
         ]);

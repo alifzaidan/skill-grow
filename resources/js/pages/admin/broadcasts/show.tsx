@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { usePermission } from '@/hooks/use-permission';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 
@@ -147,6 +148,9 @@ const htmlToWhatsapp = (html: string): string => {
 };
 
 export default function ShowBroadcast({ broadcast, categories, courses, bootcamps, webinars, certifications, flash }: Props) {
+    const { canManage } = usePermission();
+    const canManageBroadcasts = canManage('broadcasts');
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Pengguna', href: '/admin/users' },
         { title: 'Broadcast', href: '/admin/broadcasts' },
@@ -215,7 +219,7 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const resetFilters = async () => {
+    const resetFilters = () => {
         setSelPrograms([]);
         setSelSpecificCourses([]);
         setSelSpecificBootcamps([]);
@@ -224,43 +228,42 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
         setSelCategories([]);
         setPurchaseRange({ from: undefined, to: undefined });
         setJoinRange({ from: undefined, to: undefined });
-        // Fetch with empty filters directly (state hasn't updated yet)
-        setLoading(true);
-        try {
-            const res = await axios.post(route('broadcasts.filtered-users', broadcast.id), { filters: {} });
-            setUsers(res.data.users);
-        } catch { /* ignore */ }
-        finally { setLoading(false); }
     };
 
     const handleSend = () => {
+        if (!confirm(`Kirim broadcast ini ke ${users.length} pengguna terpilih (urutan ${fromIdx} s/d ${toIdx})?`)) return;
         setSending(true);
-        const plainMsg = htmlToWhatsapp(broadcast.message);
-        router.post(route('broadcasts.send', broadcast.id), {
-            message: plainMsg,
-            from: fromIdx, to: toIdx,
-            filters: buildFilters(),
-            broadcast_id: broadcast.id,
-        }, {
-            onFinish: () => setSending(false),
-        });
+        router.post(
+            route('broadcasts.send', broadcast.id),
+            {
+                from_index: fromIdx,
+                to_index: toIdx,
+                filters: buildFilters(),
+            },
+            {
+                onFinish: () => setSending(false),
+            },
+        );
     };
 
-    const openManualWa = (user: FilteredUser) => {
-        const plain = htmlToWhatsapp(broadcast.message);
-        const msg = encodeURIComponent(plain.replace('{nama}', user.name));
-        window.open(`https://api.whatsapp.com/send?phone=${user.formatted_phone}&text=${msg}`, '_blank');
+    const openManualWa = (u: FilteredUser) => {
+        if (u.wa_link) {
+            window.open(u.wa_link, '_blank');
+        }
     };
 
-    const sendSingleWablas = (user: FilteredUser) => {
-        setSendingSingle(user.id);
-        const plainMsg = htmlToWhatsapp(broadcast.message);
-        router.post(route('broadcasts.send-single', broadcast.id), {
-            user_id: user.id,
-            message: plainMsg,
-        }, {
-            onFinish: () => setSendingSingle(null),
-        });
+    const sendSingleWablas = async (u: FilteredUser) => {
+        setSendingSingle(u.id);
+        try {
+            await axios.post(route('broadcasts.send-single', broadcast.id), {
+                user_id: u.id,
+            });
+            toast.success(`Pesan berhasil dikirim ke ${u.name}`);
+        } catch {
+            toast.error(`Gagal mengirim ke ${u.name}`);
+        } finally {
+            setSendingSingle(null);
+        }
     };
 
     return (
@@ -276,9 +279,11 @@ export default function ShowBroadcast({ broadcast, categories, courses, bootcamp
                                 Total terkirim: <span className="font-medium">{broadcast.total_sent}</span>
                             </p>
                         </div>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={route('broadcasts.edit', broadcast.id)}><Edit className="mr-1 h-4 w-4" /> Edit Konten</Link>
-                        </Button>
+                        {canManageBroadcasts && (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={route('broadcasts.edit', broadcast.id)}><Edit className="mr-1 h-4 w-4" /> Edit Konten</Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 

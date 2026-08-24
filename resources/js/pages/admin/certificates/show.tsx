@@ -11,6 +11,7 @@ import { id } from 'date-fns/locale';
 import { Download, Eye, SquarePen, Trash } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/use-permission';
 import ImportManualParticipantsDialog from './import-manual-participants-dialog';
 import CertificateDetail from './show-details';
 import CertificateParticipants from './show-participants';
@@ -65,7 +66,10 @@ interface CertificateProps {
 
 export default function ShowCertificate({ certificate, flash }: CertificateProps) {
     const { auth } = usePage<SharedData>().props;
-    const isAffiliate = auth.role.includes('affiliate');
+    const { canManage } = usePermission();
+    const role = auth.role[0];
+    const isAffiliate = role === 'affiliate';
+    const canManageCertificate = canManage('certificates') && !isAffiliate;
     const [isLoading, setIsLoading] = useState(true);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -132,7 +136,7 @@ export default function ShowCertificate({ certificate, flash }: CertificateProps
                             <Separator />
 
 
-                            {!isAffiliate && (
+                            {canManageCertificate && (
                                 <>
                             <div className="space-y-2">
                                 <Button asChild className="w-full" variant="secondary">

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePermission } from '@/hooks/use-permission';
 import AdminLayout from '@/layouts/admin-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -48,49 +49,62 @@ interface Article {
     category: {
         name: string;
     };
-    excerpt: string;
-    status: string;
+    excerpt?: string;
     views: number;
-    read_time: number;
-    is_featured: boolean;
-    published_at: string | null;
+    read_time?: number;
+    is_featured?: boolean;
+    published_at?: string | null;
+    status: string;
     created_at: string;
 }
 
 interface Webinar {
     id: number;
     title: string;
-    slug: string;
-    thumbnail: string;
+    slug?: string;
+    description: string;
+    thumbnail: string | null;
+    price: number;
+    discount_price?: number | null;
+    quota?: number;
+    status: string;
+    schedule_date: string;
+    start_time: string;
+    end_time: string;
     category: {
         name: string;
     };
-    price: number;
-    discount_price: number | null;
-    quota: number;
-    status: string;
-    start_time: string;
-    batch: string;
+    batch?: string;
+    students_count: number;
+    created_at: string;
 }
 
 interface Bootcamp {
     id: number;
     title: string;
-    slug: string;
-    thumbnail: string;
-    category: {
-        name: string;
-    };
+    slug?: string;
+    description: string;
+    thumbnail: string | null;
     price: number;
-    discount_price: number | null;
-    batch: string;
+    discount_price?: number | null;
     status: string;
     start_date: string;
     end_date: string;
+    category: {
+        name: string;
+    };
+    batch?: string;
+    students_count: number;
+    created_at: string;
 }
 
 interface Stats {
-    total_products: number;
+    total_products?: number;
+    total_courses: number;
+    total_articles: number;
+    total_webinars: number;
+    total_bootcamps: number;
+    total_students: number;
     total_commission: number;
     paid_commission: number;
     available_commission: number;
@@ -98,7 +112,7 @@ interface Stats {
 
 export interface Withdrawal {
     id: string;
-    affiliate_user_id: string;
+    mentor_id: string;
     amount: number;
     withdrawn_at: string;
     created_at: string;
@@ -121,6 +135,8 @@ interface MentorProps {
 }
 
 export default function ShowMentor({ mentor, earnings, withdrawals, courses, articles, webinars, bootcamps, stats, flash }: MentorProps) {
+    const { canManage } = usePermission();
+    const canManageMentor = canManage('mentors');
     const [open, setOpen] = useState(false);
     const [withdrawOpen, setWithdrawOpen] = useState(false);
     const [isWithdrawing, setIsWithdrawing] = useState(false);
@@ -150,7 +166,7 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
         router.delete(route('mentors.destroy', mentor.id));
     };
 
-    // ✅ Format currency
+    // Format currency
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -159,13 +175,13 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
         }).format(amount);
     };
 
-    // ✅ Handle input change
+    // Handle input change
     const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/\D/g, '');
         setWithdrawAmount(value);
     };
 
-    // ✅ Handle withdraw
+    // Handle withdraw
     const handleWithdraw = () => {
         const amount = parseInt(withdrawAmount);
 
@@ -193,7 +209,7 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
         );
     };
 
-    // ✅ Quick fill
+    // Quick fill
     const handleQuickFill = (percentage: number) => {
         const amount = Math.floor(stats.available_commission * percentage);
         setWithdrawAmount(amount.toString());
@@ -204,9 +220,9 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
             <Head title={`Detail Mentor - ${mentor.name}`} />
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">{`Detail ${mentor.name}`}</h1>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-6">
-                    <Tabs defaultValue="detail" className="lg:col-span-2">
-                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7">
+                <div className={`${canManageMentor ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
+                    <Tabs defaultValue="detail" className={canManageMentor ? "lg:col-span-2" : "w-full"}>
+                        <TabsList>
                             <TabsTrigger value="detail">Detail</TabsTrigger>
                             <TabsTrigger value="courses">
                                 Kelas
@@ -240,10 +256,8 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
                             </TabsTrigger>
                             <TabsTrigger value="penarikan">
                                 Penarikan
-                                {earnings!.filter((e) => e.status === 'paid').length > 0 && (
-                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">
-                                        {earnings!.filter((e) => e.status === 'paid').length}
-                                    </span>
+                                {withdrawals && withdrawals.length > 0 && (
+                                    <span className="bg-primary/10 ml-1 rounded-full px-2 py-0.5 text-xs">{withdrawals.length}</span>
                                 )}
                             </TabsTrigger>
                         </TabsList>
@@ -251,126 +265,136 @@ export default function ShowMentor({ mentor, earnings, withdrawals, courses, art
                             <MentorDetail mentor={mentor} />
                         </TabsContent>
                         <TabsContent value="courses">
-                            <ShowCourse courses={courses ?? []} />
+                            <ShowCourse courses={(courses ?? []) as any} />
                         </TabsContent>
                         <TabsContent value="bootcamps">
-                            <ShowBootcamps bootcamps={bootcamps ?? []} />
+                            <ShowBootcamps bootcamps={(bootcamps ?? []) as any} />
                         </TabsContent>
                         <TabsContent value="webinars">
-                            <ShowWebinars webinars={webinars ?? []} />
+                            <ShowWebinars webinars={(webinars ?? []) as any} />
                         </TabsContent>
                         <TabsContent value="articles">
-                            <ShowArticles articles={articles ?? []} />
+                            <ShowArticles articles={(articles ?? []) as any} />
                         </TabsContent>
                         <TabsContent value="transaksi">
-                            <AffiliateEarnings earnings={earnings ?? []} stats={stats} />
+                            <AffiliateEarnings
+                                earnings={earnings ?? []}
+                                stats={{
+                                    total_products: stats.total_products ?? (stats.total_courses + stats.total_bootcamps + stats.total_webinars),
+                                    total_commission: stats.total_commission,
+                                    paid_commission: stats.paid_commission,
+                                    available_commission: stats.available_commission,
+                                }}
+                            />
                         </TabsContent>
                         <TabsContent value="penarikan">
                             <MentorWithdrawals withdrawals={withdrawals ?? []} />
                         </TabsContent>
                     </Tabs>
 
-                    <div>
-                        <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
-                        <div className="space-y-4 rounded-lg border p-4">
-                            {/* ✅ Withdraw Dialog */}
-                            {stats.available_commission > 0 && (
-                                <>
-                                    <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+                    {canManageMentor && (
+                        <div>
+                            <h2 className="my-2 text-lg font-medium">Edit & Kustom</h2>
+                            <div className="space-y-4 rounded-lg border p-4">
+                                {/* Withdraw Dialog */}
+                                {stats.available_commission > 0 && (
+                                    <>
+                                        <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button className="w-full border-green-700 bg-green-600 text-white hover:bg-green-700">
+                                                    <Banknote />
+                                                    Tarik Komisi
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Tarik Komisi</DialogTitle>
+                                                    <DialogDescription>Masukkan nominal komisi yang ingin ditarik untuk {mentor.name}</DialogDescription>
+                                                </DialogHeader>
+
+                                                <div className="space-y-4 py-4">
+                                                    {/* Available Balance */}
+                                                    <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400">Komisi Tersedia</p>
+                                                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                            {formatCurrency(stats.available_commission)}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Amount Input */}
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="amount">Nominal Penarikan</Label>
+                                                        <div className="relative">
+                                                            <span className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">Rp</span>
+                                                            <Input
+                                                                id="amount"
+                                                                type="text"
+                                                                placeholder="0"
+                                                                value={withdrawAmount ? parseInt(withdrawAmount).toLocaleString('id-ID') : ''}
+                                                                onChange={handleAmountChange}
+                                                                className="pl-10"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Quick Fill Buttons */}
+                                                    <div className="space-y-2">
+                                                        <Label className="text-sm">Pilih Cepat</Label>
+                                                        <div className="grid grid-cols-4 gap-2">
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.25)}>
+                                                                25%
+                                                            </Button>
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.5)}>
+                                                                50%
+                                                            </Button>
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.75)}>
+                                                                75%
+                                                            </Button>
+                                                            <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(1)}>
+                                                                100%
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <DialogFooter>
+                                                    <Button variant="outline" onClick={() => setWithdrawOpen(false)} disabled={isWithdrawing}>
+                                                        Batal
+                                                    </Button>
+                                                    <Button onClick={handleWithdraw} disabled={isWithdrawing} className="bg-green-600 hover:bg-green-700">
+                                                        {isWithdrawing ? 'Memproses...' : 'Tarik Sekarang'}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                        <Separator />
+                                    </>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Dialog open={open} onOpenChange={setOpen}>
                                         <DialogTrigger asChild>
-                                            <Button className="w-full border-green-700 bg-green-600 text-white hover:bg-green-700">
-                                                <Banknote />
-                                                Tarik Komisi
+                                            <Button className="w-full" variant="secondary">
+                                                <Edit />
+                                                Edit
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Tarik Komisi</DialogTitle>
-                                                <DialogDescription>Masukkan nominal komisi yang ingin ditarik untuk {mentor.name}</DialogDescription>
-                                            </DialogHeader>
-
-                                            <div className="space-y-4 py-4">
-                                                {/* Available Balance */}
-                                                <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400">Komisi Tersedia</p>
-                                                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                                        {formatCurrency(stats.available_commission)}
-                                                    </p>
-                                                </div>
-
-                                                {/* Amount Input */}
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="amount">Nominal Penarikan</Label>
-                                                    <div className="relative">
-                                                        <span className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">Rp</span>
-                                                        <Input
-                                                            id="amount"
-                                                            type="text"
-                                                            placeholder="0"
-                                                            value={withdrawAmount ? parseInt(withdrawAmount).toLocaleString('id-ID') : ''}
-                                                            onChange={handleAmountChange}
-                                                            className="pl-10"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Quick Fill Buttons */}
-                                                <div className="space-y-2">
-                                                    <Label className="text-sm">Pilih Cepat</Label>
-                                                    <div className="grid grid-cols-4 gap-2">
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.25)}>
-                                                            25%
-                                                        </Button>
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.5)}>
-                                                            50%
-                                                        </Button>
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(0.75)}>
-                                                            75%
-                                                        </Button>
-                                                        <Button type="button" variant="outline" size="sm" onClick={() => handleQuickFill(1)}>
-                                                            100%
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <DialogFooter>
-                                                <Button variant="outline" onClick={() => setWithdrawOpen(false)} disabled={isWithdrawing}>
-                                                    Batal
-                                                </Button>
-                                                <Button onClick={handleWithdraw} disabled={isWithdrawing} className="bg-green-600 hover:bg-green-700">
-                                                    {isWithdrawing ? 'Memproses...' : 'Tarik Sekarang'}
-                                                </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
+                                        <EditAffiliate mentor={mentor} setOpen={setOpen} />
                                     </Dialog>
-                                    <Separator />
-                                </>
-                            )}
-
-                            <div className="space-y-2">
-                                <Dialog open={open} onOpenChange={setOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button className="w-full" variant="secondary">
-                                            <Edit />
-                                            Edit
-                                        </Button>
-                                    </DialogTrigger>
-                                    <EditAffiliate mentor={mentor} setOpen={setOpen} />
-                                </Dialog>
-                                <DeleteConfirmDialog
-                                    trigger={
-                                        <Button variant="destructive" className="w-full">
-                                            <Trash /> Hapus
-                                        </Button>
-                                    }
-                                    title="Apakah Anda yakin ingin menghapus mentor ini?"
-                                    itemName={mentor.name}
-                                    onConfirm={handleDelete}
-                                />
+                                    <DeleteConfirmDialog
+                                        trigger={
+                                            <Button variant="destructive" className="w-full">
+                                                <Trash /> Hapus
+                                            </Button>
+                                        }
+                                        title="Apakah Anda yakin ingin menghapus mentor ini?"
+                                        itemName={mentor.name}
+                                        onConfirm={handleDelete}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
                 <div className="mt-4 rounded-lg border p-4">
                     <h3 className="text-muted-foreground text-center text-sm">
