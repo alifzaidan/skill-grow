@@ -192,12 +192,11 @@ const allNavItems: NavItem[] = [
         roles: ['admin', 'mentor', 'staff'],
         permissionKey: 'articles',
     },
-    {
+        {
         title: 'Pendapatan',
         href: '/admin/affiliate-earnings',
         icon: DollarSign,
-        roles: ['affiliate', 'mentor', 'admin', 'staff'],
-        permissionKey: 'earnings',
+        roles: ['affiliate', 'mentor'],
     },
 ];
 

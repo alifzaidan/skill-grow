@@ -452,7 +452,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     });
 
     // Earnings
-    Route::middleware(['role_or_permission:affiliate|mentor|admin|earnings.view'])->group(function () {
+    Route::middleware(['role_or_permission:affiliate|mentor|admin'])->group(function () {
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
         Route::get('affiliate-earnings/export', [AffiliateEarningController::class, 'export'])->name('earnings.export');
     });
