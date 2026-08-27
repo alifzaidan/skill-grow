@@ -235,38 +235,53 @@ class BundleController extends Controller
         $bundle->strikethrough_price = $totalOriginalPrice;
 
         $hasAccess = false;
-        $pendingInvoiceUrl = null;
-        $userId = Auth::id();
+        $pendingInvoice = null;
 
-        $hasAccess = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
-            $query->where('user_id', $userId)
-                ->where('status', 'paid');
-        })
-            ->where('bundle_id', $bundle->id)
-            ->exists();
+        if (Auth::check()) {
+            $userId = Auth::id();
 
-        if (!$hasAccess) {
-            $pendingInvoice = Invoice::where('user_id', $userId)
-                ->where('status', 'pending')
-                ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
-                    $query->where('bundle_id', $bundle->id);
-                })
-                ->where(function ($query) {
-                    $query->whereNull('expires_at')
-                        ->orWhere('expires_at', '>', now());
-                })
-                ->latest()
-                ->first();
+            $hasAccess = EnrollmentBundle::whereHas('invoice', function ($query) use ($userId) {
+                $query->where('user_id', $userId)
+                    ->where('status', 'paid');
+            })
+                ->where('bundle_id', $bundle->id)
+                ->exists();
 
-            if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+            if (!$hasAccess) {
+                $invoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('bundleEnrollments', function ($query) use ($bundle) {
+                        $query->where('bundle_id', $bundle->id);
+                    })
+                    ->where(function ($query) {
+                        $query->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'va_number' => $invoice->va_number,
+                        'qr_code_url' => $invoice->qr_code_url,
+                        'bank_name' => $invoice->bank_name ?? null,
+                        'created_at' => $invoice->created_at,
+                        'expires_at' => $invoice->expires_at,
+                    ];
+                }
             }
         }
 
         return Inertia::render('user/bundling/checkout/index', [
             'bundle' => $bundle,
             'hasAccess' => $hasAccess,
-            'pendingInvoiceUrl' => $pendingInvoiceUrl,
+            'pendingInvoice' => $pendingInvoice,
             'referralInfo' => $this->getReferralInfo(),
         ]);
     }

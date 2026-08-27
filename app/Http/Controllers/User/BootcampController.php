@@ -111,35 +111,49 @@ class BootcampController extends Controller
 
         $bootcamp->load(['schedules', 'tools', 'category', 'mentors']);
         $hasAccess = false;
-        $pendingInvoiceUrl = null;
+        $pendingInvoice = null;
 
-        $userId = Auth::id();
+        if (Auth::check()) {
+            $userId = Auth::id();
 
-        $hasAccess = Invoice::where('user_id', $userId)
-            ->where('status', 'paid')
-            ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
-                $query->where('bootcamp_id', $bootcamp->id);
-            })
-            ->exists();
-
-        if (!$hasAccess) {
-            $pendingInvoice = Invoice::where('user_id', $userId)
-                ->where('status', 'pending')
+            $hasAccess = Invoice::where('user_id', $userId)
+                ->where('status', 'paid')
                 ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
                     $query->where('bootcamp_id', $bootcamp->id);
                 })
-                ->latest()
-                ->first();
+                ->exists();
 
-            if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+            if (!$hasAccess) {
+                $invoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('bootcampItems', function ($query) use ($bootcamp) {
+                        $query->where('bootcamp_id', $bootcamp->id);
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'va_number' => $invoice->va_number,
+                        'qr_code_url' => $invoice->qr_code_url,
+                        'bank_name' => $invoice->bank_name ?? null,
+                        'created_at' => $invoice->created_at,
+                        'expires_at' => $invoice->expires_at,
+                    ];
+                }
             }
         }
 
         return Inertia::render('user/bootcamp/register/index', [
             'bootcamp' => $bootcamp,
             'hasAccess' => $hasAccess,
-            'pendingInvoiceUrl' => $pendingInvoiceUrl,
+            'pendingInvoice' => $pendingInvoice,
             'referralInfo' => $this->getReferralInfo(),
         ]);
     }

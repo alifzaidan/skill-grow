@@ -21,6 +21,16 @@ interface Webinar {
     title: string;
     slug: string;
 }
+interface Bundle {
+    id: string;
+    title: string;
+    slug: string;
+}
+interface CertificationProgram {
+    id: string;
+    title: string;
+    slug: string;
+}
 
 interface EnrollmentCourse {
     id: string;
@@ -37,16 +47,15 @@ interface EnrollmentWebinar {
     webinar: Webinar;
     price: number;
 }
-
-interface CertificationProgram {
+interface EnrollmentBundle {
     id: string;
-    title: string;
-    slug: string;
+    bundle?: Bundle;
+    price?: number;
 }
-
 interface EnrollmentCertificationProgram {
     id: string;
-    certificationProgram: CertificationProgram;
+    certificationProgram?: CertificationProgram;
+    certification_program?: CertificationProgram;
     price: number;
     is_scholarship: boolean;
 }
@@ -66,6 +75,8 @@ interface Invoice {
     bootcampItems?: EnrollmentBootcamp[];
     webinar_items?: EnrollmentWebinar[];
     webinarItems?: EnrollmentWebinar[];
+    bundle_enrollments?: EnrollmentBundle[];
+    bundleEnrollments?: EnrollmentBundle[];
     certificationProgramItems?: EnrollmentCertificationProgram[];
     certification_program_items?: EnrollmentCertificationProgram[];
     created_at: string;
@@ -78,51 +89,158 @@ interface Props {
 export default function Transactions({ myTransactions }: Props) {
     const [search, setSearch] = useState('');
 
+    const getCertificationProgram = (item: EnrollmentCertificationProgram) => {
+        return item.certificationProgram || item.certification_program;
+    };
+
+    const getItemHref = (type: string, slug: string, status: Invoice['status']) => {
+        const isPaid = status === 'paid' || status === 'completed';
+
+        if (type === 'Certification Program' || type === 'certification_program') {
+            return isPaid
+                ? route('profile.certification-program.detail', { program: slug })
+                : route('certification-programs.detail', slug);
+        }
+
+        if (type === 'Course' || type === 'course') {
+            return isPaid
+                ? `/profile/my-courses/${slug}`
+                : route('course.detail', slug);
+        }
+
+        if (type === 'Bootcamp' || type === 'bootcamp') {
+            return isPaid
+                ? `/profile/my-bootcamps/${slug}`
+                : route('bootcamp.detail', slug);
+        }
+
+        if (type === 'Webinar' || type === 'webinar') {
+            return isPaid
+                ? `/profile/my-webinars/${slug}`
+                : route('webinar.detail', slug);
+        }
+
+        if (type === 'Bundle' || type === 'bundle') {
+            return isPaid
+                ? route('profile.courses')
+                : route('bundle.detail', slug);
+        }
+
+        const pathSegment = type.toLowerCase().replace(/\s+/g, '-');
+        return isPaid ? `/profile/my-${pathSegment}s/${slug}` : `/${pathSegment}/${slug}`;
+    };
+
     // Gabungkan semua items dari semua invoice menjadi satu array
-    const allItems = myTransactions.flatMap((invoice) => [
-        ...(invoice.course_items || []).map((item) => ({
-            type: 'Course',
-            title: item.course.title,
-            slug: item.course.slug,
-            price: item.price,
-            invoice_id: invoice.id,
-            invoice_status: invoice.status,
-            invoice_code: invoice.invoice_code,
-            invoice_url: invoice.invoice_url,
-            paid_at: invoice.paid_at,
-            payment_channel: invoice.payment_channel,
-            payment_method: invoice.payment_method,
-            created_at: invoice.created_at,
-        })),
-        ...(invoice.bootcamp_items || []).map((item) => ({
-            type: 'Bootcamp',
-            title: item.bootcamp.title,
-            slug: item.bootcamp.slug,
-            price: item.price,
-            invoice_id: invoice.id,
-            invoice_status: invoice.status,
-            invoice_code: invoice.invoice_code,
-            invoice_url: invoice.invoice_url,
-            paid_at: invoice.paid_at,
-            payment_channel: invoice.payment_channel,
-            payment_method: invoice.payment_method,
-            created_at: invoice.created_at,
-        })),
-        ...(invoice.webinar_items || []).map((item) => ({
-            type: 'Webinar',
-            title: item.webinar.title,
-            slug: item.webinar.slug,
-            price: item.price,
-            invoice_id: invoice.id,
-            invoice_status: invoice.status,
-            invoice_code: invoice.invoice_code,
-            invoice_url: invoice.invoice_url,
-            paid_at: invoice.paid_at,
-            payment_channel: invoice.payment_channel,
-            payment_method: invoice.payment_method,
-            created_at: invoice.created_at,
-        })),
-    ]);
+    const allItems = myTransactions.flatMap((invoice) => {
+        const courseItems = invoice.course_items || invoice.courseItems || [];
+        const bootcampItems = invoice.bootcamp_items || invoice.bootcampItems || [];
+        const webinarItems = invoice.webinar_items || invoice.webinarItems || [];
+        const bundleItems = invoice.bundle_enrollments || invoice.bundleEnrollments || [];
+        const certificationItems =
+            invoice.certificationProgramItems || invoice.certification_program_items || [];
+
+        return [
+            ...courseItems.map((item) => ({
+                type: 'Course',
+                title: item.course.title,
+                slug: item.course.slug,
+                price: item.price,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...bootcampItems.map((item) => ({
+                type: 'Bootcamp',
+                title: item.bootcamp.title,
+                slug: item.bootcamp.slug,
+                price: item.price,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...webinarItems.map((item) => ({
+                type: 'Webinar',
+                title: item.webinar.title,
+                slug: item.webinar.slug,
+                price: item.price,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...bundleItems.map((item) => ({
+                type: 'Bundle',
+                title: item.bundle?.title || 'Paket Bundling',
+                slug: item.bundle?.slug || '',
+                price: item.price || invoice.amount,
+                invoice_id: invoice.id,
+                invoice_status: invoice.status,
+                invoice_code: invoice.invoice_code,
+                invoice_url: invoice.invoice_url,
+                paid_at: invoice.paid_at,
+                payment_channel: invoice.payment_channel,
+                payment_method: invoice.payment_method,
+                created_at: invoice.created_at,
+            })),
+            ...certificationItems
+                .map((item) => {
+                    const certificationProgram = getCertificationProgram(item);
+
+                    if (!certificationProgram) {
+                        return null;
+                    }
+
+                    return {
+                        type: 'Certification Program',
+                        title: certificationProgram.title,
+                        slug: certificationProgram.slug,
+                        price: item.price,
+                        invoice_id: invoice.id,
+                        invoice_status: invoice.status,
+                        invoice_code: invoice.invoice_code,
+                        invoice_url: invoice.invoice_url,
+                        paid_at: invoice.paid_at,
+                        payment_channel: invoice.payment_channel,
+                        payment_method: invoice.payment_method,
+                        created_at: invoice.created_at,
+                        is_scholarship: item.is_scholarship,
+                    };
+                })
+                .filter(
+                    (
+                        item,
+                    ): item is {
+                        type: string;
+                        title: string;
+                        slug: string;
+                        price: number;
+                        invoice_id: string;
+                        invoice_status: Invoice['status'];
+                        invoice_code: string;
+                        invoice_url: string;
+                        paid_at: string | null;
+                        payment_channel: string | null;
+                        payment_method: string | null;
+                        created_at: string;
+                        is_scholarship: boolean;
+                    } => item !== null,
+                ),
+        ];
+    });
 
     const filteredItems = allItems.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
 
@@ -154,12 +272,13 @@ export default function Transactions({ myTransactions }: Props) {
                                 <th className="p-2 font-medium">Metode Pembayaran</th>
                                 <th className="p-2 font-medium">Kode Invoice</th>
                                 <th className="p-2 font-medium">Dibayar Pada</th>
+                                <th className="p-2 font-medium">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                                    <td colSpan={7} className="py-8 text-center text-gray-500">
                                         Belum ada transaksi.
                                     </td>
                                 </tr>
@@ -168,13 +287,21 @@ export default function Transactions({ myTransactions }: Props) {
                                     <tr key={idx} className="border-t dark:border-zinc-800">
                                         <td className="p-2">
                                             <Link
-                                                href={`/profile/my-${item.type.toLowerCase()}s/${item.slug}`}
+                                                href={getItemHref(item.type, item.slug, item.invoice_status)}
                                                 className="text-primary hover:underline"
                                             >
                                                 {item.title}
                                             </Link>
                                         </td>
-                                        <td className="p-2">{item.type === 'Course' ? 'Kelas Online' : item.type}</td>
+                                        <td className="p-2">
+                                            {item.type === 'Course'
+                                                ? 'Kelas Online'
+                                                : item.type === 'Certification Program'
+                                                  ? 'Sertifikasi Program'
+                                                  : item.type === 'Bundle'
+                                                    ? 'Paket Bundling'
+                                                    : item.type}
+                                        </td>
                                         <td className="p-2">{getStatusComponent(item.invoice_status)}</td>
                                         <td className="p-2">
                                             {item.price === 0 ? (
@@ -183,11 +310,7 @@ export default function Transactions({ myTransactions }: Props) {
                                                 item.payment_channel || item.payment_method || '-'
                                             )}
                                         </td>
-                                        <td className="p-2">
-                                            <Link href={route('invoice.show', { id: item.invoice_id })} className="text-primary hover:underline">
-                                                {item.invoice_code}
-                                            </Link>
-                                        </td>
+                                        <td className="p-2">{item.invoice_code}</td>
                                         <td className="p-2">
                                             {item.invoice_status === 'pending' && item.invoice_url ? (
                                                 <Button asChild size="sm" variant="outline">
@@ -200,6 +323,11 @@ export default function Transactions({ myTransactions }: Props) {
                                             ) : (
                                                 '-'
                                             )}
+                                        </td>
+                                        <td className="p-2">
+                                            <Button asChild size="sm" variant="outline">
+                                                <Link href={route('profile.transaction.detail', { invoice: item.invoice_id })}>Detail</Link>
+                                            </Button>
                                         </td>
                                     </tr>
                                 ))

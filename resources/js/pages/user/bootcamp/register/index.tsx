@@ -115,14 +115,30 @@ const formatDateRange = (start?: string | null, end?: string | null) => {
 };
 
 
+interface PendingInvoice {
+    id: string;
+    invoice_code: string;
+    status: string;
+    amount: number;
+    payment_method?: string;
+    invoice_url?: string | null;
+    va_number?: string;
+    qr_code_url?: string;
+    bank_name?: string;
+    created_at: string;
+    expires_at: string;
+}
+
 export default function RegisterBootcamp({
     bootcamp,
     hasAccess,
+    pendingInvoice,
     pendingInvoiceUrl,
     referralInfo,
 }: {
     bootcamp: Bootcamp;
     hasAccess: boolean;
+    pendingInvoice?: PendingInvoice | null;
     pendingInvoiceUrl?: string | null;
     referralInfo: ReferralInfo;
 }) {
@@ -132,6 +148,7 @@ export default function RegisterBootcamp({
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [cancellingInvoice, setCancellingInvoice] = useState(false);
 
     // Referral & Points State
     const [codeType, setCodeType] = useState<'voucher' | 'referral'>('voucher');
@@ -350,210 +367,81 @@ export default function RegisterBootcamp({
         return () => clearTimeout(timer);
     }, [guestFormData.email, isLoggedIn]);
 
-    const refreshCSRFToken = useCallback(async (): Promise<string> => {
+    const handleCancelInvoice = async () => {
+        const invoiceId = pendingInvoice?.id;
+        if (!invoiceId) return;
+        if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) return;
+
+        setCancellingInvoice(true);
         try {
-            const response = await fetch('/csrf-token', {
-                method: 'GET',
-                credentials: 'same-origin',
-            });
-            const data = await response.json();
-
-            const metaTag = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
-            if (metaTag) {
-                metaTag.content = data.token;
+            const response = await axios.post(route('invoice.cancel', { id: invoiceId }));
+            if (response.data?.success || response.status === 200) {
+                toast.success('Pesanan berhasil dibatalkan.');
+                window.location.reload();
+            } else {
+                toast.error(response.data?.message || 'Gagal membatalkan pesanan.');
             }
-
-            return data.token;
-        } catch (error) {
-            console.error('Failed to refresh CSRF token:', error);
-            throw error;
+        } catch (error: unknown) {
+            console.error('Cancel invoice error:', error);
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || 'Gagal membatalkan pesanan.');
+            } else {
+                toast.error('Gagal membatalkan pesanan.');
+            }
+        } finally {
+            setCancellingInvoice(false);
         }
-    }, []);
+    };
 
-    const savePendingCheckout = () => {
-        const pendingCheckoutData: PendingCheckoutData = {
-            bootcampId: bootcamp.id,
-            timestamp: Date.now(),
-            promoCode,
-            discountData,
-            termsAccepted,
-            isFree,
-            codeType,
-            referralValid: codeType === 'referral' && !!referralData?.valid,
-            pointsChecked,
-            pointsToUse,
+    const submitPayment = async (): Promise<void> => {
+        const originalDiscountAmount = bootcamp.strikethrough_price > 0 ? bootcamp.strikethrough_price - bootcamp.price : 0;
+        const promoDiscountAmount = discountData?.valid ? discountData.discount_amount : 0;
+        const activeFinalPrice = basePrice - promoDiscountAmount;
+        
+        const pointsDeduction = pointsChecked ? pointsToUse : 0;
+        const finalNettAmount = activeFinalPrice - pointsDeduction;
+        const activeTotalPrice = isFree ? 0 : finalNettAmount + transactionFee;
+
+        const invoiceData: Record<string, string | number> = {
+            type: 'bootcamp',
+            id: bootcamp.id,
+            discount_amount: originalDiscountAmount + promoDiscountAmount,
+            nett_amount: finalNettAmount,
+            transaction_fee: transactionFee,
+            total_amount: activeTotalPrice,
+            points_redeemed: pointsDeduction,
         };
 
-        sessionStorage.setItem('pendingCheckout', JSON.stringify(pendingCheckoutData));
-    };
-
-    const ensureAuthenticated = async (): Promise<boolean> => {
-        if (isLoggedIn) return true;
-
-        if (!guestFormData.email || !guestFormData.phone_number) {
-            toast.error('Email dan nomor telepon wajib diisi.');
-            return false;
+        if (discountData?.valid && codeType === 'voucher') {
+            invoiceData.discount_code_id = discountData.discount_code.id;
+            invoiceData.discount_code_amount = discountData.discount_amount;
         }
 
-        if (!guestFormData.instance) {
-            toast.error('Instansi wajib diisi.');
-            return false;
+        if (codeType === 'referral' && referralData?.valid) {
+            invoiceData.referral_code = promoCode;
         }
-
-        if (!guestFormData.city) {
-            toast.error('Kota domisili wajib diisi.');
-            return false;
-        }
-
-        setLoading(true);
 
         try {
-            if (emailExists) {
-                const loginResponse = await axios.post(route('auto-login'), {
-                    email: guestFormData.email,
-                    phone_number: guestFormData.phone_number,
-                    instance: guestFormData.instance,
-                    city: guestFormData.city,
-                });
+            const res = await axios.post(route('invoice.store'), invoiceData);
 
-                const loginData = loginResponse.data;
-
-                if (!loginData.success) {
-                    throw new Error(loginData.message || 'Gagal login otomatis.');
+            if (res.data && res.data.success) {
+                if (res.data.payment_url) {
+                    sessionStorage.removeItem('pendingCheckout');
+                    window.location.href = res.data.payment_url;
+                } else {
+                    throw new Error('Payment URL tidak diterima dari server.');
                 }
-
-                toast.success('Login berhasil. Melanjutkan checkout...');
             } else {
-                if (!guestFormData.name) {
-                    toast.error('Nama wajib diisi.');
-                    setLoading(false);
-                    return false;
-                }
-
-                await axios.post(route('register'), {
-                    name: guestFormData.name,
-                    email: guestFormData.email,
-                    phone_number: guestFormData.phone_number,
-                    instance: guestFormData.instance,
-                    city: guestFormData.city,
-                    password: guestFormData.phone_number,
-                    password_confirmation: guestFormData.phone_number,
-                    affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo.code || sessionStorage.getItem('referral_code') || ''),
-                });
-
-                toast.success('Registrasi berhasil. Melanjutkan checkout...');
+                throw new Error(res.data?.message || 'Gagal membuat invoice.');
             }
-
-            savePendingCheckout();
-            window.location.reload();
-            return false;
         } catch (error: unknown) {
-            setLoading(false);
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
-            } else {
-                toast.error(getErrorMessage(error, 'Gagal memproses login/registrasi otomatis.'));
-            }
-            return false;
+            console.error('Payment error:', error);
+            throw error;
         }
     };
-
-    const submitPayment = useCallback(
-        async (
-            activeDiscountData: DiscountData | null,
-            overrideCodeType?: 'voucher' | 'referral',
-            overridePromoCode?: string,
-            overrideReferralValid?: boolean,
-            overridePointsChecked?: boolean,
-            overridePointsToUse?: number,
-            retryCount = 0
-        ): Promise<void> => {
-            const originalDiscountAmount = bootcamp.strikethrough_price > 0 ? bootcamp.strikethrough_price - bootcamp.price : 0;
-            const promoDiscountAmount = activeDiscountData?.discount_amount || 0;
-            const activeFinalPrice = basePrice - promoDiscountAmount;
-            
-            const pointsDeduction = overridePointsChecked !== undefined ? (overridePointsChecked ? (overridePointsToUse || 0) : 0) : (pointsChecked ? pointsToUse : 0);
-            const finalNettAmount = activeFinalPrice - pointsDeduction;
-            const activeTotalPrice = isFree ? 0 : finalNettAmount + transactionFee;
-
-            const invoiceData: Record<string, string | number> = {
-                type: 'bootcamp',
-                id: bootcamp.id,
-                discount_amount: originalDiscountAmount + promoDiscountAmount,
-                nett_amount: finalNettAmount,
-                transaction_fee: transactionFee,
-                total_amount: activeTotalPrice,
-                points_redeemed: pointsDeduction,
-            };
-
-            if (activeDiscountData?.valid) {
-                invoiceData.discount_code_id = activeDiscountData.discount_code.id;
-                invoiceData.discount_code_amount = activeDiscountData.discount_amount;
-            }
-
-            const currentCodeType = overrideCodeType || codeType;
-            const currentPromoCode = overridePromoCode || promoCode;
-            const isReferralValid = overrideReferralValid !== undefined ? overrideReferralValid : referralData?.valid;
-
-            if (currentCodeType === 'referral' && isReferralValid) {
-                invoiceData.referral_code = currentPromoCode;
-            }
-
-            try {
-                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
-
-                const res = await fetch(route('invoice.store'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        Accept: 'application/json',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(invoiceData),
-                });
-
-                if (res.status === 419 && retryCount < 2) {
-                    await refreshCSRFToken();
-                    return submitPayment(
-                        activeDiscountData,
-                        overrideCodeType,
-                        overridePromoCode,
-                        overrideReferralValid,
-                        overridePointsChecked,
-                        overridePointsToUse,
-                        retryCount + 1
-                    );
-                }
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    if (data.payment_url) {
-                        sessionStorage.removeItem('pendingCheckout');
-                        window.location.href = data.payment_url;
-                    } else {
-                        throw new Error('Payment URL not received');
-                    }
-                } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                throw error;
-            }
-        },
-        [basePrice, bootcamp.id, bootcamp.price, bootcamp.strikethrough_price, isFree, refreshCSRFToken, transactionFee, pointsChecked, pointsToUse, codeType, referralData, promoCode],
-    );
 
     const handleFreeCheckout = (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu.');
-            window.location.href = route('profile.edit');
-            return;
-        }
 
         if (!freeFormData.requirement_1_proof || !freeFormData.requirement_2_proof || !freeFormData.requirement_3_proof) {
             alert('Harap upload semua bukti yang diperlukan!');
@@ -583,105 +471,94 @@ export default function RegisterBootcamp({
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!termsAccepted && !isFree) {
-            alert('Anda harus menyetujui syarat dan ketentuan!');
-            return;
-        }
-
-        const authenticated = await ensureAuthenticated();
-        if (!authenticated) {
-            return;
-        }
-
-        if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon dan instansi terlebih dahulu.');
-            window.location.href = route('profile.edit');
-            return;
-        }
-
-        setLoading(true);
-
-        if (isFree) {
-            setShowFreeForm(true);
-            setLoading(false);
-            return;
-        }
-
-        try {
-            await submitPayment(discountData);
-        } catch (error: unknown) {
-            alert(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (!isLoggedIn) return;
-
-        const pendingCheckoutRaw = sessionStorage.getItem('pendingCheckout');
-        if (!pendingCheckoutRaw) return;
-
-        try {
-            const pendingCheckout = JSON.parse(pendingCheckoutRaw) as PendingCheckoutData;
-
-            const fiveMinutes = 5 * 60 * 1000;
-            if (Date.now() - pendingCheckout.timestamp > fiveMinutes) {
-                sessionStorage.removeItem('pendingCheckout');
+        // 1. Jika belum login, proses autentikasi (auto-login atau register) terlebih dahulu
+        if (!isLoggedIn) {
+            if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+                toast.error('Harap lengkapi seluruh data diri terlebih dahulu.');
                 return;
             }
 
-            if (pendingCheckout.bootcampId !== bootcamp.id) {
-                sessionStorage.removeItem('pendingCheckout');
-                return;
-            }
-
-            // Remove immediately to prevent double submissions in StrictMode/concurrent renders
-            sessionStorage.removeItem('pendingCheckout');
-
-            if (pendingCheckout.promoCode) {
-                setPromoCode(pendingCheckout.promoCode);
-            }
-            if (pendingCheckout.codeType) {
-                setCodeType(pendingCheckout.codeType);
-            }
-            if (pendingCheckout.referralValid) {
-                setReferralData({ valid: true });
-            }
-
-            if (pendingCheckout.pointsChecked) {
-                setPointsChecked(true);
-            }
-            if (pendingCheckout.pointsToUse) {
-                setPointsToUse(pendingCheckout.pointsToUse);
-            }
-
-            setDiscountData(pendingCheckout.discountData || null);
-            setTermsAccepted(pendingCheckout.termsAccepted || false);
-
-            if (pendingCheckout.isFree) {
-                setShowFreeForm(true);
-                setLoading(false);
+            if (!termsAccepted && !isFree) {
+                toast.error('Anda harus menyetujui syarat dan ketentuan!');
                 return;
             }
 
             setLoading(true);
 
-            submitPayment(
-                pendingCheckout.discountData || null,
-                pendingCheckout.codeType,
-                pendingCheckout.promoCode,
-                pendingCheckout.referralValid,
-                pendingCheckout.pointsChecked,
-                pendingCheckout.pointsToUse
-            ).catch((error: unknown) => {
-                console.error('Pending checkout error:', error);
-                toast.error(getErrorMessage(error, 'Gagal melanjutkan checkout.'));
+            try {
+                if (emailExists) {
+                    const loginResponse = await axios.post(route('auto-login'), {
+                        email: guestFormData.email,
+                        phone_number: guestFormData.phone_number,
+                        instance: guestFormData.instance,
+                        city: guestFormData.city,
+                    });
+
+                    if (!loginResponse.data?.success) {
+                        throw new Error(loginResponse.data?.message || 'Login otomatis gagal.');
+                    }
+                } else {
+                    if (!guestFormData.name) {
+                        toast.error('Nama wajib diisi.');
+                        setLoading(false);
+                        return;
+                    }
+
+                    await axios.post(route('register'), {
+                        name: guestFormData.name,
+                        email: guestFormData.email,
+                        phone_number: guestFormData.phone_number,
+                        instance: guestFormData.instance,
+                        city: guestFormData.city,
+                        password: guestFormData.phone_number,
+                        password_confirmation: guestFormData.phone_number,
+                        affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo?.code || sessionStorage.getItem('referral_code') || ''),
+                    });
+                }
+
+                if (isFree) {
+                    setShowFreeForm(true);
+                    setLoading(false);
+                    return;
+                }
+
+                // Langsung jalankan submitPayment tanpa reload!
+                await submitPayment();
+            } catch (error: unknown) {
+                console.error('Login/Register error:', error);
                 setLoading(false);
-            });
-        } catch {
-            sessionStorage.removeItem('pendingCheckout');
+                if (axios.isAxiosError(error)) {
+                    toast.error(error.response?.data?.message || 'Gagal memproses pendaftaran.');
+                } else {
+                    toast.error(getErrorMessage(error, 'Gagal memproses pendaftaran.'));
+                }
+            }
+            return;
         }
-    }, [isLoggedIn, bootcamp.id, submitPayment]);
+
+        // 2. Jika sudah login
+        if (!termsAccepted && !isFree) {
+            toast.error('Anda harus menyetujui syarat dan ketentuan!');
+            return;
+        }
+
+        if (isFree) {
+            setShowFreeForm(true);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await submitPayment();
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || 'Gagal memproses pembayaran.');
+            } else {
+                toast.error(getErrorMessage(error, 'Terjadi kesalahan saat proses pembayaran.'));
+            }
+            setLoading(false);
+        }
+    };
 
     // Function untuk validasi ukuran file
     const validateFileSize = (file: File, maxSizeMB: number = 2): boolean => {
@@ -989,16 +866,54 @@ export default function RegisterBootcamp({
                                         </a>
                                     </Button>
                                 </div>
-                            ) : pendingInvoiceUrl ? (
-                                <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-xs">
-                                    <Hourglass size={64} className="text-yellow-500" />
-                                    <h2 className="text-xl font-bold">Pembayaran Tertunda</h2>
-                                    <p className="text-sm text-gray-500">
-                                        Anda memiliki pembayaran yang belum selesai untuk bootcamp ini. Silakan lanjutkan untuk membayar.
-                                    </p>
-                                    <Button asChild className="w-full py-6 rounded-full bg-[#F9A885] hover:bg-[#F9A885]/90 text-white font-semibold shadow-xs">
-                                        <a href={pendingInvoiceUrl}>Lanjutkan Pembayaran</a>
-                                    </Button>
+                            ) : (pendingInvoice || pendingInvoiceUrl) ? (
+                                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs space-y-6">
+                                    <div
+                                        className="rounded-xl p-4 flex items-center gap-2 bg-yellow-50/50"
+                                    >
+                                        <Hourglass className="h-5 w-5 text-yellow-600 animate-pulse" />
+                                        <h4 className="font-bold text-yellow-950">Pembayaran Tertunda</h4>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="space-y-2 rounded-xl bg-gray-50/50 p-4 border border-gray-100 text-sm">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">No. Invoice</span>
+                                                <span className="font-semibold text-gray-800">{pendingInvoice?.invoice_code || '-'}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Metode Pembayaran</span>
+                                                <span className="font-semibold text-gray-800">DOKU</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-gray-500">Total Pembayaran</span>
+                                                <span className="text-lg font-bold text-[#FA5F25]">
+                                                    Rp {(pendingInvoice?.amount || bootcamp.price + transactionFee).toLocaleString('id-ID')}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {(pendingInvoice?.invoice_url || pendingInvoiceUrl) && (
+                                            <Button asChild className="w-full py-6 rounded-full bg-[#F9A885] hover:bg-[#F9A885]/90 text-white font-semibold shadow-xs">
+                                                <a href={pendingInvoice?.invoice_url || pendingInvoiceUrl || '#'}>Lanjutkan Pembayaran</a>
+                                            </Button>
+                                        )}
+
+                                        <Button onClick={() => window.location.reload()} variant="outline" className="w-full py-6 rounded-full border-gray-200 text-gray-700">
+                                            Cek Status Pembayaran
+                                        </Button>
+
+                                        {pendingInvoice?.id && (
+                                            <Button
+                                                onClick={handleCancelInvoice}
+                                                disabled={cancellingInvoice}
+                                                variant="ghost"
+                                                className="w-full py-6 rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                                            >
+                                                {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             ) : !showFreeForm ? (
                                 <form onSubmit={handleCheckout} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs space-y-4">

@@ -185,7 +185,7 @@ class CertificationProgramController extends Controller
                 ->exists();
 
             if (!$hasAccess) {
-                $pendingInvoice = Invoice::where('user_id', $userId)
+                $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
                     ->whereHas('certificationProgramItems', function ($query) use ($program) {
                         $query->where('certification_program_id', $program->id);
@@ -193,8 +193,21 @@ class CertificationProgramController extends Controller
                     ->latest()
                     ->first();
 
-                if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                    $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'va_number' => $invoice->va_number,
+                        'qr_code_url' => $invoice->qr_code_url,
+                        'bank_name' => $invoice->bank_name ?? null,
+                        'created_at' => $invoice->created_at,
+                        'expires_at' => $invoice->expires_at,
+                    ];
+                    $pendingInvoiceUrl = $invoice->invoice_url;
                 }
             }
 
@@ -216,6 +229,7 @@ class CertificationProgramController extends Controller
         return Inertia::render('user/certification-program/register/index', [
             'program' => $program,
             'hasAccess' => $hasAccess,
+            'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'regularApplication' => $regularApplication,
             'scholarshipApplication' => $scholarshipApplication,

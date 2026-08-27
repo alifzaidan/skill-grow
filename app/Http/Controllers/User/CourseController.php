@@ -102,42 +102,51 @@ class CourseController extends Controller
             ])->toResponse($request)->setStatusCode(404);
         }
 
-        if (!Auth::check()) {
-            $currentUrl = $request->fullUrl();
-            return redirect()->route('login', ['redirect' => $currentUrl]);
-        }
-
         $course->load(['modules.lessons']);
         $hasAccess = false;
-        $pendingInvoiceUrl = null;
+        $pendingInvoice = null;
 
-        $userId = Auth::id();
+        if (Auth::check()) {
+            $userId = Auth::id();
 
-        $hasAccess = Invoice::where('user_id', $userId)
-            ->where('status', 'paid')
-            ->whereHas('courseItems', function ($query) use ($course) {
-                $query->where('course_id', $course->id);
-            })
-            ->exists();
-
-        if (!$hasAccess) {
-            $pendingInvoice = Invoice::where('user_id', $userId)
-                ->where('status', 'pending')
+            $hasAccess = Invoice::where('user_id', $userId)
+                ->where('status', 'paid')
                 ->whereHas('courseItems', function ($query) use ($course) {
                     $query->where('course_id', $course->id);
                 })
-                ->latest()
-                ->first();
+                ->exists();
 
-            if ($pendingInvoice && $pendingInvoice->invoice_url) {
-                $pendingInvoiceUrl = $pendingInvoice->invoice_url;
+            if (!$hasAccess) {
+                $invoice = Invoice::where('user_id', $userId)
+                    ->where('status', 'pending')
+                    ->whereHas('courseItems', function ($query) use ($course) {
+                        $query->where('course_id', $course->id);
+                    })
+                    ->latest()
+                    ->first();
+
+                if ($invoice) {
+                    $pendingInvoice = [
+                        'id' => $invoice->id,
+                        'invoice_code' => $invoice->invoice_code,
+                        'status' => $invoice->status,
+                        'amount' => $invoice->amount,
+                        'payment_method' => $invoice->payment_method,
+                        'invoice_url' => $invoice->invoice_url,
+                        'va_number' => $invoice->va_number,
+                        'qr_code_url' => $invoice->qr_code_url,
+                        'bank_name' => $invoice->bank_name ?? null,
+                        'created_at' => $invoice->created_at,
+                        'expires_at' => $invoice->expires_at,
+                    ];
+                }
             }
         }
 
         return Inertia::render('user/course/checkout/index', [
             'course' => $course,
             'hasAccess' => $hasAccess,
-            'pendingInvoiceUrl' => $pendingInvoiceUrl,
+            'pendingInvoice' => $pendingInvoice,
             'referralInfo' => $this->getReferralInfo(),
         ]);
     }

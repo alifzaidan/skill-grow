@@ -104,10 +104,32 @@ export default function CheckoutCourse({
 }) {
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+    const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
 
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [cancellingInvoice, setCancellingInvoice] = useState(false);
+
+    // Guest Form State
+    const [checkingEmail, setCheckingEmail] = useState(false);
+    const [emailExists, setEmailExists] = useState(false);
+    const [guestFormData, setGuestFormData] = useState<{
+        name: string;
+        email: string;
+        phone_number: string;
+        instance: string;
+        city: string;
+    }>({
+        name: '',
+        email: '',
+        phone_number: '',
+        instance: '',
+        city: '',
+    });
+
+    const updateGuestForm = (field: keyof typeof guestFormData, value: string) => {
+        setGuestFormData((prev) => ({ ...prev, [field]: value }));
+    };
 
     // Referral & Points State
     const [codeType, setCodeType] = useState<'voucher' | 'referral'>('voucher');
@@ -151,6 +173,52 @@ export default function CheckoutCourse({
         }
     }, [isLoggedIn]);
 
+    // Check email for guest
+    useEffect(() => {
+        if (isLoggedIn) return;
+
+        const email = guestFormData.email.trim();
+        if (!email || !email.includes('@')) {
+            setEmailExists(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setCheckingEmail(true);
+
+            try {
+                const response = await axios.post('/api/check-email', { email });
+                const data = response.data;
+
+                if (data.exists) {
+                    setEmailExists(true);
+                    setGuestFormData((prev) => ({
+                        ...prev,
+                        name: data.name || prev.name,
+                        phone_number: data.phone_number || prev.phone_number,
+                        instance: data.instance || prev.instance,
+                        city: data.city || prev.city,
+                    }));
+                    setUserPoints(data.point_balance || 0);
+                } else {
+                    setEmailExists(false);
+                    setUserPoints(0);
+                    setPointsChecked(false);
+                    setPointsToUse(0);
+                }
+            } catch {
+                setEmailExists(false);
+                setUserPoints(0);
+                setPointsChecked(false);
+                setPointsToUse(0);
+            } finally {
+                setCheckingEmail(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [guestFormData.email, isLoggedIn]);
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -169,22 +237,19 @@ export default function CheckoutCourse({
         setPromoError('');
 
         try {
-            const response = await fetch('/api/discount-codes/validate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    code: promoCode,
-                    amount: course.price,
-                    product_type: 'course',
-                    product_id: course.id,
-                }),
-            });
+            const requestData: Record<string, string | number> = {
+                code: promoCode,
+                amount: course.price,
+                product_type: 'course',
+                product_id: course.id,
+            };
 
-            const data = await response.json();
+            if (!isLoggedIn && emailExists && guestFormData.email) {
+                requestData.email = guestFormData.email;
+            }
+
+            const response = await axios.post('/api/discount-codes/validate', requestData);
+            const data = response.data;
 
             if (data.valid) {
                 setDiscountData(data);
@@ -193,13 +258,17 @@ export default function CheckoutCourse({
                 setDiscountData(null);
                 setPromoError(data.message || 'Kode promo tidak valid');
             }
-        } catch {
+        } catch (error: unknown) {
             setDiscountData(null);
-            setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+            if (axios.isAxiosError(error)) {
+                setPromoError(error.response?.data?.message || 'Terjadi kesalahan saat memvalidasi kode promo');
+            } else {
+                setPromoError('Terjadi kesalahan saat memvalidasi kode promo');
+            }
         } finally {
             setPromoLoading(false);
         }
-    }, [promoCode, isFree, course.price, course.id]);
+    }, [promoCode, isFree, course.price, course.id, isLoggedIn, emailExists, guestFormData.email]);
 
     const validateReferralCode = useCallback(async () => {
         if (!promoCode.trim() || isFree) return;
@@ -252,34 +321,8 @@ export default function CheckoutCourse({
         return () => clearTimeout(timer);
     }, [promoCode, isFree, codeType, validatePromoCode, validateReferralCode]);
 
-    const refreshCSRFToken = async (): Promise<string> => {
-        try {
-            const response = await fetch('/csrf-token', {
-                method: 'GET',
-                credentials: 'same-origin',
-            });
-            const data = await response.json();
-
-            const metaTag = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement;
-            if (metaTag) {
-                metaTag.content = data.token;
-            }
-
-            return data.token;
-        } catch (error) {
-            console.error('Failed to refresh CSRF token:', error);
-            throw error;
-        }
-    };
-
     const handleFreeCheckout = (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
-            window.location.href = route('profile.edit');
-            return;
-        }
 
         setLoading(true);
 
@@ -301,119 +344,159 @@ export default function CheckoutCourse({
         );
     };
 
+    const submitPayment = async (): Promise<void> => {
+        const originalDiscountAmount = course.strikethrough_price > 0 ? course.strikethrough_price - course.price : 0;
+        const promoDiscountAmount = codeType === 'voucher' && discountData?.valid ? discountData.discount_amount : 0;
+
+        const invoiceData: InvoiceData = {
+            type: 'course',
+            id: course.id,
+            discount_amount: originalDiscountAmount + promoDiscountAmount,
+            nett_amount: finalCoursePrice,
+            transaction_fee: transactionFee,
+            total_amount: totalPrice,
+        };
+
+        if (codeType === 'voucher' && discountData?.valid) {
+            invoiceData.discount_code_id = discountData.discount_code.id;
+            invoiceData.discount_code_amount = discountData.discount_amount;
+        } else if (codeType === 'referral' && referralData?.valid) {
+            invoiceData.referral_code = promoCode;
+        }
+
+        if (pointsChecked && pointsToUse > 0) {
+            invoiceData.points_redeemed = pointsToUse;
+        }
+
+        try {
+            const res = await axios.post(route('invoice.store'), invoiceData);
+
+            if (res.data && res.data.success) {
+                if (res.data.payment_url) {
+                    window.location.href = res.data.payment_url;
+                } else {
+                    throw new Error('Payment URL tidak diterima dari server.');
+                }
+            } else {
+                throw new Error(res.data?.message || 'Gagal membuat invoice.');
+            }
+        } catch (error: unknown) {
+            console.error('Payment error:', error);
+            throw error;
+        }
+    };
+
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!isProfileComplete) {
-            alert('Profil Anda belum lengkap! Harap lengkapi nomor telepon terlebih dahulu.');
-            window.location.href = route('profile.edit');
+        // 1. Jika belum login, proses autentikasi (auto-login atau register) terlebih dahulu
+        if (!isLoggedIn) {
+            if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+                alert('Harap lengkapi seluruh data diri terlebih dahulu.');
+                return;
+            }
+
+            if (!termsAccepted && !isFree) {
+                alert('Anda harus menyetujui syarat dan ketentuan!');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                if (emailExists) {
+                    const loginResponse = await axios.post(route('auto-login'), {
+                        email: guestFormData.email,
+                        phone_number: guestFormData.phone_number,
+                        instance: guestFormData.instance,
+                        city: guestFormData.city,
+                    });
+
+                    if (!loginResponse.data?.success) {
+                        throw new Error(loginResponse.data?.message || 'Login otomatis gagal.');
+                    }
+                } else {
+                    if (!guestFormData.name) {
+                        alert('Nama wajib diisi.');
+                        setLoading(false);
+                        return;
+                    }
+
+                    await axios.post(route('register'), {
+                        name: guestFormData.name,
+                        email: guestFormData.email,
+                        phone_number: guestFormData.phone_number,
+                        instance: guestFormData.instance,
+                        city: guestFormData.city,
+                        password: guestFormData.phone_number,
+                        password_confirmation: guestFormData.phone_number,
+                        affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo?.code || sessionStorage.getItem('referral_code') || ''),
+                    });
+                }
+
+                if (isFree) {
+                    return handleFreeCheckout(e);
+                }
+
+                // Langsung jalankan submitPayment tanpa reload!
+                await submitPayment();
+            } catch (error: unknown) {
+                console.error('Login/Register error:', error);
+                setLoading(false);
+                if (axios.isAxiosError(error)) {
+                    alert(error.response?.data?.message || 'Gagal memproses pendaftaran.');
+                } else {
+                    alert(error instanceof Error ? error.message : 'Gagal memproses pendaftaran.');
+                }
+            }
             return;
         }
 
+        // 2. Jika sudah login
         if (!termsAccepted && !isFree) {
             alert('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
 
-        setLoading(true);
-
         if (isFree) {
             return handleFreeCheckout(e);
         }
 
-        const submitPayment = async (retryCount = 0): Promise<void> => {
-            const originalDiscountAmount = course.strikethrough_price > 0 ? course.strikethrough_price - course.price : 0;
-            const promoDiscountAmount = codeType === 'voucher' && discountData?.valid ? discountData.discount_amount : 0;
-
-            const invoiceData: InvoiceData = {
-                type: 'course',
-                id: course.id,
-                discount_amount: originalDiscountAmount + promoDiscountAmount,
-                nett_amount: finalCoursePrice,
-                transaction_fee: transactionFee,
-                total_amount: totalPrice,
-            };
-
-            if (codeType === 'voucher' && discountData?.valid) {
-                invoiceData.discount_code_id = discountData.discount_code.id;
-                invoiceData.discount_code_amount = discountData.discount_amount;
-            } else if (codeType === 'referral' && referralData?.valid) {
-                invoiceData.referral_code = promoCode;
-            }
-
-            if (pointsChecked && pointsToUse > 0) {
-                invoiceData.points_redeemed = pointsToUse;
-            }
-
-            try {
-                const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
-
-                const res = await fetch(route('invoice.store'), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken || '',
-                        Accept: 'application/json',
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(invoiceData),
-                });
-
-                if (res.status === 419 && retryCount < 2) {
-                    console.log(`CSRF token expired, refreshing... (attempt ${retryCount + 1})`);
-                    await refreshCSRFToken();
-                    return submitPayment(retryCount + 1);
-                }
-
-                const data = await res.json();
-
-                if (res.ok && data.success) {
-                    if (data.payment_url) {
-                        window.location.href = data.payment_url;
-                    } else {
-                        throw new Error('Payment URL not received');
-                    }
-                } else {
-                    throw new Error(data.message || 'Gagal membuat invoice.');
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                throw error;
-            }
-        };
-
+        setLoading(true);
         try {
             await submitPayment();
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Terjadi kesalahan saat proses pembayaran.';
-            alert(message);
+            if (axios.isAxiosError(error)) {
+                alert(error.response?.data?.message || 'Gagal memproses pembayaran.');
+            } else {
+                alert(error instanceof Error ? error.message : 'Terjadi kesalahan saat proses pembayaran.');
+            }
             setLoading(false);
         }
     };
 
-    // Get level badge
-    const getLevelBadge = (level: string) => {
-        switch (level) {
-            case 'beginner':
-                return (
-                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                        Beginner
-                    </span>
-                );
-            case 'intermediate':
-                return (
-                    <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">
-                        Intermediate
-                    </span>
-                );
-            case 'advanced':
-                return (
-                    <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                        Advanced
-                    </span>
-                );
-            default:
-                return null;
+    const handleCancelInvoice = async () => {
+        if (!pendingInvoice?.id) return;
+        if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) return;
+
+        setCancellingInvoice(true);
+        try {
+            const response = await axios.post(route('invoice.cancel', { id: pendingInvoice.id }));
+            if (response.data?.success || response.status === 200) {
+                alert('Pesanan berhasil dibatalkan.');
+                window.location.reload();
+            } else {
+                alert(response.data?.message || 'Gagal membatalkan pesanan.');
+            }
+        } catch (error: unknown) {
+            console.error('Cancel invoice error:', error);
+            if (axios.isAxiosError(error)) {
+                alert(error.response?.data?.message || 'Gagal membatalkan pesanan.');
+            } else {
+                alert('Gagal membatalkan pesanan.');
+            }
+        } finally {
+            setCancellingInvoice(false);
         }
     };
 
@@ -444,59 +527,6 @@ export default function CheckoutCourse({
 
         window.location.reload();
     };
-
-    if (!isLoggedIn) {
-        const currentUrl = window.location.href;
-        const loginUrl = route('login', { redirect: currentUrl });
-
-        return (
-            <div className="min-h-screen bg-[url('/assets/images/bg-product.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 py-12">
-                <Head title="Login Diperlukan" />
-                <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 shadow-xs text-center space-y-6">
-                    <div className="mx-auto w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
-                        <User size={32} />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Diperlukan</h2>
-                        <p className="text-sm text-gray-500">
-                            Silakan login terlebih dahulu untuk melanjutkan checkout kelas
-                            {referralInfo.hasActive && '. Kode referral Anda akan tetap tersimpan'}
-                        </p>
-                    </div>
-                    <div className="flex gap-4">
-                        <Button asChild className="flex-1 rounded-full bg-[#F9A885] hover:bg-[#F9A885]/90 text-white font-semibold">
-                            <a href={loginUrl}>Login</a>
-                        </Button>
-                        <Button asChild variant="outline" className="flex-1 rounded-full border-gray-200 text-gray-700">
-                            <Link href={route('register', referralInfo.code ? { ref: referralInfo.code } : {})}>Daftar</Link>
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    if (!isProfileComplete) {
-        return (
-            <div className="min-h-screen bg-[url('/assets/images/bg-product.png')] bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 py-12">
-                <Head title="Profil Belum Lengkap" />
-                <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 shadow-xs text-center space-y-6">
-                    <div className="mx-auto w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
-                        <User size={32} />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Profil Belum Lengkap</h2>
-                        <p className="text-sm text-gray-500">
-                            Harap lengkapi nomor telepon terlebih dahulu untuk melanjutkan checkout kelas.
-                        </p>
-                    </div>
-                    <Button asChild className="w-full py-6 rounded-full bg-[#F9A885] hover:bg-[#F9A885]/90 text-white font-semibold shadow-xs">
-                        <Link href={route('profile.edit', { redirect: window.location.href })}>Lengkapi Profil</Link>
-                    </Button>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <UserLayout>
@@ -614,6 +644,105 @@ export default function CheckoutCourse({
                                     </TabsContent>
                                 </div>
                             </Tabs>
+
+                            {/* Guest Form Card */}
+                            {!isLoggedIn && !hasAccess && !pendingInvoice && (
+                                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
+                                    <h3 className="font-bold text-gray-900 text-lg mb-4">Masukkan Data Diri Anda</h3>
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-email" className="font-semibold text-gray-700">Email</Label>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    id="guest-email"
+                                                    type="email"
+                                                    placeholder="email@example.com"
+                                                    value={guestFormData.email}
+                                                    onChange={(e) => updateGuestForm('email', e.target.value)}
+                                                    className="flex-1 rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500"
+                                                    required
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="icon"
+                                                    onClick={() => {
+                                                        updateGuestForm('email', '');
+                                                        setEmailExists(false);
+                                                    }}
+                                                    className="h-10 w-10 shrink-0 border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                                >
+                                                    <RotateCcw className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                            {checkingEmail && <p className="text-xs text-gray-500">Mengecek email...</p>}
+                                            {emailExists && <p className="text-xs text-green-600">Email ditemukan. Login otomatis akan digunakan.</p>}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-name" className="font-semibold text-gray-700">Nama Lengkap</Label>
+                                            <Input
+                                                id="guest-name"
+                                                type="text"
+                                                placeholder="Nama lengkap Anda"
+                                                value={guestFormData.name}
+                                                onChange={(e) => updateGuestForm('name', e.target.value)}
+                                                disabled={emailExists}
+                                                className="rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-phone" className="font-semibold text-gray-700">No. WhatsApp / Telepon</Label>
+                                            <Input
+                                                id="guest-phone"
+                                                type="tel"
+                                                placeholder="08xxxxxxxxxx"
+                                                value={guestFormData.phone_number}
+                                                onChange={(e) => updateGuestForm('phone_number', e.target.value)}
+                                                disabled={emailExists}
+                                                className="rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500"
+                                                required
+                                            />
+                                            {!emailExists && (
+                                                <p className="text-xs text-gray-500">Nomor telepon akan digunakan sebagai kata sandi akun Anda.</p>
+                                            )}
+                                            {emailExists && (
+                                                <p className="text-xs text-blue-600">Data akun ditemukan dan dikunci agar sesuai akun terdaftar.</p>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-instance" className="font-semibold text-gray-700">Instansi / Perusahaan</Label>
+                                            <Input
+                                                id="guest-instance"
+                                                type="text"
+                                                placeholder="Instansi atau perusahaan Anda"
+                                                value={guestFormData.instance}
+                                                onChange={(e) => updateGuestForm('instance', e.target.value)}
+                                                disabled={loading}
+                                                className="rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guest-city" className="font-semibold text-gray-700">Kota Domisili</Label>
+                                            <Input
+                                                id="guest-city"
+                                                type="text"
+                                                placeholder="Kota domisili Anda"
+                                                value={guestFormData.city}
+                                                onChange={(e) => updateGuestForm('city', e.target.value)}
+                                                disabled={loading}
+                                                className="rounded-xl bg-gray-50/50 border-gray-200 focus:border-orange-500"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Right Column */}
@@ -646,7 +775,7 @@ export default function CheckoutCourse({
                                                 return (
                                                     <>
                                                         <X className="h-5 w-5 text-red-600" />
-                                                        <h4 className="font-bold text-red-700">Pembayaran Gagal</h4>
+                                                        <h4 className="font-bold text-red-700">Pembayaran Gagal / Kedaluwarsa</h4>
                                                     </>
                                                 );
                                             }
@@ -684,7 +813,7 @@ export default function CheckoutCourse({
                                             if (isExpired) {
                                                 return (
                                                     <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700 leading-relaxed">
-                                                        Waktu pembayaran telah habis. Jika Anda sudah membayar atau butuh bantuan, silakan hubungi admin melalui{' '}
+                                                        Waktu pembayaran telah habis. Silakan batalkan pesanan untuk membuat pesanan baru atau hubungi admin melalui{' '}
                                                         <a
                                                             href="https://wa.me/6289528514480"
                                                             target="_blank"
@@ -706,6 +835,15 @@ export default function CheckoutCourse({
 
                                         <Button onClick={() => window.location.reload()} variant="outline" className="w-full py-6 rounded-full border-gray-200 text-gray-700">
                                             Cek Status Pembayaran
+                                        </Button>
+
+                                        <Button
+                                            onClick={handleCancelInvoice}
+                                            disabled={cancellingInvoice}
+                                            variant="ghost"
+                                            className="w-full py-6 rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                                        >
+                                            {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
                                         </Button>
                                     </div>
                                 </div>

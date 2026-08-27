@@ -16,6 +16,7 @@ class TransactionController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'bundleEnrollments.bundle',
             'certificationProgramItems.certificationProgram',
         ])
             ->where('user_id', $userId)
@@ -31,6 +32,7 @@ class TransactionController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
+            'bundleEnrollments.bundle',
             'certificationProgramItems.certificationProgram',
         ])->findOrFail($id);
 
