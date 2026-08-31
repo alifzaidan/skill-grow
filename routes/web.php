@@ -452,7 +452,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     });
 
     // Earnings
-    Route::middleware(['role_or_permission:affiliate|mentor|admin'])->group(function () {
+    Route::middleware(['role_or_permission:affiliate|mentor|admin|staff'])->group(function () {
         Route::get('affiliate-earnings', [AffiliateEarningController::class, 'index'])->name('earnings.index');
         Route::get('affiliate-earnings/export', [AffiliateEarningController::class, 'export'])->name('earnings.export');
     });
@@ -491,6 +491,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
     // Transactions
     Route::middleware(['role_or_permission:admin|transactions.view'])->group(function () {
         Route::get('transactions', [InvoiceController::class, 'index'])->name('transactions.index');
+        Route::get('transactions/export', [InvoiceController::class, 'export'])->name('transactions.export');
     });
 
     // Promotions

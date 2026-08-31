@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import AdminLayout from '@/layouts/admin-layout';
 import { rupiahFormatter } from '@/lib/utils';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
+import { SharedData, type BreadcrumbItem } from '@/types';
+import { Head, usePage } from '@inertiajs/react';
 import {
     BookOpen,
     BookText,
@@ -50,6 +50,7 @@ interface Statistics {
 }
 
 import { PaginatedData } from '@/types/pagination';
+import { usePermission } from '@/hooks/use-permission';
 
 interface MentorProps {
     mentors: PaginatedData<Mentor>;
@@ -64,10 +65,10 @@ interface MentorProps {
     };
 }
 
-import { usePermission } from '@/hooks/use-permission';
-
 export default function Mentors({ mentors, statistics, flash, filters }: MentorProps) {
-    const { canManage } = usePermission();
+    const { auth } = usePage<SharedData>().props;
+    const { canManage, roles, isAdmin } = usePermission();
+    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
     const canManageMentor = canManage('mentors');
     const [open, setOpen] = useState(false);
     const [showMoreStats, setShowMoreStats] = useState(false);
@@ -118,24 +119,26 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">Total Komisi</p>
-                                    <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.earnings.total_earnings)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
-                                        {statistics.content.total_courses +
-                                            statistics.content.total_articles +
-                                            statistics.content.total_webinars +
-                                            statistics.content.total_bootcamps}{' '}
-                                        konten
-                                    </p>
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-xs font-medium">Total Komisi</p>
+                                        <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.earnings.total_earnings)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
+                                            {statistics.content.total_courses +
+                                                statistics.content.total_articles +
+                                                statistics.content.total_webinars +
+                                                statistics.content.total_bootcamps}{' '}
+                                            konten
+                                        </p>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ MOBILE: Expandable Details */}
@@ -168,7 +171,7 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                                 </div>
 
                                 {/* Content & Commission */}
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className={`grid gap-3 ${isStaff ? 'grid-cols-1' : 'grid-cols-2'}`}>
                                     <div className="rounded-lg border p-3 text-sm">
                                         <h4 className="mb-2 text-xs font-semibold">Konten</h4>
                                         <div className="space-y-1 text-xs">
@@ -191,30 +194,32 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                                         </div>
                                     </div>
 
-                                    <div className="rounded-lg border p-3 text-sm">
-                                        <h4 className="mb-2 text-xs font-semibold">Komisi</h4>
-                                        <div className="space-y-1 text-xs">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Dibayar</span>
-                                                <span className="font-medium text-green-600">
-                                                    {rupiahFormatter.format(statistics.earnings.paid_commission)}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Pending</span>
-                                                <span className="font-medium text-yellow-600">
-                                                    {rupiahFormatter.format(statistics.earnings.pending_commission)}
-                                                </span>
+                                    {!isStaff && (
+                                        <div className="rounded-lg border p-3 text-sm">
+                                            <h4 className="mb-2 text-xs font-semibold">Komisi</h4>
+                                            <div className="space-y-1 text-xs">
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Dibayar</span>
+                                                    <span className="font-medium text-green-600">
+                                                        {rupiahFormatter.format(statistics.earnings.paid_commission)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-muted-foreground">Pending</span>
+                                                    <span className="font-medium text-yellow-600">
+                                                        {rupiahFormatter.format(statistics.earnings.pending_commission)}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* ✅ DESKTOP: Stats (4 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                    {/* ✅ DESKTOP: Stats */}
+                    <div className={`hidden gap-4 md:grid ${isStaff ? 'md:grid-cols-3' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:from-blue-950/20">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -244,8 +249,9 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-muted-foreground text-sm font-medium">Total Komisi</p>
                                     <h3 className="mt-2 text-2xl font-bold text-purple-600 dark:text-purple-400">
@@ -260,6 +266,7 @@ export default function Mentors({ mentors, statistics, flash, filters }: MentorP
                                 </div>
                             </div>
                         </div>
+                        )}
 
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
                             <div className="flex items-center justify-between">

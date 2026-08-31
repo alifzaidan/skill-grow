@@ -62,6 +62,7 @@ interface Statistics {
 }
 
 import { PaginatedData } from '@/types/pagination';
+import { usePermission } from '@/hooks/use-permission';
 
 interface TransactionProps {
     invoices: PaginatedData<Invoice>;
@@ -80,6 +81,8 @@ interface TransactionProps {
 
 export default function Transactions({ invoices, statistics, filters, flash }: TransactionProps) {
     const [showMoreStats, setShowMoreStats] = useState(false);
+    const { roles, isAdmin } = usePermission();
+    const isStaff = roles.includes('staff') && !isAdmin;
 
     useEffect(() => {
         if (flash?.success) {
@@ -103,7 +106,7 @@ export default function Transactions({ invoices, statistics, filters, flash }: T
 
                 {/* Statistics Cards */}
                 <div className="mb-6 space-y-4">
-                    {/* ✅ MOBILE: Compact Overview (2 cards only) */}
+                    {/* ✅ MOBILE: Compact Overview */}
                     <div className="grid gap-4 md:hidden">
                         <div className="dark:to-background rounded-lg border bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm dark:from-blue-950/20">
                             <div className="flex items-center justify-between">
@@ -118,20 +121,22 @@ export default function Transactions({ invoices, statistics, filters, flash }: T
                             </div>
                         </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-xs font-medium">Total Pendapatan</p>
-                                    <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.revenue.total_revenue)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
-                                        Bulan ini: {rupiahFormatter.format(statistics.period.month_revenue)}
-                                    </p>
+                        {!isStaff && (
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-xs font-medium">Total Pendapatan</p>
+                                        <h3 className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.revenue.total_revenue)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">
+                                            Bulan ini: {rupiahFormatter.format(statistics.period.month_revenue)}
+                                        </p>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* ✅ MOBILE: Expandable Details */}
@@ -266,56 +271,58 @@ export default function Transactions({ invoices, statistics, filters, flash }: T
                     </div>
 
                     {/* ✅ DESKTOP: Revenue Stats (4 cards) */}
-                    <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-sm font-medium">Total Pendapatan</p>
-                                    <h3 className="mt-2 text-xl font-bold text-purple-600 dark:text-purple-400">
-                                        {rupiahFormatter.format(statistics.revenue.total_revenue)}
-                                    </h3>
+                    {!isStaff && (
+                        <div className="hidden gap-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-purple-50 to-white p-4 shadow-sm dark:from-purple-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-sm font-medium">Total Pendapatan</p>
+                                        <h3 className="mt-2 text-xl font-bold text-purple-600 dark:text-purple-400">
+                                            {rupiahFormatter.format(statistics.revenue.total_revenue)}
+                                        </h3>
+                                    </div>
+                                    <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <DollarSign className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                             </div>
-                        </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm dark:from-indigo-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-sm font-medium">Rata-rata Transaksi</p>
-                                    <h3 className="mt-2 text-xl font-bold text-indigo-600 dark:text-indigo-400">
-                                        {rupiahFormatter.format(statistics.revenue.average_transaction)}
-                                    </h3>
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm dark:from-indigo-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-sm font-medium">Rata-rata Transaksi</p>
+                                        <h3 className="mt-2 text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                            {rupiahFormatter.format(statistics.revenue.average_transaction)}
+                                        </h3>
+                                    </div>
+                                    <TrendingUp className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                                 </div>
-                                <TrendingUp className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
                             </div>
-                        </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-sm font-medium">Total Diskon</p>
-                                    <h3 className="mt-2 text-xl font-bold text-orange-600 dark:text-orange-400">
-                                        {rupiahFormatter.format(statistics.revenue.total_discount)}
-                                    </h3>
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-orange-50 to-white p-4 shadow-sm dark:from-orange-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-sm font-medium">Total Diskon</p>
+                                        <h3 className="mt-2 text-xl font-bold text-orange-600 dark:text-orange-400">
+                                            {rupiahFormatter.format(statistics.revenue.total_discount)}
+                                        </h3>
+                                    </div>
+                                    <Tag className="h-8 w-8 text-orange-600 dark:text-orange-400" />
                                 </div>
-                                <Tag className="h-8 w-8 text-orange-600 dark:text-orange-400" />
                             </div>
-                        </div>
 
-                        <div className="dark:to-background rounded-lg border bg-gradient-to-br from-teal-50 to-white p-4 shadow-sm dark:from-teal-950/20">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <p className="text-muted-foreground text-sm font-medium">Pendapatan Bulan Ini</p>
-                                    <h3 className="mt-2 text-xl font-bold text-teal-600 dark:text-teal-400">
-                                        {rupiahFormatter.format(statistics.period.month_revenue)}
-                                    </h3>
-                                    <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">{statistics.period.month_transactions} transaksi</p>
+                            <div className="dark:to-background rounded-lg border bg-gradient-to-br from-teal-50 to-white p-4 shadow-sm dark:from-teal-950/20">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <p className="text-muted-foreground text-sm font-medium">Pendapatan Bulan Ini</p>
+                                        <h3 className="mt-2 text-xl font-bold text-teal-600 dark:text-teal-400">
+                                            {rupiahFormatter.format(statistics.period.month_revenue)}
+                                        </h3>
+                                        <p className="mt-1 text-xs text-teal-600 dark:text-teal-400">{statistics.period.month_transactions} transaksi</p>
+                                    </div>
+                                    <Calendar className="h-8 w-8 text-teal-600 dark:text-teal-400" />
                                 </div>
-                                <Calendar className="h-8 w-8 text-teal-600 dark:text-teal-400" />
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* ✅ DESKTOP: Additional Stats (2 cards) */}
                     <div className="hidden gap-4 md:grid md:grid-cols-2">
