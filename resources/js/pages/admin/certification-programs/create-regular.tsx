@@ -382,7 +382,7 @@ export default function CreateRegularCertificationProgram({ categories, mentors 
 
                                                                     if (missingMentors.length > 0) {
                                                                         toast.warning(
-                                                                            `Mentor "${missingMentors.join(', ')}" belum terdaftar di database Kompeten. Silakan buat data mentor terlebih dahulu di Kompeten agar dapat dipilih.`,
+                                                                            `Mentor "${missingMentors.join(', ')}" belum terdaftar di database Skill Grow. Silakan buat data mentor terlebih dahulu di Skill Grow agar dapat dipilih.`,
                                                                             { duration: 7000 }
                                                                         );
                                                                     }
@@ -743,10 +743,10 @@ export default function CreateRegularCertificationProgram({ categories, mentors 
                                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                                             <div className="space-y-1 text-xs leading-relaxed">
                                                 <p className="font-medium text-amber-900 dark:text-amber-200">
-                                                    Mentor "{missingMentorNames.join(', ')}" belum terdaftar di Kompeten
+                                                    Mentor "{missingMentorNames.join(', ')}" belum terdaftar di Skill Grow
                                                 </p>
                                                 <p className="text-amber-700 dark:text-amber-400">
-                                                    Data mentor dari Biinsight tidak ditemukan di database Kompeten. Silakan buat akun/data mentor tersebut terlebih dahulu di menu <strong>Kelola Staff / Mentor</strong> atau pilih mentor lain yang tersedia di atas.
+                                                    Data mentor dari Biinsight tidak ditemukan di database Skill Grow. Silakan buat akun/data mentor tersebut terlebih dahulu di menu <strong>Kelola Staff / Mentor</strong> atau pilih mentor lain yang tersedia di atas.
                                                 </p>
                                             </div>
                                         </div>

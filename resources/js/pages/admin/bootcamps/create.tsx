@@ -187,8 +187,8 @@ export default function CreateBootcamp({
             has_submission_link: false,
             batch: 1,
             tools: [],
-            requirement_1: 'Follow Instagram @kompeten.idn',
-            requirement_2: 'Follow TikTok @kompeten.idn',
+            requirement_1: 'Follow Instagram @skillgrow.id',
+            requirement_2: 'Follow TikTok @skillgrow.id',
             requirement_3: 'Tag 3 teman di postingan Instagram kami',
         },
     });
@@ -422,7 +422,7 @@ export default function CreateBootcamp({
 
                                                                     if (missingMentors.length > 0) {
                                                                         toast.warning(
-                                                                            `Mentor "${missingMentors.join(', ')}" belum terdaftar di database Kompeten. Silakan buat data mentor terlebih dahulu di Kompeten agar dapat dipilih.`,
+                                                                            `Mentor "${missingMentors.join(', ')}" belum terdaftar di database Skill Grow. Silakan buat data mentor terlebih dahulu di Skill Grow agar dapat dipilih.`,
                                                                             { duration: 7000 }
                                                                         );
                                                                     }
@@ -1096,10 +1096,10 @@ export default function CreateBootcamp({
                                                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                                                 <div className="space-y-1 text-xs leading-relaxed">
                                                     <p className="font-medium text-amber-900 dark:text-amber-200">
-                                                        Mentor "{missingMentorNames.join(', ')}" belum terdaftar di Kompeten
+                                                        Mentor "{missingMentorNames.join(', ')}" belum terdaftar di Skill Grow
                                                     </p>
                                                     <p className="text-amber-700 dark:text-amber-400">
-                                                        Data mentor dari Biinsight tidak ditemukan di database Kompeten. Silakan buat akun/data mentor tersebut terlebih dahulu di menu <strong>Kelola Staff / Mentor</strong> atau pilih mentor lain yang tersedia di atas.
+                                                        Data mentor dari Biinsight tidak ditemukan di database Skill Grow. Silakan buat akun/data mentor tersebut terlebih dahulu di menu <strong>Kelola Staff / Mentor</strong> atau pilih mentor lain yang tersedia di atas.
                                                     </p>
                                                 </div>
                                             </div>
@@ -1203,7 +1203,7 @@ export default function CreateBootcamp({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow Instagram @kompeten.idn"
+                                            placeholder="Contoh: Follow Instagram @skillgrow.id"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan pertama yang akan ditampilkan untuk bootcamp gratis</FormDescription>
@@ -1221,7 +1221,7 @@ export default function CreateBootcamp({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow TikTok @kompeten.idn"
+                                            placeholder="Contoh: Follow TikTok @skillgrow.id"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan kedua yang akan ditampilkan untuk bootcamp gratis</FormDescription>

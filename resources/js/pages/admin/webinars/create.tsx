@@ -144,8 +144,8 @@ export default function CreateWebinar({
             group_url: '',
             batch: 1,
             tools: [],
-            requirement_1: 'Follow Instagram @kompeten.idn',
-            requirement_2: 'Follow TikTok @kompeten.idn',
+            requirement_1: 'Follow Instagram @skillgrow.id',
+            requirement_2: 'Follow TikTok @skillgrow.id',
             requirement_3: 'Tag 3 teman di postingan Instagram kami',
         },
     });
@@ -215,9 +215,9 @@ export default function CreateWebinar({
                                                                         const numericBatch = parseInt(batchStr.replace(/\D/g, '')) || 1;
                                                                         form.setValue('batch', numericBatch);
                                                                     }
-                                                                    
+
                                                                     const isValidDate = (d: any) => d && !isNaN(Date.parse(d));
-                                                                    
+
                                                                     if (isValidDate(program.start_time)) {
                                                                         form.setValue('start_time', new Date(program.start_time).toISOString());
                                                                     }
@@ -610,10 +610,10 @@ export default function CreateWebinar({
                                                         >
                                                             {field.value
                                                                 ? new Date(field.value).toLocaleDateString('id-ID', {
-                                                                      day: 'numeric',
-                                                                      month: 'short',
-                                                                      year: 'numeric',
-                                                                  })
+                                                                    day: 'numeric',
+                                                                    month: 'short',
+                                                                    year: 'numeric',
+                                                                })
                                                                 : 'Pilih tanggal'}
                                                             <ChevronDownIcon />
                                                         </Button>
@@ -676,10 +676,10 @@ export default function CreateWebinar({
                                                         >
                                                             {field.value
                                                                 ? new Date(field.value).toLocaleDateString('id-ID', {
-                                                                      day: 'numeric',
-                                                                      month: 'short',
-                                                                      year: 'numeric',
-                                                                  })
+                                                                    day: 'numeric',
+                                                                    month: 'short',
+                                                                    year: 'numeric',
+                                                                })
                                                                 : 'Pilih tanggal'}
                                                             <ChevronDownIcon />
                                                         </Button>
@@ -743,10 +743,10 @@ export default function CreateWebinar({
                                                         >
                                                             {field.value
                                                                 ? new Date(field.value).toLocaleDateString('id-ID', {
-                                                                      day: 'numeric',
-                                                                      month: 'short',
-                                                                      year: 'numeric',
-                                                                  })
+                                                                    day: 'numeric',
+                                                                    month: 'short',
+                                                                    year: 'numeric',
+                                                                })
                                                                 : 'Pilih tanggal'}
                                                             <ChevronDownIcon />
                                                         </Button>
@@ -937,7 +937,7 @@ export default function CreateWebinar({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow Instagram @kompeten.idn"
+                                            placeholder="Contoh: Follow Instagram @skillgrow.id"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan pertama yang akan ditampilkan untuk webinar gratis</FormDescription>
@@ -955,7 +955,7 @@ export default function CreateWebinar({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow TikTok @kompeten.idn"
+                                            placeholder="Contoh: Follow TikTok @skillgrow.id"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan kedua yang akan ditampilkan untuk webinar gratis</FormDescription>
