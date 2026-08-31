@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:public/build/assets/use-permission-DYLsw1rd.js
-import{K as t}from"./app-DjjfzYEC.js";function f(){const{auth:r}=t().props,i=(r==null?void 0:r.role)||[],e=(r==null?void 0:r.permissions)||[],s=i.includes("admin");return{can:n=>s?!0:e.includes(n),canAny:n=>s?!0:n.some(c=>e.includes(c)),canAll:n=>s?!0:n.every(c=>e.includes(c)),canManage:n=>s?!0:e.includes(`${n}.manage`),canView:n=>s?!0:e.includes(`${n}.view`)||e.includes(`${n}.manage`),isAdmin:s,permissions:e,roles:i}}export{f as u};
-========
-import{K as t}from"./app-B8US3hiM.js";function f(){const{auth:r}=t().props,i=(r==null?void 0:r.role)||[],e=(r==null?void 0:r.permissions)||[],s=i.includes("admin");return{can:n=>s?!0:e.includes(n),canAny:n=>s?!0:n.some(c=>e.includes(c)),canAll:n=>s?!0:n.every(c=>e.includes(c)),canManage:n=>s?!0:e.includes(`${n}.manage`),canView:n=>s?!0:e.includes(`${n}.view`)||e.includes(`${n}.manage`),isAdmin:s,permissions:e,roles:i}}export{f as u};
->>>>>>>> f2706d040edd72433bd2c820fc8c5ac3287b6212:public/build/assets/use-permission-BOvVGmEZ.js
