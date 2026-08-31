@@ -19,7 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Head, router } from '@inertiajs/react';
 import { Editor } from '@tinymce/tinymce-react';
 import { addDays, addHours, setHours, setMinutes, setSeconds } from 'date-fns';
-import { BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown, UserRound } from 'lucide-react';
+import { AlertTriangle, BookMarked, CalendarFold, Check, ChevronDownIcon, ChevronsUpDown, UserRound } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -98,6 +98,7 @@ export default function CreateWebinar({
     const [biinspiraPrograms, setBiinspiraPrograms] = useState<any[]>([]);
     const [isBiinspiraPopoverOpen, setIsBiinspiraPopoverOpen] = useState(false);
     const [selectedBiinspiraProgram, setSelectedBiinspiraProgram] = useState<any | null>(null);
+    const [missingMentorName, setMissingMentorName] = useState<string | null>(null);
 
     useEffect(() => {
         fetch(route('admin.biinsight-import.programs') + '?type=webinar')
@@ -143,8 +144,8 @@ export default function CreateWebinar({
             group_url: '',
             batch: 1,
             tools: [],
-            requirement_1: 'Follow Instagram @skillgrow.id',
-            requirement_2: 'Follow TikTok @skillgrow.id',
+            requirement_1: 'Follow Instagram @kompeten.idn',
+            requirement_2: 'Follow TikTok @kompeten.idn',
             requirement_3: 'Tag 3 teman di postingan Instagram kami',
         },
     });
@@ -239,8 +240,63 @@ export default function CreateWebinar({
                                                                         }
                                                                     }
 
+                                                                    // Populate Mentor
+                                                                    const rawMentorNames: string[] = [];
+                                                                    if (Array.isArray(program.mentors)) {
+                                                                        program.mentors.forEach((m: any) => {
+                                                                            if (typeof m === 'string' && m.trim()) {
+                                                                                rawMentorNames.push(m.trim());
+                                                                            } else if (m && typeof m === 'object' && m.name) {
+                                                                                rawMentorNames.push(String(m.name).trim());
+                                                                            }
+                                                                        });
+                                                                    } else if (typeof program.mentor === 'string' && program.mentor.trim()) {
+                                                                        rawMentorNames.push(program.mentor.trim());
+                                                                    } else if (typeof program.mentor_name === 'string' && program.mentor_name.trim()) {
+                                                                        rawMentorNames.push(program.mentor_name.trim());
+                                                                    }
+
+                                                                    let assignedMentor: string | null = null;
+                                                                    let missingMentor: string | null = null;
+
+                                                                    if (rawMentorNames.length > 0) {
+                                                                        const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+                                                                        const getBaseName = (s: string) => normalize(s.split(',')[0]);
+
+                                                                        const targetName = rawMentorNames[0];
+                                                                        const matched = mentors.find((m) => {
+                                                                            const mNorm = normalize(m.name);
+                                                                            const rNorm = normalize(targetName);
+                                                                            if (mNorm === rNorm) return true;
+                                                                            const mBase = getBaseName(m.name);
+                                                                            const rBase = getBaseName(targetName);
+                                                                            if (mBase && rBase && mBase === rBase) return true;
+                                                                            return false;
+                                                                        });
+
+                                                                        if (matched) {
+                                                                            form.setValue('user_id', matched.id);
+                                                                            assignedMentor = matched.name;
+                                                                        } else {
+                                                                            missingMentor = targetName;
+                                                                        }
+                                                                    }
+
                                                                     setIsBiinspiraPopoverOpen(false);
-                                                                    toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
+                                                                    setMissingMentorName(missingMentor);
+
+                                                                    if (missingMentor) {
+                                                                        toast.warning(
+                                                                            `Mentor "${missingMentor}" belum terdaftar di database Kompeten. Silakan buat data mentor terlebih dahulu di Kompeten agar dapat dipilih.`,
+                                                                            { duration: 7000 }
+                                                                        );
+                                                                    }
+
+                                                                    if (assignedMentor) {
+                                                                        toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight (Mentor: ${assignedMentor}).`);
+                                                                    } else {
+                                                                        toast.success(`Berhasil mengambil data "${program.title}" dari Biinsight!`);
+                                                                    }
                                                                 } catch (err: any) {
                                                                     console.error(err);
                                                                     toast.error(`Gagal memproses data: ${err.message}`);
@@ -811,6 +867,19 @@ export default function CreateWebinar({
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
+                                        {missingMentorName && (
+                                            <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-amber-800 dark:border-amber-800/80 dark:bg-amber-950/40 dark:text-amber-300">
+                                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                <div className="space-y-1 text-xs leading-relaxed">
+                                                    <p className="font-medium text-amber-900 dark:text-amber-200">
+                                                        Mentor "{missingMentorName}" belum terdaftar di Kompeten
+                                                    </p>
+                                                    <p className="text-amber-700 dark:text-amber-400">
+                                                        Data mentor dari Biinsight tidak ditemukan di database Kompeten. Silakan buat akun/data mentor tersebut terlebih dahulu di menu <strong>Kelola Staff / Mentor</strong> atau pilih mentor lain yang tersedia di atas.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                         <FormDescription>Pilih mentor yang akan menjadi pemateri webinar ini</FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -868,7 +937,7 @@ export default function CreateWebinar({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow Instagram @skillgrow.id"
+                                            placeholder="Contoh: Follow Instagram @kompeten.idn"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan pertama yang akan ditampilkan untuk webinar gratis</FormDescription>
@@ -886,7 +955,7 @@ export default function CreateWebinar({
                                             {...field}
                                             value={field.value ?? ''}
                                             className="w-full rounded border p-2"
-                                            placeholder="Contoh: Follow TikTok @skillgrow.id"
+                                            placeholder="Contoh: Follow TikTok @kompeten.idn"
                                             autoComplete="off"
                                         />
                                         <FormDescription>Teks persyaratan kedua yang akan ditampilkan untuk webinar gratis</FormDescription>
