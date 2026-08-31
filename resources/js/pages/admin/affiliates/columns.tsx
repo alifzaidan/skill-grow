@@ -7,13 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { rupiahFormatter } from '@/lib/utils';
-import { Link, router } from '@inertiajs/react';
+import { SharedData } from '@/types';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { CirclePower, Folder, Trash } from 'lucide-react';
 
 import { usePermission } from '@/hooks/use-permission';
+
+function AffiliateEarningsCell({ row }: { row: { original: Affiliate } }) {
+    const { auth } = usePage<SharedData>().props;
+    const { roles, isAdmin } = usePermission();
+    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+
+    if (isStaff) {
+        return <div className="font-medium text-muted-foreground">Rp ***</div>;
+    }
+
+    const totalEarnings = row.original.total_earnings || 0;
+    return <div className="font-medium text-green-600">{rupiahFormatter.format(totalEarnings)}</div>;
+}
 
 export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }) {
     const { canManage } = usePermission();
@@ -63,22 +77,22 @@ export default function AffiliateActions({ affiliate }: { affiliate: Affiliate }
                     <TooltipTrigger asChild>
                         <div>
                             <DeleteConfirmDialog
-                            trigger={
-                                <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
-                                    <Trash />
-                                    <span className="sr-only">Hapus Afiliasi</span>
-                                </Button>
-                            }
-                            title="Apakah Anda yakin ingin menghapus afiliasi ini?"
-                            itemName={affiliate.name}
-                            onConfirm={handleDelete}
-                        />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Hapus Afiliasi</p>
-                </TooltipContent>
-            </Tooltip>
+                                trigger={
+                                    <Button variant="link" size="icon" className="size-8 text-red-500 hover:cursor-pointer">
+                                        <Trash />
+                                        <span className="sr-only">Hapus Afiliasi</span>
+                                    </Button>
+                                }
+                                title="Apakah Anda yakin ingin menghapus afiliasi ini?"
+                                itemName={affiliate.name}
+                                onConfirm={handleDelete}
+                            />
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Hapus Afiliasi</p>
+                    </TooltipContent>
+                </Tooltip>
             )}
         </div>
     );
@@ -153,10 +167,7 @@ export const columns: ColumnDef<Affiliate>[] = [
     {
         accessorKey: 'total_earnings',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Total Pendapatan" />,
-        cell: ({ row }) => {
-            const totalEarnings = row.original.total_earnings || 0;
-            return <div className="font-medium text-green-600">{rupiahFormatter.format(totalEarnings)}</div>;
-        },
+        cell: ({ row }) => <AffiliateEarningsCell row={row} />,
     },
     {
         accessorKey: 'created_at',

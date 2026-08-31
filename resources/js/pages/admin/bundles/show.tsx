@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { BundleTransactionInvoice } from './columns-transactions';
 import BundleTransaction from './show-transactions';
+import { usePermission } from '@/hooks/use-permission';
 
 interface Product {
     id: string;
@@ -94,12 +95,11 @@ interface ShowProps {
     };
 }
 
-import { usePermission } from '@/hooks/use-permission';
-
 export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, discountAmount, discountPercentage, flash }: ShowProps) {
     const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
+    const isStaff = auth.role.includes('staff') && !auth.role.includes('admin');
     const canManageBundle = canManage('bundles') && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -183,22 +183,25 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
         archived: { label: 'Archived', color: 'bg-red-100 text-red-700' },
     };
 
-    const totalEnrollments = bundle.enrollments.length;
-    const paidEnrollments = bundle.enrollments.filter((e) => e.invoice.status === 'paid').length;
-    const totalRevenue = bundle.enrollments.filter((e) => e.invoice.status === 'paid').reduce((sum, e) => sum + e.invoice.amount, 0);
-    const transactions: BundleTransactionInvoice[] = bundle.enrollments.map((enrollment) => ({
-        id: enrollment.invoice.id,
+    const totalEnrollments = bundle.enrollments?.length || 0;
+    const paidEnrollments = bundle.enrollments?.filter((e) => e.invoice?.status === 'paid').length || 0;
+    const totalRevenue = bundle.enrollments?.filter((e) => e.invoice?.status === 'paid').reduce((sum, e) => sum + (e.invoice?.amount || 0), 0) || 0;
+
+    // Transform bundle enrollments into TransactionInvoice format
+    const transactions: BundleTransactionInvoice[] = (bundle.enrollments || []).map((enrollment) => ({
+        id: enrollment.id,
         user: {
-            id: enrollment.invoice.user.id,
-            name: enrollment.invoice.user.name,
+            id: enrollment.invoice?.user?.id || '',
+            name: enrollment.invoice?.user?.name || '-',
+            email: enrollment.invoice?.user?.email || '-',
             phone_number: null,
         },
         referrer: null,
-        invoice_code: enrollment.invoice.invoice_code,
+        invoice_code: enrollment.invoice?.invoice_code || '-',
         invoice_url: null,
-        amount: enrollment.invoice.amount,
-        status: enrollment.invoice.status as BundleTransactionInvoice['status'],
-        paid_at: enrollment.invoice.paid_at ?? null,
+        amount: enrollment.invoice?.amount || 0,
+        status: (enrollment.invoice?.status || 'pending') as BundleTransactionInvoice['status'],
+        paid_at: enrollment.invoice?.paid_at ?? null,
         created_at: enrollment.created_at,
     }));
 
@@ -211,12 +214,11 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
             <div className="px-4 py-4 md:px-6">
                 <h1 className="mb-4 text-2xl font-semibold">Detail {bundle.title}</h1>
 
-                {/* ...existing code... */}
                 <div className={`${canManageBundle ? 'lg:grid-cols-3' : ''} grid grid-cols-1 gap-4 lg:gap-6`}>
                     <Tabs defaultValue="detail" className={canManageBundle ? "lg:col-span-2" : "w-full"}>
                         <TabsList>
                             <TabsTrigger value="detail">Detail Bundling</TabsTrigger>
-                            {canManageBundle && (
+                            {!isAffiliate && (
                                 <TabsTrigger value="enrollments">
                                     Pembelian
                                     {totalEnrollments > 0 && (
@@ -348,12 +350,16 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <div className="rounded-lg border p-4">
                                             <h3 className="mb-3 text-sm font-medium text-gray-600">Total Harga Normal</h3>
-                                            <p className="text-2xl font-bold text-gray-900">{rupiahFormatter.format(totalOriginalPrice)}</p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                {isStaff ? 'Rp ***' : rupiahFormatter.format(totalOriginalPrice)}
+                                            </p>
                                         </div>
                                         <div className="rounded-lg border border-green-200 bg-green-50 p-4">
                                             <h3 className="mb-3 text-sm font-medium text-green-700">Harga Bundle</h3>
-                                            <p className="text-2xl font-bold text-green-700">{rupiahFormatter.format(bundle.price)}</p>
-                                            {discountPercentage > 0 && (
+                                            <p className="text-2xl font-bold text-green-700">
+                                                {isStaff ? 'Rp ***' : rupiahFormatter.format(bundle.price)}
+                                            </p>
+                                            {!isStaff && discountPercentage > 0 && (
                                                 <p className="mt-2 text-xs text-green-600">
                                                     Hemat {discountPercentage}% ({rupiahFormatter.format(discountAmount)})
                                                 </p>
@@ -385,7 +391,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-gray-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ) : (
@@ -402,7 +408,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-red-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -431,7 +437,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-gray-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ) : (
@@ -448,7 +454,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-red-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -477,7 +483,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-gray-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ) : (
@@ -494,7 +500,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </Badge>
                                                                     </div>
                                                                     <span className="text-sm font-medium text-red-600">
-                                                                        {rupiahFormatter.format(item.price)}
+                                                                        {isStaff ? 'Rp ***' : rupiahFormatter.format(item.price)}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -550,7 +556,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                             <TabsContent value="enrollments">
                                 <div className="space-y-4">
                                     {/* Stats Cards */}
-                                    <div className="grid gap-4 md:grid-cols-3">
+                                    <div className={`grid gap-4 ${isStaff ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
                                         <Card>
                                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                                 <CardTitle className="text-sm font-medium">Total Pembelian</CardTitle>
@@ -573,16 +579,18 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                             </CardContent>
                                         </Card>
 
-                                        <Card>
-                                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                                                <Package className="text-muted-foreground h-4 w-4" />
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="text-2xl font-bold">{rupiahFormatter.format(totalRevenue)}</div>
-                                                <p className="text-muted-foreground text-xs">Dari pembayaran sukses</p>
-                                            </CardContent>
-                                        </Card>
+                                        {!isStaff && (
+                                            <Card>
+                                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                                    <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                                                    <Package className="text-muted-foreground h-4 w-4" />
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <div className="text-2xl font-bold">{rupiahFormatter.format(totalRevenue)}</div>
+                                                    <p className="text-muted-foreground text-xs">Dari pembayaran sukses</p>
+                                                </CardContent>
+                                            </Card>
+                                        )}
                                     </div>
 
                                     {/* Enrollments Table */}
@@ -623,7 +631,11 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
                                                                         </code>
                                                                     </TableCell>
                                                                     <TableCell className="font-medium">
-                                                                        {rupiahFormatter.format(enrollment.invoice.amount)}
+                                                                        {isStaff ? (
+                                                                            <span className="text-muted-foreground">Rp ***</span>
+                                                                        ) : (
+                                                                            rupiahFormatter.format(enrollment.invoice.amount)
+                                                                        )}
                                                                     </TableCell>
                                                                     <TableCell>
                                                                         <Badge

@@ -94,6 +94,27 @@ export type Bootcamp = {
     } | null;
 };
 
+function BootcampPriceCell({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { auth } = usePage<SharedData>().props;
+    const { roles, isAdmin } = usePermission();
+    const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
+
+    const price = bootcamp.price;
+    if (price === 0) {
+        return <div className="text-base font-semibold">Gratis</div>;
+    }
+    if (isStaff) {
+        return <div className="text-base font-semibold text-muted-foreground">Rp ***</div>;
+    }
+    const strikethroughPrice = bootcamp.strikethrough_price;
+    return (
+        <div>
+            {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
+            <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
+        </div>
+    );
+}
+
 export const columns: ColumnDef<Bootcamp>[] = [
     {
         accessorKey: 'no',
@@ -143,10 +164,12 @@ export const columns: ColumnDef<Bootcamp>[] = [
 
             return (
                 <div>
-                    <div>
-                        {format(startDate, 'dd MMMM yyyy', { locale: id })}
-                        {!isSameDate && (
+                    <div className="text-sm font-medium">
+                        {isSameDate ? (
+                            format(startDate, 'dd MMMM yyyy', { locale: id })
+                        ) : (
                             <>
+                                {format(startDate, 'dd MMMM yyyy', { locale: id })}
                                 <span> - </span>
                                 {format(endDate, 'dd MMMM yyyy', { locale: id })}
                             </>
@@ -173,19 +196,7 @@ export const columns: ColumnDef<Bootcamp>[] = [
     {
         accessorKey: 'price',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => {
-            const strikethroughPrice = row.original.strikethrough_price;
-            const price = row.original.price;
-            if (price === 0) {
-                return <div className="text-base font-semibold">Gratis</div>;
-            }
-            return (
-                <div>
-                    {strikethroughPrice > 0 && <div className="text-xs text-gray-500 line-through">{rupiahFormatter.format(strikethroughPrice)}</div>}
-                    <div className="text-base font-semibold">{rupiahFormatter.format(price)}</div>
-                </div>
-            );
-        },
+        cell: ({ row }) => <BootcampPriceCell bootcamp={row.original} />,
     },
     {
         id: 'recording_status',

@@ -22,7 +22,6 @@ interface User {
     id: string;
     name: string;
     phone_number: string | null;
-    referrer: Referrer | null;
 }
 
 interface Course {
@@ -69,6 +68,7 @@ interface CertificationProgramItem {
 export interface Invoice {
     id: string;
     user: User;
+    referrer: Referrer | null;
     invoice_code: string;
     invoice_url: string | null;
     nett_amount: number;
@@ -84,15 +84,32 @@ export interface Invoice {
 
 import { usePermission } from '@/hooks/use-permission';
 
+function PriceCell({ row }: { row: Row<Invoice> }) {
+    const { roles, isAdmin } = usePermission();
+    const isStaff = roles.includes('staff') && !isAdmin;
+
+    if (isStaff) {
+        return <div className="font-medium text-muted-foreground">Rp ***</div>;
+    }
+
+    const formatted = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(row.original.nett_amount);
+    return <div className="font-medium">{formatted}</div>;
+}
+
 function ActionsCell({ row }: { row: Row<Invoice> }) {
-    const { canManage } = usePermission();
-    const canManageTransactions = canManage('transactions');
+    const { canManage, roles, isAdmin } = usePermission();
+    const canManageTransaction = canManage('transactions');
+    const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
     const user = invoice.user;
     let whatsappUrl = '';
 
-    if (invoice.user?.phone_number) {
-        let phoneNumber = invoice.user.phone_number.replace(/\D/g, '');
+    if (user?.phone_number) {
+        let phoneNumber = user.phone_number.replace(/\D/g, '');
         if (phoneNumber.startsWith('0')) {
             phoneNumber = '62' + phoneNumber.substring(1);
         }
@@ -114,7 +131,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
 
     return (
         <div className="flex items-center justify-center gap-2">
-            {invoice.status === 'paid' && (
+            {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" asChild>
@@ -147,7 +164,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
                 </Tooltip>
             )}
 
-            {canManageTransactions && invoice.status === 'pending' && (
+            {invoice.status === 'pending' && canManageTransaction && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
@@ -254,19 +271,12 @@ export const columns: ColumnDef<Invoice>[] = [
     {
         accessorKey: 'nett_amount',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-        cell: ({ row }) => {
-            const formatted = new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-            }).format(row.original.nett_amount);
-            return <div className="font-medium">{formatted}</div>;
-        },
+        cell: ({ row }) => <PriceCell row={row} />,
     },
     {
-        accessorKey: 'user.referrer.name',
+        accessorKey: 'referrer.name',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
-        cell: ({ row }) => <p>{row.original.user.referrer?.name || '-'}</p>,
+        cell: ({ row }) => <p>{row.original.referrer?.name || '-'}</p>,
     },
     {
         accessorKey: 'status',
