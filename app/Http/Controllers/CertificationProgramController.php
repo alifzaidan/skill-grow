@@ -227,7 +227,7 @@ class CertificationProgramController extends Controller
 
     public function show(string $id)
     {
-        $program = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules'])->findOrFail($id);
+        $program = CertificationProgram::with(['category', 'mentors', 'schedules', 'socializationSchedules', 'installmentTerms'])->findOrFail($id);
 
         $applications = [];
         if ($program->type === 'scholarship') {
@@ -243,6 +243,7 @@ class CertificationProgramController extends Controller
 
         $transactionQuery = Invoice::with([
             'user.referrer',
+            'installmentTerms',
             'certificationProgramItems' => function ($query) use ($id) {
                 $query->where('certification_program_id', $id);
             }
@@ -282,11 +283,22 @@ class CertificationProgramController extends Controller
             ? 'admin/certification-programs/edit-scholarship'
             : 'admin/certification-programs/edit-regular';
 
-        return Inertia::render($view, [
+        $data = [
             'program' => $program,
             'categories' => $categories,
             'mentors' => $mentors,
-        ]);
+        ];
+
+        if ($program->type === 'scholarship') {
+            $data['regular_programs'] = CertificationProgram::where('type', 'regular')
+                ->with(['schedules' => function ($q) {
+                    $q->orderBy('schedule_date');
+                }])
+                ->orderByRaw('CAST(batch AS UNSIGNED) ASC')
+                ->get(['id', 'title', 'batch']);
+        }
+
+        return Inertia::render($view, $data);
     }
 
     public function update(Request $request, string $id)

@@ -14,6 +14,7 @@ Route::get('/user', function (Request $request) {
 
 // Route::post('/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('discount-codes.validate');
 
+Route::post('/xendit/callback', [InvoiceController::class, 'callbackXendit'])->name('xendit.callback');
 Route::post('/doku/callback', [InvoiceController::class, 'callbackDoku'])->name('doku.callback');
 
 Route::get('/search', [SearchController::class, 'search']);
@@ -33,6 +34,7 @@ Route::post('/check-email', function (Request $request) {
 
     $response = [
         'exists' => !!$user,
+        'active_installment' => null,
     ];
 
     if ($user) {
@@ -40,6 +42,29 @@ Route::post('/check-email', function (Request $request) {
         $response['phone_number'] = $user->phone_number;
         $response['instance'] = $user->instance;
         $response['city'] = $user->city;
+        $response['point_balance'] = (int) $user->point_balance;
+
+        $type = $request->input('type');
+        $productId = $request->input('id')
+            ?? $request->input('program_id')
+            ?? $request->input('bootcamp_id')
+            ?? $request->input('bundle_id')
+            ?? $request->input('webinar_id')
+            ?? $request->input('course_id');
+
+        if ($type && $productId) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, $type, $productId);
+        } elseif ($request->program_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'certification_program', $request->program_id);
+        } elseif ($request->bootcamp_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'bootcamp', $request->bootcamp_id);
+        } elseif ($request->bundle_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'bundle', $request->bundle_id);
+        } elseif ($request->webinar_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'webinar', $request->webinar_id);
+        } elseif ($request->course_id) {
+            $response['active_installment'] = \App\Models\Invoice::getActiveInstallmentForUser($user->id, 'course', $request->course_id);
+        }
     }
 
     // Check scholarship application status from email (works for both registered and unregistered users)

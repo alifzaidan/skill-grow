@@ -1,11 +1,12 @@
 import Heading from '@/components/heading';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spotlight } from '@/components/ui/spotlight';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock, Lock } from 'lucide-react';
 import { useState } from 'react';
 
 interface CertificationProgram {
@@ -17,9 +18,9 @@ interface CertificationProgram {
 
 interface EnrollmentCertificationProgram {
     id: string;
-    certificationProgram: CertificationProgram;
     price: number;
     is_scholarship: boolean;
+    certificationProgram: CertificationProgram;
 }
 
 interface Invoice {
@@ -27,7 +28,11 @@ interface Invoice {
     invoice_code: string;
     invoice_url: string;
     amount: number;
-    status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed';
+    status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed' | 'installment_pending';
+    is_installment?: boolean;
+    is_access_suspended?: boolean;
+    paid_terms?: number;
+    total_terms?: number;
     paid_at: string | null;
     payment_channel: string | null;
     payment_method: string | null;
@@ -58,6 +63,10 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                     invoice_id: invoice.id,
                     invoice_code: invoice.invoice_code,
                     invoice_status: invoice.status,
+                    is_installment: invoice.is_installment,
+                    is_access_suspended: invoice.is_access_suspended,
+                    paid_terms: invoice.paid_terms,
+                    total_terms: invoice.total_terms,
                     invoice_url: invoice.invoice_url,
                     paid_at: invoice.paid_at,
                     payment_channel: invoice.payment_channel,
@@ -69,34 +78,27 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
     );
 
     const filteredItems = allItems.filter((item) => item.title.toLowerCase().includes(search.toLowerCase()));
-    const visibleItems = filteredItems.slice(0, visibleCount);
 
     return (
         <UserLayout>
-            <Head title="Sertifikasi Saya" />
+            <Head title="Sertifikasi Program Saya" />
             <ProfileLayout>
-                <Heading title="Sertifikasi Saya" description="Lihat semua program sertifikasi yang sudah Anda beli." />
+                <Heading title="Sertifikasi Program Saya" description="Lihat riwayat sertifikasi program Anda di sini" />
                 <div className="mb-4 flex justify-between gap-2">
-                    <Input type="search" placeholder="Cari program sertifikasi..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input type="search" placeholder="Cari nama program..." value={search} onChange={(e) => setSearch(e.target.value)} />
                 </div>
-                <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {visibleItems.length === 0 ? (
-                        <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                            <img src="/assets/images/not-found.webp" alt="Sertifikasi Belum Tersedia" className="w-48" />
-                            <div className="text-center text-gray-500">Belum ada program sertifikasi yang tersedia saat ini.</div>
-                        </div>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {filteredItems.length === 0 ? (
+                        <div className="col-span-full py-8 text-center text-gray-500">Belum ada sertifikasi program yang dibeli.</div>
                     ) : (
-                        visibleItems.map((item, idx) => (
-                            <Link
-                                key={idx}
-                                href={route('profile.certification-program.detail', { program: item.slug })}
-                                className="relative overflow-hidden rounded-xl bg-zinc-300/30 p-[2px] dark:bg-zinc-700/30"
-                            >
-                                <Spotlight className="bg-primary blur-2xl" size={284} />
-                                <div className="bg-sidebar relative flex h-full w-full flex-col items-center justify-center rounded-lg dark:bg-zinc-800">
-                                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
-                                        <CheckCircle className="h-3 w-3" />
-                                        {item.is_scholarship ? 'Beasiswa' : 'Reguler'}
+                        filteredItems.slice(0, visibleCount).map((item, idx) => (
+                            <Link key={idx} href={route('profile.certification-program.detail', { program: item.slug })}>
+                                <div className="group relative overflow-hidden rounded-lg border bg-white shadow-xs transition duration-200 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+                                    <Spotlight className="from-blue-600/30 via-indigo-400/20 to-teal-400/30 dark:from-blue-900/30 dark:via-indigo-800/20 dark:to-teal-800/30" />
+                                    <div className="absolute top-2 left-2 z-10">
+                                        <Badge variant={item.is_scholarship ? 'secondary' : 'default'} className="text-xs">
+                                            {item.is_scholarship ? 'Beasiswa' : 'Reguler'}
+                                        </Badge>
                                     </div>
 
                                     <img
@@ -108,10 +110,24 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                                         <h2 className="mb-1 text-lg font-semibold">{item.title}</h2>
                                         <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">Invoice: {item.invoice_code}</p>
 
-                                        <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
-                                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                            <span className="text-xs font-medium text-green-700 dark:text-green-300">Sudah Dibayar</span>
-                                        </div>
+                                        {item.is_access_suspended ? (
+                                            <div className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 dark:bg-red-900/20">
+                                                <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
+                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">Akses Dibekukan</span>
+                                            </div>
+                                        ) : item.is_installment && item.invoice_status === 'installment_pending' ? (
+                                            <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20">
+                                                <Clock className="h-4 w-4 text-amber-600 dark:amber-400" />
+                                                <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                                                    Cicilan Aktif ({item.paid_terms}/{item.total_terms})
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
+                                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">Sudah Dibayar</span>
+                                            </div>
+                                        )}
 
                                         <div className="mt-2 flex justify-between text-sm">
                                             <span className="text-gray-600 dark:text-gray-400">

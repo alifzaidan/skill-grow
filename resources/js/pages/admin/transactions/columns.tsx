@@ -2,6 +2,7 @@
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
+import InstallmentMonitorModal from '@/components/admin/installment-monitor-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,7 +11,7 @@ import type { Row } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Trash } from 'lucide-react';
+import { Clock, FileText, Trash } from 'lucide-react';
 import { useState } from 'react';
 
 interface Referrer {
@@ -62,7 +63,8 @@ interface CertificationProgram {
 }
 
 interface CertificationProgramItem {
-    certification_program: CertificationProgram;
+    certification_program?: CertificationProgram;
+    certificationProgram?: CertificationProgram;
 }
 
 export interface Invoice {
@@ -72,14 +74,43 @@ export interface Invoice {
     invoice_code: string;
     invoice_url: string | null;
     nett_amount: number;
-    status: 'paid' | 'pending' | 'failed';
+    status: 'paid' | 'pending' | 'failed' | 'expired' | 'completed' | 'installment_pending';
     paid_at: string | null;
-    course_items: EnrollmentCourse[];
-    bootcamp_items: EnrollmentBootcamp[];
-    webinar_items: EnrollmentWebinar[];
-    bundle_enrollments: BundleEnrollment[];
-    certification_program_items: CertificationProgramItem[];
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
+    course_items?: EnrollmentCourse[];
+    courseItems?: EnrollmentCourse[];
+    bootcamp_items?: EnrollmentBootcamp[];
+    bootcampItems?: EnrollmentBootcamp[];
+    webinar_items?: EnrollmentWebinar[];
+    webinarItems?: EnrollmentWebinar[];
+    bundle_enrollments?: BundleEnrollment[];
+    bundleEnrollments?: BundleEnrollment[];
+    certification_program_items?: CertificationProgramItem[];
+    certificationProgramItems?: CertificationProgramItem[];
     created_at: string;
+    installment_terms?: Array<{
+        id: string;
+        installment_number: number;
+        invoice_code: string;
+        amount: number;
+        status: 'paid' | 'pending' | 'failed';
+        installment_due_date?: string | null;
+        due_date?: string | null;
+        paid_at?: string | null;
+        invoice_url?: string | null;
+    }>;
+    installmentTerms?: Array<{
+        id: string;
+        installment_number: number;
+        invoice_code: string;
+        amount: number;
+        status: 'paid' | 'pending' | 'failed';
+        installment_due_date?: string | null;
+        due_date?: string | null;
+        paid_at?: string | null;
+        invoice_url?: string | null;
+    }>;
 }
 
 import { usePermission } from '@/hooks/use-permission';
@@ -106,6 +137,8 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
     const user = invoice.user;
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const isInstallment = Boolean(invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0);
     let whatsappUrl = '';
 
     if (user?.phone_number) {
@@ -144,6 +177,25 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
                         <p>Lihat Invoice</p>
                     </TooltipContent>
                 </Tooltip>
+            )}
+
+            {isInstallment && (
+                <InstallmentMonitorModal
+                    invoice={invoice as any}
+                    trigger={
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 text-primary hover:text-primary hover:bg-primary/10">
+                                    <Clock className="size-4" />
+                                    <span className="sr-only">Monitor Cicilan & Reminder WA</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Monitor Cicilan & Reminder WA</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    }
+                />
             )}
 
             {whatsappUrl && (
@@ -234,27 +286,31 @@ export const columns: ColumnDef<Invoice>[] = [
         header: 'Nama Produk',
         filterFn: (row, _columnId, filterValue) => {
             const invoice = row.original;
-            const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
-            const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
-            const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
-            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
-            const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
+            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course?.title || '');
+            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp?.title || '');
+            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar?.title || '');
+            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle?.title || '');
+            const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
+                (item) => item.certificationProgram?.title || item.certification_program?.title || '',
+            );
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles].filter(Boolean);
             return allTitles.some((title) =>
                 title.toLowerCase().includes(String(filterValue).toLowerCase()),
             );
         },
         cell: ({ row }) => {
             const invoice = row.original;
-            const courseTitles = invoice.course_items?.map((item) => item.course.title) || [];
-            const bootcampTitles = invoice.bootcamp_items?.map((item) => item.bootcamp.title) || [];
-            const webinarTitles = invoice.webinar_items?.map((item) => item.webinar.title) || [];
-            const bundleTitles = invoice.bundle_enrollments?.map((item) => item.bundle.title) || [];
-            const certTitles = invoice.certification_program_items?.map((item) => item.certification_program.title) || [];
+            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course?.title || '');
+            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp?.title || '');
+            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar?.title || '');
+            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle?.title || '');
+            const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
+                (item) => item.certificationProgram?.title || item.certification_program?.title || '',
+            );
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
-            const fullTitleString = allTitles.join(', ');
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles].filter(Boolean);
+            const fullTitleString = allTitles.length > 0 ? allTitles.join(', ') : '-';
 
             return (
                 <Tooltip>
@@ -282,14 +338,44 @@ export const columns: ColumnDef<Invoice>[] = [
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-            const status = row.original.status;
+            const invoice = row.original;
+            const terms = invoice.installment_terms || invoice.installmentTerms || [];
+            const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+
+            if (isInstallment) {
+                const paidCount = terms.filter((t) => t.status === 'paid').length;
+                const totalCount = terms.length;
+                const isFullyPaid = totalCount > 0 && paidCount === totalCount;
+                const isSuspended = !invoice.access_suspended_at ? false : true;
+
+                return (
+                    <div className="flex flex-col gap-1 items-start">
+                        {isFullyPaid ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                Cicilan Lunas
+                            </Badge>
+                        ) : isSuspended ? (
+                            <Badge variant="destructive">
+                                Akses Dibekukan
+                            </Badge>
+                        ) : (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                                Cicilan ({paidCount}/{totalCount || '?'})
+                            </Badge>
+                        )}
+                    </div>
+                );
+            }
+
+            const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClasses = {
+            const statusClasses: Record<string, string> = {
                 paid: 'bg-green-100 text-green-800',
                 completed: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',
                 failed: 'bg-red-100 text-red-800',
                 expired: 'bg-gray-100 text-gray-800',
+                installment_pending: 'bg-amber-100 text-amber-800',
             };
             return <Badge className={`${statusClasses[status] || statusClasses.expired}`}>{statusText}</Badge>;
         },

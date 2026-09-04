@@ -12,6 +12,8 @@ import axios from 'axios';
 import { BadgeCheck, Calendar, Check, Hourglass, RotateCcw, ShoppingCart, User, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import InstallmentOptions, { ActiveInstallmentData, InstallmentTermOption } from '@/components/installment-options';
+import { toast } from 'sonner';
 
 function parseList(items?: string | null): string[] {
     if (!items) return [];
@@ -94,14 +96,23 @@ interface InvoiceData {
 export default function CheckoutCourse({
     course,
     hasAccess,
+    activeInstallment: initialActiveInstallment = null,
     pendingInvoice,
+    pendingInvoiceUrl,
     referralInfo,
+    installmentTerms = [],
 }: {
     course: Course;
     hasAccess: boolean;
+    activeInstallment?: ActiveInstallmentData | null;
     pendingInvoice?: PendingInvoice | null;
+    pendingInvoiceUrl?: string | null;
     referralInfo: ReferralInfo;
+    installmentTerms?: InstallmentTermOption[];
 }) {
+    const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
+    const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
+    const hasInstallments = Boolean((installmentTerms && installmentTerms.length > 0) || activeInstallment);
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
@@ -187,7 +198,12 @@ export default function CheckoutCourse({
             setCheckingEmail(true);
 
             try {
-                const response = await axios.post('/api/check-email', { email });
+                const response = await axios.post('/api/check-email', {
+                    email,
+                    type: 'course',
+                    id: course.id,
+                    course_id: course.id,
+                });
                 const data = response.data;
 
                 if (data.exists) {
@@ -200,24 +216,33 @@ export default function CheckoutCourse({
                         city: data.city || prev.city,
                     }));
                     setUserPoints(data.point_balance || 0);
+
+                    if (data.active_installment) {
+                        setActiveInstallment(data.active_installment);
+                        setPaymentTab('installment');
+                    } else {
+                        setActiveInstallment(null);
+                    }
                 } else {
                     setEmailExists(false);
                     setUserPoints(0);
                     setPointsChecked(false);
                     setPointsToUse(0);
+                    setActiveInstallment(null);
                 }
             } catch {
                 setEmailExists(false);
                 setUserPoints(0);
                 setPointsChecked(false);
                 setPointsToUse(0);
+                setActiveInstallment(null);
             } finally {
                 setCheckingEmail(false);
             }
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [guestFormData.email, isLoggedIn]);
+    }, [guestFormData.email, isLoggedIn, course.id]);
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -386,67 +411,92 @@ export default function CheckoutCourse({
         }
     };
 
+    const ensureAuth = async (): Promise<boolean> => {
+        if (isLoggedIn) return true;
+
+        if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
+            toast.error('Mohon lengkapi seluruh data diri.');
+            return false;
+        }
+
+        try {
+            if (emailExists) {
+                const loginResponse = await axios.post(route('auto-login'), {
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                });
+
+                if (!loginResponse.data?.success) {
+                    throw new Error(loginResponse.data?.message || 'Gagal login otomatis. Pastikan nomor telepon sesuai dengan yang terdaftar.');
+                }
+            } else {
+                if (!guestFormData.name) {
+                    toast.error('Nama lengkap wajib diisi.');
+                    return false;
+                }
+
+                const regResponse = await axios.post(route('register'), {
+                    name: guestFormData.name,
+                    email: guestFormData.email,
+                    phone_number: guestFormData.phone_number,
+                    instance: guestFormData.instance,
+                    city: guestFormData.city,
+                    password: guestFormData.phone_number,
+                    password_confirmation: guestFormData.phone_number,
+                    affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (sessionStorage.getItem('referral_code') || referralInfo?.code || ''),
+                });
+
+                if (!(regResponse.data?.success || regResponse.status === 200 || regResponse.status === 201)) {
+                    throw new Error('Registrasi gagal.');
+                }
+            }
+            return true;
+        } catch (error: any) {
+            console.error('Login/Register error:', error);
+            toast.error(error.response?.data?.message || error.message || 'Gagal memproses pendaftaran.');
+            return false;
+        }
+    };
+
     const handleCheckout = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (activeInstallment && !activeInstallment.is_fully_paid) {
+            toast.error('Anda sedang memiliki program cicilan berjalan. Silakan selesaikan pembayaran melalui tab Cicilan.');
+            setPaymentTab('installment');
+            return;
+        }
+
         // 1. Jika belum login, proses autentikasi (auto-login atau register) terlebih dahulu
         if (!isLoggedIn) {
-            if (!guestFormData.email || !guestFormData.phone_number || !guestFormData.instance || !guestFormData.city) {
-                alert('Harap lengkapi seluruh data diri terlebih dahulu.');
-                return;
-            }
-
             if (!termsAccepted && !isFree) {
-                alert('Anda harus menyetujui syarat dan ketentuan!');
+                toast.error('Anda harus menyetujui syarat dan ketentuan!');
                 return;
             }
 
             setLoading(true);
 
+            const authOk = await ensureAuth();
+            if (!authOk) {
+                setLoading(false);
+                return;
+            }
+
+            if (isFree) {
+                return handleFreeCheckout(e);
+            }
+
             try {
-                if (emailExists) {
-                    const loginResponse = await axios.post(route('auto-login'), {
-                        email: guestFormData.email,
-                        phone_number: guestFormData.phone_number,
-                        instance: guestFormData.instance,
-                        city: guestFormData.city,
-                    });
-
-                    if (!loginResponse.data?.success) {
-                        throw new Error(loginResponse.data?.message || 'Login otomatis gagal.');
-                    }
-                } else {
-                    if (!guestFormData.name) {
-                        alert('Nama wajib diisi.');
-                        setLoading(false);
-                        return;
-                    }
-
-                    await axios.post(route('register'), {
-                        name: guestFormData.name,
-                        email: guestFormData.email,
-                        phone_number: guestFormData.phone_number,
-                        instance: guestFormData.instance,
-                        city: guestFormData.city,
-                        password: guestFormData.phone_number,
-                        password_confirmation: guestFormData.phone_number,
-                        affiliate_code: (codeType === 'referral' && referralData?.valid) ? promoCode : (referralInfo?.code || sessionStorage.getItem('referral_code') || ''),
-                    });
-                }
-
-                if (isFree) {
-                    return handleFreeCheckout(e);
-                }
-
                 // Langsung jalankan submitPayment tanpa reload!
                 await submitPayment();
             } catch (error: unknown) {
-                console.error('Login/Register error:', error);
                 setLoading(false);
                 if (axios.isAxiosError(error)) {
-                    alert(error.response?.data?.message || 'Gagal memproses pendaftaran.');
+                    toast.error(error.response?.data?.message || 'Gagal memproses pendaftaran.');
                 } else {
-                    alert(error instanceof Error ? error.message : 'Gagal memproses pendaftaran.');
+                    toast.error(error instanceof Error ? error.message : 'Gagal memproses pendaftaran.');
                 }
             }
             return;
@@ -454,7 +504,7 @@ export default function CheckoutCourse({
 
         // 2. Jika sudah login
         if (!termsAccepted && !isFree) {
-            alert('Anda harus menyetujui syarat dan ketentuan!');
+            toast.error('Anda harus menyetujui syarat dan ketentuan!');
             return;
         }
 
@@ -467,21 +517,22 @@ export default function CheckoutCourse({
             await submitPayment();
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                alert(error.response?.data?.message || 'Gagal memproses pembayaran.');
+                toast.error(error.response?.data?.message || 'Gagal memproses pembayaran.');
             } else {
-                alert(error instanceof Error ? error.message : 'Terjadi kesalahan saat proses pembayaran.');
+                toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat proses pembayaran.');
             }
             setLoading(false);
         }
     };
 
     const handleCancelInvoice = async () => {
-        if (!pendingInvoice?.id) return;
+        const invoiceId = pendingInvoice?.id;
+        if (!invoiceId) return;
         if (!confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')) return;
 
         setCancellingInvoice(true);
         try {
-            const response = await axios.post(route('invoice.cancel', { id: pendingInvoice.id }));
+            const response = await axios.post(route('invoice.cancel', { id: invoiceId }));
             if (response.data?.success || response.status === 200) {
                 alert('Pesanan berhasil dibatalkan.');
                 window.location.reload();
@@ -500,7 +551,10 @@ export default function CheckoutCourse({
         }
     };
 
-    const formatExpiryTime = (expiresAt: string): { time: string; status: 'expired' | 'urgent' | 'normal' } => {
+    const formatExpiryTime = (expiresAt?: string | null): { time: string; status: 'expired' | 'urgent' | 'normal' } => {
+        if (!expiresAt) {
+            return { time: '', status: 'normal' };
+        }
         const now = new Date();
         const expiry = new Date(expiresAt);
         const diff = expiry.getTime() - now.getTime();
@@ -520,8 +574,8 @@ export default function CheckoutCourse({
     };
 
     const continuePendingPayment = () => {
-        if (pendingInvoice?.invoice_url) {
-            window.location.href = pendingInvoice.invoice_url;
+        if (pendingInvoice?.invoice_url || pendingInvoiceUrl) {
+            window.location.href = pendingInvoice?.invoice_url || pendingInvoiceUrl!;
             return;
         }
 
@@ -646,7 +700,7 @@ export default function CheckoutCourse({
                             </Tabs>
 
                             {/* Guest Form Card */}
-                            {!isLoggedIn && !hasAccess && !pendingInvoice && (
+                            {!isLoggedIn && !hasAccess && !pendingInvoice && !pendingInvoiceUrl && (
                                 <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs">
                                     <h3 className="font-bold text-gray-900 text-lg mb-4">Masukkan Data Diri Anda</h3>
                                     <div className="space-y-4">
@@ -747,7 +801,7 @@ export default function CheckoutCourse({
 
                         {/* Right Column */}
                         <div className="lg:col-span-1">
-                            {hasAccess ? (
+                            {hasAccess && (!activeInstallment || activeInstallment.is_fully_paid) ? (
                                 <div className="flex flex-col items-center justify-center space-y-4 rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-xs">
                                     <BadgeCheck size={64} className="text-green-500" />
                                     <h2 className="text-xl font-bold">Anda Sudah Memiliki Akses</h2>
@@ -756,21 +810,21 @@ export default function CheckoutCourse({
                                         <a href={`/profile/my-courses/${course.slug}`}>Masuk ke Kelas</a>
                                     </Button>
                                 </div>
-                            ) : pendingInvoice ? (
+                            ) : (pendingInvoice || pendingInvoiceUrl) && !activeInstallment ? (
                                 <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xs space-y-6">
                                     <div
                                         className="rounded-xl p-4 flex items-center gap-2"
                                         style={{
                                             backgroundColor: (() => {
-                                                const expiryInfo = formatExpiryTime(pendingInvoice.expires_at);
-                                                const isExpired = expiryInfo.status === 'expired' && pendingInvoice.status === 'pending';
+                                                const expiryInfo = formatExpiryTime(pendingInvoice?.expires_at);
+                                                const isExpired = expiryInfo.status === 'expired' && pendingInvoice?.status === 'pending';
                                                 return isExpired ? '#fee2e2' : 'rgba(254, 249, 195, 0.5)';
                                             })(),
                                         }}
                                     >
                                         {(() => {
-                                            const expiryInfo = formatExpiryTime(pendingInvoice.expires_at);
-                                            const isExpired = expiryInfo.status === 'expired' && pendingInvoice.status === 'pending';
+                                            const expiryInfo = formatExpiryTime(pendingInvoice?.expires_at);
+                                            const isExpired = expiryInfo.status === 'expired' && pendingInvoice?.status === 'pending';
                                             if (isExpired) {
                                                 return (
                                                     <>
@@ -792,23 +846,23 @@ export default function CheckoutCourse({
                                         <div className="space-y-2 rounded-xl bg-gray-50/50 p-4 border border-gray-100 text-sm">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-500">No. Invoice</span>
-                                                <span className="font-semibold text-gray-800">{pendingInvoice.invoice_code}</span>
+                                                <span className="font-semibold text-gray-800">{pendingInvoice?.invoice_code || '-'}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-500">Metode Pembayaran</span>
-                                                <span className="font-semibold text-gray-800">DOKU</span>
+                                                <span className="font-semibold text-gray-800">{pendingInvoice?.payment_method || 'Xendit'}</span>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-gray-500">Total Pembayaran</span>
                                                 <span className="text-lg font-bold text-[#FA5F25]">
-                                                    Rp {pendingInvoice.amount.toLocaleString('id-ID')}
+                                                    Rp {(pendingInvoice?.amount || totalPrice).toLocaleString('id-ID')}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {(() => {
-                                            const expiryInfo = formatExpiryTime(pendingInvoice.expires_at);
-                                            const isExpired = expiryInfo.status === 'expired' && pendingInvoice.status === 'pending';
+                                            const expiryInfo = formatExpiryTime(pendingInvoice?.expires_at);
+                                            const isExpired = expiryInfo.status === 'expired' && pendingInvoice?.status === 'pending';
 
                                             if (isExpired) {
                                                 return (
@@ -837,14 +891,16 @@ export default function CheckoutCourse({
                                             Cek Status Pembayaran
                                         </Button>
 
-                                        <Button
-                                            onClick={handleCancelInvoice}
-                                            disabled={cancellingInvoice}
-                                            variant="ghost"
-                                            className="w-full py-6 rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
-                                        >
-                                            {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
-                                        </Button>
+                                        {pendingInvoice?.id && (
+                                            <Button
+                                                onClick={handleCancelInvoice}
+                                                disabled={cancellingInvoice}
+                                                variant="ghost"
+                                                className="w-full py-6 rounded-full text-red-600 hover:bg-red-50 hover:text-red-700"
+                                            >
+                                                {cancellingInvoice ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
@@ -857,7 +913,312 @@ export default function CheckoutCourse({
                                                 <span className="w-full text-xl font-bold text-green-600">KELAS ONLINE GRATIS</span>
                                             </div>
                                             <p className="text-sm text-gray-600">Dapatkan akses langsung secara gratis ke materi pembelajaran kelas ini.</p>
+                                            <Button
+                                                className="w-full py-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xs transition-colors cursor-pointer"
+                                                type="submit"
+                                                disabled={loading}
+                                            >
+                                                {loading ? 'Memproses...' : 'Dapatkan Akses Gratis Sekarang'}
+                                            </Button>
                                         </div>
+                                    ) : hasInstallments ? (
+                                        <Tabs
+                                            value={paymentTab}
+                                            onValueChange={(val) => {
+                                                if (val === 'full' && activeInstallment && !activeInstallment.is_fully_paid) {
+                                                    toast.error('Anda memiliki program cicilan berjalan. Silakan selesaikan pembayaran cicilan Anda.');
+                                                    return;
+                                                }
+                                                setPaymentTab(val as 'full' | 'installment');
+                                            }}
+                                            className="w-full space-y-4"
+                                        >
+                                            <TabsList className="grid w-full grid-cols-2">
+                                                <TabsTrigger
+                                                    value="full"
+                                                    disabled={!!activeInstallment && !activeInstallment.is_fully_paid}
+                                                >
+                                                    Pembayaran Penuh
+                                                </TabsTrigger>
+                                                <TabsTrigger value="installment" className="flex items-center justify-center gap-1.5">
+                                                    <span>Cicilan</span>
+                                                    {installmentTerms && installmentTerms.length > 0 && (
+                                                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                                                            {installmentTerms.length}x
+                                                        </span>
+                                                    )}
+                                                </TabsTrigger>
+                                            </TabsList>
+
+                                            <TabsContent value="full" className="space-y-4 m-0">
+                                                {/* Pilihan Jenis Kode */}
+                                                <div className="space-y-2">
+                                                    <Label className="font-semibold text-gray-700">Jenis Kode</Label>
+                                                    <RadioGroup
+                                                        value={codeType}
+                                                        onValueChange={(val: 'voucher' | 'referral') => {
+                                                            setCodeType(val);
+                                                            setPromoCode('');
+                                                            setDiscountData(null);
+                                                            setReferralData(null);
+                                                            setPromoError('');
+                                                            setReferralError('');
+                                                            if (val === 'voucher') {
+                                                                setPointsChecked(false);
+                                                                setPointsToUse(0);
+                                                            }
+                                                        }}
+                                                        className="flex gap-4"
+                                                    >
+                                                        <div className="flex items-center space-x-2">
+                                                            <RadioGroupItem value="voucher" id="code-voucher" />
+                                                            <Label htmlFor="code-voucher" className="cursor-pointer font-medium">Voucher</Label>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <RadioGroupItem value="referral" id="code-referral" />
+                                                            <Label htmlFor="code-referral" className="cursor-pointer font-medium">Referral</Label>
+                                                        </div>
+                                                    </RadioGroup>
+                                                </div>
+
+                                                {/* Input Kode Promo / Referral */}
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="promo-code" className="font-semibold text-gray-700">
+                                                        Punya Kode Promo?
+                                                    </Label>
+                                                    <div className="flex gap-2">
+                                                        <div className="relative flex-1">
+                                                            <Input
+                                                                id="promo-code"
+                                                                type="text"
+                                                                placeholder={codeType === 'voucher' ? 'Masukkan kode voucher' : 'Masukkan kode referral'}
+                                                                value={promoCode}
+                                                                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                                                                className="rounded-xl pr-10"
+                                                            />
+                                                            {(promoLoading || referralLoading) && (
+                                                                <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                                    <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-orange-600"></div>
+                                                                </div>
+                                                            )}
+                                                            {!(promoLoading || referralLoading) && promoCode && (
+                                                                <div className="absolute top-1/2 right-3 -translate-y-1/2 transform">
+                                                                    {codeType === 'voucher' ? (
+                                                                        discountData?.valid ? (
+                                                                            <Check className="h-4 w-4 text-green-600" />
+                                                                        ) : promoError ? (
+                                                                            <X className="h-4 w-4 text-red-600" />
+                                                                        ) : null
+                                                                    ) : referralData?.valid ? (
+                                                                        <Check className="h-4 w-4 text-green-600" />
+                                                                    ) : referralError ? (
+                                                                        <X className="h-4 w-4 text-red-600" />
+                                                                    ) : null}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={codeType === 'voucher' ? validatePromoCode : validateReferralCode}
+                                                            disabled={promoLoading || referralLoading || !promoCode}
+                                                            className="rounded-xl border-gray-200 text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                                        >
+                                                            {promoLoading || referralLoading ? 'Mengecek...' : 'Terapkan'}
+                                                        </Button>
+                                                    </div>
+                                                    {codeType === 'voucher' && promoError && (
+                                                        <p className="text-xs text-red-600">{promoError}</p>
+                                                    )}
+                                                    {codeType === 'voucher' && discountData?.valid && (
+                                                        <div className="rounded-xl bg-green-50 p-3">
+                                                            <p className="text-xs font-semibold text-green-700">
+                                                                {discountData.discount_code.name} berhasil diterapkan!
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                    {codeType === 'referral' && referralError && (
+                                                        <p className="text-xs text-red-600">{referralError}</p>
+                                                    )}
+                                                    {codeType === 'referral' && referralData?.valid && (
+                                                        <div className="rounded-xl bg-green-50 p-3">
+                                                            <p className="text-xs font-semibold text-green-700">
+                                                                Kode referral {referralData.referrer?.name ? `milik ${referralData.referrer.name}` : ''} berhasil diterapkan!
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Poin Reward */}
+                                                {isLoggedIn && userPoints > 0 && (
+                                                    <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="text-sm font-semibold text-gray-800">Gunakan Poin Reward</p>
+                                                                <p className="text-xs text-gray-500">Saldo: {userPoints.toLocaleString('id-ID')} Poin (1 Poin = Rp 1)</p>
+                                                            </div>
+                                                            <Switch
+                                                                checked={pointsChecked}
+                                                                disabled={codeType === 'voucher' && !!discountData?.valid}
+                                                                onCheckedChange={(checked) => {
+                                                                    setPointsChecked(checked);
+                                                                    if (!checked) {
+                                                                        setPointsToUse(0);
+                                                                        setPointsError('');
+                                                                    } else {
+                                                                        setPointsToUse(Math.min(userPoints, maxPointsAllowed));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+
+                                                        {pointsChecked && (
+                                                            <div className="space-y-1 pt-1">
+                                                                <div className="flex gap-2">
+                                                                    <Input
+                                                                        type="number"
+                                                                        min={0}
+                                                                        max={Math.min(userPoints, maxPointsAllowed)}
+                                                                        value={pointsToUse || ''}
+                                                                        onChange={(e) => {
+                                                                            const val = Math.max(0, parseInt(e.target.value) || 0);
+                                                                            if (val > userPoints) {
+                                                                                setPointsError('Poin melebihi saldo Anda.');
+                                                                            } else if (val > maxPointsAllowed) {
+                                                                                setPointsError(`Maksimal poin yang dapat digunakan adalah ${maxPointsAllowed}.`);
+                                                                            } else {
+                                                                                setPointsError('');
+                                                                            }
+                                                                            setPointsToUse(val);
+                                                                        }}
+                                                                        className="rounded-xl"
+                                                                    />
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            setPointsToUse(Math.min(userPoints, maxPointsAllowed));
+                                                                            setPointsError('');
+                                                                        }}
+                                                                        className="rounded-xl border-gray-200 text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                                                    >
+                                                                        Maksimal
+                                                                    </Button>
+                                                                </div>
+                                                                {pointsError && <p className="text-xs text-red-600">{pointsError}</p>}
+                                                                {codeType === 'voucher' && !!discountData?.valid && (
+                                                                    <p className="text-xs text-amber-600">Poin tidak dapat digunakan bersamaan dengan kode voucher.</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                <div className="space-y-2 pt-2 text-sm">
+                                                    {course.strikethrough_price > 0 && (
+                                                        <>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-gray-600">Harga Asli</span>
+                                                                <span className="font-semibold text-gray-500 line-through">
+                                                                    Rp {course.strikethrough_price.toLocaleString('id-ID')}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-gray-600">Diskon</span>
+                                                                <span className="font-semibold text-red-500">
+                                                                    -Rp {(course.strikethrough_price - course.price).toLocaleString('id-ID')}
+                                                                </span>
+                                                            </div>
+                                                            <Separator className="my-2" />
+                                                        </>
+                                                    )}
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Harga Kelas</span>
+                                                        <span className="font-semibold text-gray-800">Rp {course.price.toLocaleString('id-ID')}</span>
+                                                    </div>
+
+                                                    {/* Promo Discount */}
+                                                    {codeType === 'voucher' && discountData?.valid && (
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Diskon Promo ({discountData.discount_code.code})</span>
+                                                            <span className="font-semibold text-green-600">
+                                                                -Rp {discountData.discount_amount.toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Points Discount */}
+                                                    {pointsChecked && pointsToUse > 0 && (
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-gray-600">Potongan Poin ({pointsToUse.toLocaleString('id-ID')} Poin)</span>
+                                                            <span className="font-semibold text-green-600">
+                                                                -Rp {pointsToUse.toLocaleString('id-ID')}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600">Biaya Transaksi</span>
+                                                        <span className="font-semibold text-gray-800">Rp {transactionFee.toLocaleString('id-ID')}</span>
+                                                    </div>
+                                                    <Separator className="my-2" />
+                                                    <div className="flex items-center justify-between text-base">
+                                                        <span className="font-bold text-gray-900">Total Pembayaran</span>
+                                                        <span className="text-[#FA5F25] text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-start gap-3 pt-2">
+                                                    <Checkbox
+                                                        id="terms"
+                                                        checked={termsAccepted}
+                                                        onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                                        className="mt-0.5"
+                                                    />
+                                                    <Label htmlFor="terms" className="text-xs text-gray-600 leading-tight">
+                                                        Saya menyetujui{' '}
+                                                        <a
+                                                            href="/terms-and-conditions"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-orange-600 hover:underline font-semibold"
+                                                        >
+                                                            syarat dan ketentuan
+                                                        </a>{' '}
+                                                        yang berlaku
+                                                    </Label>
+                                                </div>
+
+                                                <Button
+                                                    className="w-full py-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xs transition-colors cursor-pointer"
+                                                    type="submit"
+                                                    disabled={!termsAccepted || loading}
+                                                >
+                                                    {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                                </Button>
+                                            </TabsContent>
+
+                                            {/* Tab Cicilan */}
+                                            <TabsContent value="installment" className="space-y-4 m-0">
+                                                <InstallmentOptions
+                                                    productType="course"
+                                                    productId={course.id}
+                                                    productPrice={course.price}
+                                                    terms={installmentTerms}
+                                                    activeInstallment={activeInstallment}
+                                                    termsAccepted={termsAccepted}
+                                                    onTermsAcceptedChange={setTermsAccepted}
+                                                    onBeforePay={async () => {
+                                                        if (!activeInstallment && !termsAccepted) {
+                                                            toast.error('Anda harus menyetujui syarat dan ketentuan!');
+                                                            return false;
+                                                        }
+                                                        return await ensureAuth();
+                                                    }}
+                                                />
+                                            </TabsContent>
+                                        </Tabs>
                                     ) : (
                                         <>
                                             {/* Pilihan Jenis Kode */}
@@ -1102,39 +1463,37 @@ export default function CheckoutCourse({
                                                     <span className="font-bold text-gray-900">Total Pembayaran</span>
                                                     <span className="text-[#FA5F25] text-xl font-bold">Rp {totalPrice.toLocaleString('id-ID')}</span>
                                                 </div>
+                                                <div className="flex items-start gap-3 pt-2">
+                                                    <Checkbox
+                                                        id="terms"
+                                                        checked={termsAccepted}
+                                                        onCheckedChange={(checked) => setTermsAccepted(checked === true)}
+                                                        className="mt-0.5"
+                                                    />
+                                                    <Label htmlFor="terms" className="text-xs text-gray-600 leading-tight">
+                                                        Saya menyetujui{' '}
+                                                        <a
+                                                            href="/terms-and-conditions"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-orange-600 hover:underline font-semibold"
+                                                        >
+                                                            syarat dan ketentuan
+                                                        </a>{' '}
+                                                        yang berlaku
+                                                    </Label>
+                                                </div>
+                                                <Button
+                                                    className="w-full py-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xs transition-colors cursor-pointer"
+                                                    type="submit"
+                                                    disabled={!termsAccepted || loading}
+                                                >
+                                                    {loading ? 'Memproses...' : 'Lanjutkan Pembayaran'}
+                                                </Button>
                                             </div>
                                         </>
                                     )}
 
-                                    {!isFree && (
-                                        <div className="flex items-start gap-3 pt-2">
-                                            <Checkbox
-                                                id="terms"
-                                                checked={termsAccepted}
-                                                onCheckedChange={(checked) => setTermsAccepted(checked === true)}
-                                                className="mt-0.5"
-                                            />
-                                            <Label htmlFor="terms" className="text-xs text-gray-600 leading-tight">
-                                                Saya menyetujui{' '}
-                                                <a
-                                                    href="/terms-and-conditions"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-orange-600 hover:underline font-semibold"
-                                                >
-                                                    syarat dan ketentuan
-                                                </a>{' '}
-                                                yang berlaku
-                                            </Label>
-                                        </div>
-                                    )}
-                                    <Button
-                                        className="w-full py-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-xs transition-colors cursor-pointer"
-                                        type="submit"
-                                        disabled={(isFree ? false : !termsAccepted) || loading}
-                                    >
-                                        {loading ? 'Memproses...' : isFree ? 'Dapatkan Akses Gratis Sekarang' : 'Lanjutkan Pembayaran'}
-                                    </Button>
                                     <p className="text-center text-xs text-gray-500 flex items-center justify-center gap-1.5 mt-2">
                                         Pembayaran aman dan terenkripsi 🔒
                                     </p>

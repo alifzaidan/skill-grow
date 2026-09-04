@@ -67,7 +67,12 @@ interface Invoice {
     amount: number;
     nett_amount: number;
     discount_amount: number;
-    status: 'paid' | 'pending' | 'failed' | 'completed';
+    status: 'paid' | 'pending' | 'failed' | 'completed' | 'installment_pending';
+    is_installment?: boolean;
+    is_access_suspended?: boolean;
+    is_fully_paid?: boolean;
+    paid_terms?: number;
+    total_terms?: number;
     paid_at: string | null;
     created_at: string;
     payment_method: string | null;
@@ -519,7 +524,21 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
                                         <span className="text-gray-500">Status</span>
-                                        <span className="font-medium text-green-600 capitalize">{invoice.status}</span>
+                                        <span
+                                            className={`font-medium ${
+                                                invoice.is_access_suspended
+                                                    ? 'text-red-600'
+                                                    : invoice.is_installment && !invoice.is_fully_paid
+                                                      ? 'text-amber-600'
+                                                      : 'text-green-600'
+                                            }`}
+                                        >
+                                            {invoice.is_access_suspended
+                                                ? 'Akses Dibekukan'
+                                                : invoice.is_installment && !invoice.is_fully_paid
+                                                  ? `Cicilan (${invoice.paid_terms}/${invoice.total_terms})`
+                                                  : 'Sudah Dibayar'}
+                                        </span>
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
                                         <span className="text-gray-500">Total</span>
@@ -531,12 +550,23 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                             <span className="font-medium">{invoice.payment_method}</span>
                                         </div>
                                     )}
-                                    <Button asChild variant="outline" className="mt-4 w-full" size="sm">
-                                        <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
-                                            <FileText className="mr-2 h-4 w-4" />
-                                            Unduh Invoice
-                                        </a>
-                                    </Button>
+                                    {/* Hanya tampilkan tombol unduh invoice jika bukan cicilan atau cicilan sudah lunas */}
+                                    {(!invoice.is_installment || invoice.is_fully_paid) && (
+                                        <Button asChild variant="outline" className="mt-4 w-full" size="sm">
+                                            <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Unduh Invoice
+                                            </a>
+                                        </Button>
+                                    )}
+                                    {invoice.is_installment && (
+                                        <Button asChild variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400" size="sm">
+                                            <Link href={route('profile.installments')}>
+                                                <Clock className="mr-2 h-4 w-4" />
+                                                Kelola Cicilan Saya
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </CardContent>
                             </Card>
 

@@ -47,14 +47,16 @@ class InvoiceController extends Controller
         $productType = $request->input('product_type');
 
         // Buat query dasar
+        // Buat query dasar (hanya transaksi utama / parent invoice)
         $invoicesQuery = Invoice::with([
             'user.referrer',
+            'installmentTerms',
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'bundleEnrollments.bundle',
             'certificationProgramItems.certificationProgram'
-        ]);
+        ])->whereNull('parent_invoice_id');
 
         // Apply date filter jika ada
         if ($startDate && $endDate) {
@@ -228,6 +230,17 @@ class InvoiceController extends Controller
             $userId = Auth::id();
             $type = $request->input('type', 'course');
             $itemId = $request->input('id');
+
+            if ($userId) {
+                $activeInstallment = Invoice::getActiveInstallmentForUser($userId, $type, $itemId);
+                if ($activeInstallment && !$activeInstallment['is_fully_paid']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk program ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
+                    ], 422);
+                }
+            }
+
             $isScholarship = false;
             $itemPrice = null;
 
@@ -523,6 +536,17 @@ class InvoiceController extends Controller
         try {
             $userId = Auth::id();
             $bundleId = $request->input('bundle_id');
+
+            if ($userId) {
+                $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bundle', $bundleId);
+                if ($activeInstallment && !$activeInstallment['is_fully_paid']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda memiliki transaksi cicilan yang sedang aktif untuk paket bundling ini. Silakan lanjutkan pembayaran termin cicilan Anda.',
+                    ], 422);
+                }
+            }
+
             $discountAmount = $request->input('discount_amount', 0);
             $transactionFee = $request->input('transaction_fee', 5000);
             $nettAmount = $request->input('nett_amount');
@@ -1054,6 +1078,9 @@ class InvoiceController extends Controller
             return response()->json(['message' => 'unauthorized'], 401);
         }
 
+        $externalId = $request->external_id;
+        $baseCode = explode('_', $externalId)[0];
+
         $invoice = Invoice::with([
             'user',
             'courseItems.course',
@@ -1061,7 +1088,9 @@ class InvoiceController extends Controller
             'webinarItems.webinar',
             'certificationProgramItems.certificationProgram',
             'bundleEnrollments.bundle.bundleItems.bundleable'
-        ])->where('invoice_code', $request->external_id)->first();
+        ])->where('invoice_code', $externalId)
+          ->orWhere('invoice_code', $baseCode)
+          ->first();
 
         if (!$invoice) {
             return response()->json(['message' => 'Invoice Not Found'], 404);
@@ -1073,6 +1102,50 @@ class InvoiceController extends Controller
         }
 
         $isSuccess = ($request->status == 'PAID' || $request->status == 'SETTLED');
+
+        // ====== INSTALLMENT CHILD HANDLER ======
+        if ($invoice->isInstallmentChild() && $isSuccess) {
+            $invoice->update([
+                'paid_at' => Carbon::now('Asia/Jakarta'),
+                'status' => 'paid',
+                'payment_method' => $request->payment_method,
+                'payment_channel' => $request->payment_channel,
+            ]);
+
+            $parentInvoice = Invoice::with([
+                'user',
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'certificationProgramItems.certificationProgram',
+                'bundleEnrollments.bundle',
+            ])->find($invoice->parent_invoice_id);
+
+            if ($parentInvoice) {
+                // Jika termin ke-1 (DP): aktifkan akses
+                if ($invoice->installment_number === 1) {
+                    $this->activateInstallmentEnrollments($parentInvoice);
+                }
+
+                // Pulihkan akses jika sebelumnya dibekukan
+                $parentInvoice->update(['access_suspended_at' => null]);
+
+                // Catat komisi affiliate untuk termin ini
+                $this->recordAffiliateCommissionForTerm($invoice, $parentInvoice);
+
+                // Cek apakah semua termin lunas
+                if ($parentInvoice->isFullyPaid()) {
+                    $parentInvoice->update(['status' => 'paid', 'paid_at' => Carbon::now('Asia/Jakarta')]);
+                    event(new \App\Events\TransactionPaid($parentInvoice));
+                    $this->sendWhatsAppInstallmentComplete($parentInvoice);
+                } else {
+                    $this->sendWhatsAppTermPaid($invoice, $parentInvoice);
+                }
+            }
+
+            return response()->json(['message' => 'Success'], 200);
+        }
+        // ====== END INSTALLMENT CHILD HANDLER ======
 
         if ($isSuccess) {
             $invoice->update([
@@ -1825,15 +1898,51 @@ class InvoiceController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
-            'certificationProgramItems.certificationProgram'
-        ])->findOrFail($id);
+            'certificationProgramItems.certificationProgram',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.certificationProgramItems.certificationProgram',
+        ])
+            ->where(function ($q) use ($id) {
+                $q->where('id', $id)->orWhere('invoice_code', $id);
+            })
+            ->firstOrFail();
 
-        if ($invoice->status !== 'paid') {
-            abort(403, 'Invoice belum dibayar');
+        // Cek otorisasi kepemilikan invoice
+        if (!$user->hasRole('admin') && $invoice->user_id !== $user->id) {
+            abort(403, 'Anda tidak memiliki akses ke invoice ini');
+        }
+
+        // Izinkan download jika:
+        // 1. Invoice reguler yang sudah paid
+        // 2. Invoice parent cicilan yang sudah lunas (status=paid)
+        // 3. Invoice anak cicilan (termin) yang statusnya paid
+        $isAllowed = false;
+        if ($invoice->status === 'paid') {
+            $isAllowed = true;
+        } elseif ($invoice->isInstallmentChild() && $invoice->status === 'paid') {
+            $isAllowed = true;
+        }
+
+        if (!$isAllowed) {
+            abort(403, 'Invoice belum dibayar atau belum lunas');
+        }
+
+        // Jika invoice anak cicilan, gunakan data produk dari parent
+        $invoiceForView = $invoice;
+        if ($invoice->isInstallmentChild() && $invoice->parentInvoice) {
+            $parent = $invoice->parentInvoice;
+            // Salin relasi produk dari parent ke invoice anak untuk view
+            $invoice->setRelation('courseItems', $parent->courseItems);
+            $invoice->setRelation('bootcampItems', $parent->bootcampItems);
+            $invoice->setRelation('webinarItems', $parent->webinarItems);
+            $invoice->setRelation('certificationProgramItems', $parent->certificationProgramItems);
+            $invoiceForView = $invoice;
         }
 
         $data = [
-            'invoice' => $invoice,
+            'invoice' => $invoiceForView,
             'company' => [
                 'name' => 'Skillgrow',
                 'address' => 'Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324',
@@ -1876,4 +1985,93 @@ class InvoiceController extends Controller
 
         return Excel::download(new TransactionsExport($filters), $filename);
     }
+
+    // ==================== INSTALLMENT HELPERS ====================
+
+    /**
+     * Aktifkan akses enrollment pada invoice induk cicilan setelah DP dibayar
+     */
+    private function activateInstallmentEnrollments(Invoice $parentInvoice): void
+    {
+        // Jika invoice adalah bundling, buat individual enrollments untuk setiap item di dalam bundle
+        if ($parentInvoice->bundleEnrollments && $parentInvoice->bundleEnrollments->count() > 0) {
+            foreach ($parentInvoice->bundleEnrollments as $bundleEnrollment) {
+                $bundleEnrollment->createIndividualEnrollments();
+            }
+        }
+
+        Log::info('Installment DP paid - access activated', [
+            'parent_invoice_code' => $parentInvoice->invoice_code,
+            'user_id' => $parentInvoice->user_id,
+        ]);
+    }
+
+    /**
+     * Catat komisi affiliate untuk sebuah termin cicilan yang berhasil dibayar
+     */
+    private function recordAffiliateCommissionForTerm(Invoice $childInvoice, Invoice $parentInvoice): void
+    {
+        try {
+            $this->recordAffiliateCommission($childInvoice);
+        } catch (\Throwable $e) {
+            Log::error('Failed to record affiliate commission for installment term', [
+                'child_invoice_code' => $childInvoice->invoice_code,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Kirim WhatsApp saat satu termin cicilan berhasil dibayar (belum lunas)
+     */
+    private function sendWhatsAppTermPaid(Invoice $childInvoice, Invoice $parentInvoice): void
+    {
+        try {
+            $user = $parentInvoice->user;
+            if (!$user?->phone_number) return;
+
+            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+            $termNumber = $childInvoice->installment_number;
+            $totalTerms = $parentInvoice->installmentTerms()->count();
+            $nextTerm = $parentInvoice->nextUnpaidTerm();
+            $nextDue = $nextTerm ? Carbon::parse($nextTerm->installment_due_date)->translatedFormat('d F Y') : '-';
+
+            $message = "*[Skill Grow - Cicilan Berhasil]*\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Cicilan ke-*{$termNumber}/{$totalTerms}* sebesar *Rp " . number_format($childInvoice->amount, 0, ',', '.') . "* berhasil dibayar.\n\n";
+            if ($nextTerm) {
+                $message .= "Cicilan ke-*" . ($termNumber + 1) . "/{$totalTerms}* jatuh tempo pada *{$nextDue}*.\n\n";
+            }
+            $message .= "Terima kasih!\n\n*Skill Grow - Customer Support*";
+
+            self::sendText([['phone' => $phoneNumber, 'message' => $message, 'isGroup' => 'false']]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to send WhatsApp term paid', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Kirim WhatsApp saat semua termin cicilan lunas
+     */
+    private function sendWhatsAppInstallmentComplete(Invoice $parentInvoice): void
+    {
+        try {
+            $user = $parentInvoice->user;
+            if (!$user?->phone_number) return;
+
+            $phoneNumber = $this->formatPhoneNumber($user->phone_number);
+
+            $message = "*[Skill Grow - Cicilan Lunas]*\n\n";
+            $message .= "Hai *{$user->name}*,\n\n";
+            $message .= "Selamat! Semua cicilan untuk invoice *{$parentInvoice->invoice_code}* telah lunas.\n\n";
+            $message .= "Sertifikat tersedia untuk diunduh melalui profil Anda.\n\n";
+            $message .= "Terima kasih!\n\n*Skill Grow - Customer Support*";
+
+            self::sendText([['phone' => $phoneNumber, 'message' => $message, 'isGroup' => 'false']]);
+        } catch (\Throwable $e) {
+            Log::error('Failed to send WhatsApp installment complete', ['error' => $e->getMessage()]);
+        }
+    }
+
+    // ==================== END INSTALLMENT HELPERS ====================
 }

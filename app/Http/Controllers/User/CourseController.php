@@ -26,8 +26,7 @@ class CourseController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myCourseIds = Invoice::with('courseItems.course.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->courseItems->pluck('course_id');
@@ -68,8 +67,7 @@ class CourseController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myCourseIds = Invoice::with('courseItems.course.category')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->courseItems->pluck('course_id');
@@ -104,21 +102,31 @@ class CourseController extends Controller
 
         $course->load(['modules.lessons']);
         $hasAccess = false;
+        $activeInstallment = null;
         $pendingInvoice = null;
+        $pendingInvoiceUrl = null;
 
-        if (Auth::check()) {
-            $userId = Auth::id();
+        $userId = Auth::id();
 
-            $hasAccess = Invoice::where('user_id', $userId)
-                ->where('status', 'paid')
+        if ($userId) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'course', $course->id);
+
+            $hasRegularPaid = Invoice::where('user_id', $userId)
+                ->whereNull('parent_invoice_id')
+                ->where('is_installment', false)
+                ->whereIn('status', ['paid', 'completed'])
                 ->whereHas('courseItems', function ($query) use ($course) {
                     $query->where('course_id', $course->id);
                 })
                 ->exists();
 
-            if (!$hasAccess) {
+            $isInstallmentCompleted = $activeInstallment && $activeInstallment['is_fully_paid'];
+            $hasAccess = $hasRegularPaid || $isInstallmentCompleted;
+
+            if (!$hasAccess && !$activeInstallment) {
                 $invoice = Invoice::where('user_id', $userId)
                     ->where('status', 'pending')
+                    ->where('is_installment', false)
                     ->whereHas('courseItems', function ($query) use ($course) {
                         $query->where('course_id', $course->id);
                     })
@@ -139,6 +147,7 @@ class CourseController extends Controller
                         'created_at' => $invoice->created_at,
                         'expires_at' => $invoice->expires_at,
                     ];
+                    $pendingInvoiceUrl = $invoice->invoice_url;
                 }
             }
         }
@@ -146,8 +155,11 @@ class CourseController extends Controller
         return Inertia::render('user/course/checkout/index', [
             'course' => $course,
             'hasAccess' => $hasAccess,
+            'activeInstallment' => $activeInstallment,
             'pendingInvoice' => $pendingInvoice,
+            'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'referralInfo' => $this->getReferralInfo(),
+            'installmentTerms' => $course->installmentTerms()->get(['term_number', 'amount', 'due_date']),
         ]);
     }
 

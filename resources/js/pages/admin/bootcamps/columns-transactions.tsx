@@ -1,6 +1,7 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import InstallmentMonitorModal from '@/components/admin/installment-monitor-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -8,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText, Image } from 'lucide-react';
+import { Clock, FileText, Image } from 'lucide-react';
 
 interface User {
     id: string;
@@ -30,14 +31,38 @@ export interface Invoice {
     invoice_code: string;
     invoice_url: string | null;
     amount: number;
-    status: 'paid' | 'pending' | 'failed';
+    status: 'paid' | 'pending' | 'failed' | 'expired' | 'completed' | 'installment_pending';
     paid_at: string | null;
     created_at: string;
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
     bootcamp_items: {
         id: string;
         bootcamp_id: string;
         free_requirement: FreeRequirement | null;
     }[];
+    installment_terms?: Array<{
+        id: string;
+        installment_number: number;
+        invoice_code: string;
+        amount: number;
+        status: 'paid' | 'pending' | 'failed';
+        installment_due_date?: string | null;
+        due_date?: string | null;
+        paid_at?: string | null;
+        invoice_url?: string | null;
+    }>;
+    installmentTerms?: Array<{
+        id: string;
+        installment_number: number;
+        invoice_code: string;
+        amount: number;
+        status: 'paid' | 'pending' | 'failed';
+        installment_due_date?: string | null;
+        due_date?: string | null;
+        paid_at?: string | null;
+        invoice_url?: string | null;
+    }>;
 }
 
 function ProofModal({ requirement, userName }: { requirement: FreeRequirement; userName: string }) {
@@ -99,12 +124,12 @@ function ProofModal({ requirement, userName }: { requirement: FreeRequirement; u
                     </div>
 
                     <div className="space-y-2">
-                        <h4 className="text-sm font-semibold">Bukti Tag 3 Teman</h4>
+                        <h4 className="text-sm font-semibold">Bukti Tag Teman</h4>
                         {requirement.tag_friend_proof ? (
                             <div className="overflow-hidden rounded-lg border">
                                 <img
                                     src={`/storage/${requirement.tag_friend_proof}`}
-                                    alt="Bukti Tag 3 Teman"
+                                    alt="Bukti Tag Teman"
                                     className="h-auto max-h-64 w-full object-contain"
                                     onError={(e) => {
                                         const target = e.target as HTMLImageElement;
@@ -119,13 +144,6 @@ function ProofModal({ requirement, userName }: { requirement: FreeRequirement; u
                             </div>
                         )}
                     </div>
-                </div>
-
-                <div className="mt-4 rounded-lg bg-gray-50 p-3">
-                    <p className="text-sm text-gray-600">
-                        <strong>Catatan:</strong> Bukti ini diupload saat pendaftaran bootcamp gratis. Pastikan semua bukti sesuai dengan persyaratan
-                        yang ditetapkan.
-                    </p>
                 </div>
             </DialogContent>
         </Dialog>
@@ -155,8 +173,13 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
     const { roles, isAdmin } = usePermission();
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+
     const hasProof =
-        invoice.bootcamp_items[0]?.free_requirement &&
+        invoice.bootcamp_items &&
+        invoice.bootcamp_items.length > 0 &&
+        invoice.bootcamp_items[0].free_requirement &&
         (invoice.bootcamp_items[0].free_requirement.ig_follow_proof ||
             invoice.bootcamp_items[0].free_requirement.tiktok_follow_proof ||
             invoice.bootcamp_items[0].free_requirement.tag_friend_proof);
@@ -166,7 +189,7 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
             {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                 <FileText className="h-4 w-4" />
                             </a>
@@ -176,6 +199,25 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
                         <p>Lihat Invoice</p>
                     </TooltipContent>
                 </Tooltip>
+            )}
+
+            {isInstallment && (
+                <InstallmentMonitorModal
+                    invoice={invoice as any}
+                    trigger={
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 text-primary hover:text-primary hover:bg-primary/10">
+                                    <Clock className="size-4" />
+                                    <span className="sr-only">Monitor Cicilan & Reminder WA</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Monitor Cicilan & Reminder WA</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    }
+                />
             )}
 
             {hasProof && (
@@ -221,12 +263,44 @@ export const transactionColumns: ColumnDef<Invoice>[] = [
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-            const status = row.original.status;
+            const invoice = row.original;
+            const terms = invoice.installment_terms || invoice.installmentTerms || [];
+            const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+
+            if (isInstallment) {
+                const paidCount = terms.filter((t) => t.status === 'paid').length;
+                const totalCount = terms.length;
+                const isFullyPaid = totalCount > 0 && paidCount === totalCount;
+                const isSuspended = !!invoice.access_suspended_at;
+
+                return (
+                    <div className="flex flex-col gap-1 items-start">
+                        {isFullyPaid ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                Cicilan Lunas
+                            </Badge>
+                        ) : isSuspended ? (
+                            <Badge variant="destructive">
+                                Akses Dibekukan
+                            </Badge>
+                        ) : (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                                Cicilan ({paidCount}/{totalCount || '?'})
+                            </Badge>
+                        )}
+                    </div>
+                );
+            }
+
+            const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClasses = {
+            const statusClasses: Record<string, string> = {
                 paid: 'bg-green-100 text-green-800',
+                completed: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',
                 failed: 'bg-red-100 text-red-800',
+                expired: 'bg-gray-100 text-gray-800',
+                installment_pending: 'bg-amber-100 text-amber-800',
             };
             return <Badge className={`${statusClasses[status] || 'bg-gray-100 text-gray-800'}`}>{statusText}</Badge>;
         },

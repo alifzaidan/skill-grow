@@ -1,13 +1,16 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
+import InstallmentMonitorModal from '@/components/admin/installment-monitor-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { FileText } from 'lucide-react';
+import { Clock, FileText } from 'lucide-react';
+import { usePermission } from '@/hooks/use-permission';
+import { Row } from '@tanstack/react-table';
 
 interface User {
     id: string;
@@ -22,13 +25,34 @@ export interface BundleTransactionInvoice {
     invoice_code: string;
     invoice_url: string | null;
     amount: number;
-    status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed';
+    status: 'paid' | 'pending' | 'expired' | 'failed' | 'completed' | 'installment_pending';
     paid_at: string | null;
     created_at: string;
+    is_installment?: boolean;
+    access_suspended_at?: string | null;
+    installment_terms?: Array<{
+        id: string;
+        installment_number: number;
+        invoice_code: string;
+        amount: number;
+        status: 'paid' | 'pending' | 'failed';
+        installment_due_date?: string | null;
+        due_date?: string | null;
+        paid_at?: string | null;
+        invoice_url?: string | null;
+    }>;
+    installmentTerms?: Array<{
+        id: string;
+        installment_number: number;
+        invoice_code: string;
+        amount: number;
+        status: 'paid' | 'pending' | 'failed';
+        installment_due_date?: string | null;
+        due_date?: string | null;
+        paid_at?: string | null;
+        invoice_url?: string | null;
+    }>;
 }
-
-import { usePermission } from '@/hooks/use-permission';
-import { Row } from '@tanstack/react-table';
 
 function PriceCell({ row }: { row: Row<BundleTransactionInvoice> }) {
     const { roles, isAdmin } = usePermission();
@@ -50,13 +74,15 @@ function ActionCell({ row }: { row: Row<BundleTransactionInvoice> }) {
     const { roles, isAdmin } = usePermission();
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
+    const terms = invoice.installment_terms || invoice.installmentTerms || [];
+    const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
 
     return (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center gap-1">
             {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                 <FileText className="size-4" />
                             </a>
@@ -66,6 +92,25 @@ function ActionCell({ row }: { row: Row<BundleTransactionInvoice> }) {
                         <p>Lihat Invoice</p>
                     </TooltipContent>
                 </Tooltip>
+            )}
+
+            {isInstallment && (
+                <InstallmentMonitorModal
+                    invoice={invoice as any}
+                    trigger={
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-8 text-primary hover:text-primary hover:bg-primary/10">
+                                    <Clock className="size-4" />
+                                    <span className="sr-only">Monitor Cicilan & Reminder WA</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Monitor Cicilan & Reminder WA</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    }
+                />
             )}
         </div>
     );
@@ -96,14 +141,44 @@ export const columns: ColumnDef<BundleTransactionInvoice>[] = [
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
         cell: ({ row }) => {
-            const status = row.original.status;
+            const invoice = row.original;
+            const terms = invoice.installment_terms || invoice.installmentTerms || [];
+            const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
+
+            if (isInstallment) {
+                const paidCount = terms.filter((t) => t.status === 'paid').length;
+                const totalCount = terms.length;
+                const isFullyPaid = totalCount > 0 && paidCount === totalCount;
+                const isSuspended = !!invoice.access_suspended_at;
+
+                return (
+                    <div className="flex flex-col gap-1 items-start">
+                        {isFullyPaid ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                                Cicilan Lunas
+                            </Badge>
+                        ) : isSuspended ? (
+                            <Badge variant="destructive">
+                                Akses Dibekukan
+                            </Badge>
+                        ) : (
+                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
+                                Cicilan ({paidCount}/{totalCount || '?'})
+                            </Badge>
+                        )}
+                    </div>
+                );
+            }
+
+            const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClasses = {
+            const statusClasses: Record<string, string> = {
                 paid: 'bg-green-100 text-green-800',
                 completed: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',
                 failed: 'bg-red-100 text-red-800',
                 expired: 'bg-gray-100 text-gray-800',
+                installment_pending: 'bg-amber-100 text-amber-800',
             };
             return <Badge className={`${statusClasses[status] || statusClasses.expired}`}>{statusText}</Badge>;
         },

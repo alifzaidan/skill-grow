@@ -63,7 +63,189 @@ class Invoice extends Model
         return [
             'paid_at' => 'datetime',
             'expires_at' => 'datetime',
+            'installment_due_date' => 'datetime',
+            'access_suspended_at' => 'datetime',
+            'is_installment' => 'boolean',
         ];
+    }
+
+    // ==================== Installment Relations ====================
+
+    public function parentInvoice()
+    {
+        return $this->belongsTo(Invoice::class, 'parent_invoice_id');
+    }
+
+    /**
+     * Relasi dari invoice induk ke semua invoice anak (termin)
+     */
+    public function installmentTerms()
+    {
+        return $this->hasMany(Invoice::class, 'parent_invoice_id')->orderBy('installment_number');
+    }
+
+    public function installmentTerm()
+    {
+        return $this->belongsTo(ProductInstallmentTerm::class, 'installment_term_id');
+    }
+
+    // ==================== Installment Helpers ====================
+
+    /**
+     * Scope untuk invoice yang sudah dibeli oleh user (lunas atau cicilan dengan DP terbayar)
+     * Termasuk yang aksesnya sedang dibekukan (agar tetap tampil di dashboard/daftar produk user)
+     */
+    public function scopePurchasedByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->whereNull('parent_invoice_id')
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($iq) {
+                        $iq->where('status', 'installment_pending')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            });
+    }
+
+    /**
+     * Scope untuk invoice yang aktif dan dapat diakses materinya (lunas, atau cicilan dengan DP terbayar & tidak dibekukan)
+     */
+    public function scopeAccessibleForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId)
+            ->whereNull('parent_invoice_id')
+            ->where(function ($q) {
+                $q->whereIn('status', ['paid', 'completed'])
+                    ->orWhere(function ($iq) {
+                        $iq->where('status', 'installment_pending')
+                            ->whereNull('access_suspended_at')
+                            ->whereHas('installmentTerms', function ($tq) {
+                                $tq->where('installment_number', 1)->where('status', 'paid');
+                            });
+                    });
+            });
+    }
+
+    /**
+     * Ambil data cicilan aktif milik user untuk produk tertentu
+     */
+    public static function getActiveInstallmentForUser($userId, string $type, string $productId): ?array
+    {
+        if (!$userId) {
+            return null;
+        }
+
+        $parentInvoice = self::with(['installmentTerms' => function ($q) {
+            $q->orderBy('installment_number');
+        }])
+            ->where('user_id', $userId)
+            ->where('is_installment', true)
+            ->whereNull('parent_invoice_id')
+            ->where(function ($q) use ($type, $productId) {
+                match ($type) {
+                    'certification_program', 'certification-program' => $q->whereHas('certificationProgramItems', fn($iq) => $iq->where('certification_program_id', $productId)),
+                    'bootcamp' => $q->whereHas('bootcampItems', fn($iq) => $iq->where('bootcamp_id', $productId)),
+                    'bundle' => $q->whereHas('bundleEnrollments', fn($iq) => $iq->where('bundle_id', $productId)),
+                    'webinar' => $q->whereHas('webinarItems', fn($iq) => $iq->where('webinar_id', $productId)),
+                    'course' => $q->whereHas('courseItems', fn($iq) => $iq->where('course_id', $productId)),
+                    default => null,
+                };
+            })
+            ->latest()
+            ->first();
+
+        if (!$parentInvoice) {
+            return null;
+        }
+
+        $terms = $parentInvoice->installmentTerms->sortBy('installment_number')->values();
+        $paidTerms = $terms->where('status', 'paid')->count();
+        $totalTerms = $terms->count();
+        $nextUnpaid = $parentInvoice->nextUnpaidTerm();
+        $isFullyPaid = $parentInvoice->isFullyPaid() || ($paidTerms === $totalTerms && $totalTerms > 0);
+
+        return [
+            'parent_invoice_id' => $parentInvoice->id,
+            'invoice_code' => $parentInvoice->invoice_code,
+            'status' => $parentInvoice->status,
+            'amount' => $parentInvoice->amount,
+            'total_terms' => $totalTerms,
+            'paid_terms' => $paidTerms,
+            'is_fully_paid' => $isFullyPaid,
+            'next_term' => $nextUnpaid ? [
+                'id' => $nextUnpaid->id,
+                'term_number' => $nextUnpaid->installment_number,
+                'amount' => $nextUnpaid->amount,
+                'due_date' => $nextUnpaid->installment_due_date ? $nextUnpaid->installment_due_date->format('Y-m-d') : null,
+                'is_overdue' => $nextUnpaid->installment_due_date
+                    ? \Carbon\Carbon::now('Asia/Jakarta')->gt(\Carbon\Carbon::parse($nextUnpaid->installment_due_date)->endOfDay())
+                    : false,
+            ] : null,
+            'terms' => $terms->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'term_number' => $t->installment_number,
+                    'amount' => $t->amount,
+                    'due_date' => $t->installment_due_date ? $t->installment_due_date->format('Y-m-d') : null,
+                    'status' => $t->status,
+                    'paid_at' => $t->paid_at ? $t->paid_at->format('Y-m-d H:i') : null,
+                ];
+            })->values()->all(),
+        ];
+    }
+
+    /**
+     * Cek apakah semua termin cicilan sudah lunas
+     */
+    public function isFullyPaid(): bool
+    {
+        if (!$this->is_installment) {
+            return $this->status === 'paid';
+        }
+        return $this->installmentTerms()->where('status', '!=', 'paid')->doesntExist();
+    }
+
+    /**
+     * Jumlah termin yang sudah dibayar
+     */
+    public function paidTermsCount(): int
+    {
+        return $this->installmentTerms()->where('status', 'paid')->count();
+    }
+
+    /**
+     * Invoice anak termin berikutnya yang belum dibayar
+     */
+    public function nextUnpaidTerm(): ?Invoice
+    {
+        return $this->installmentTerms()->where('status', '!=', 'paid')->orderBy('installment_number')->first();
+    }
+
+    /**
+     * Cek apakah akses sedang dibekukan
+     */
+    public function isAccessSuspended(): bool
+    {
+        return !is_null($this->access_suspended_at);
+    }
+
+    /**
+     * Cek apakah ini invoice induk cicilan
+     */
+    public function isInstallmentParent(): bool
+    {
+        return $this->is_installment && is_null($this->parent_invoice_id);
+    }
+
+    /**
+     * Cek apakah ini invoice anak (termin cicilan)
+     */
+    public function isInstallmentChild(): bool
+    {
+        return !is_null($this->parent_invoice_id);
     }
 
     public function getInvoiceType(): string
@@ -224,6 +406,7 @@ class Invoice extends Model
             'pending' => 'yellow',
             'failed' => 'red',
             'expired' => 'gray',
+            'installment_pending' => 'blue',
             default => 'gray',
         };
     }

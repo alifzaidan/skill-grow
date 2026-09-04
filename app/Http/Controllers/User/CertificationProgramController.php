@@ -49,8 +49,7 @@ class CertificationProgramController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->certificationProgramItems->pluck('certification_program_id');
@@ -75,6 +74,8 @@ class CertificationProgramController extends Controller
 
     public function detail(Request $request, CertificationProgram $program)
     {
+        $this->handleReferralCode($request);
+
         if (!in_array($program->status, ['published', 'hidden'], true)) {
             return Inertia::render('user/unavailable/index', [
                 'title' => 'Program Tidak Tersedia',
@@ -117,8 +118,7 @@ class CertificationProgramController extends Controller
         if (Auth::check()) {
             $userId = Auth::id();
             $myProgramIds = Invoice::with('certificationProgramItems')
-                ->where('user_id', $userId)
-                ->where('status', 'paid')
+                ->purchasedByUser($userId)
                 ->get()
                 ->flatMap(function ($invoice) {
                     return $invoice->certificationProgramItems->pluck('certification_program_id');
@@ -146,11 +146,14 @@ class CertificationProgramController extends Controller
             'myProgramIds' => $myProgramIds,
             'scholarshipApplication' => $scholarshipApplication,
             'approvedScholarshipProgramIds' => $approvedScholarshipProgramIds,
+            'referralInfo' => $this->getReferralInfo(),
         ]);
     }
 
     public function showRegister(Request $request, CertificationProgram $program)
     {
+        $this->handleReferralCode($request);
+
         if (!in_array($program->status, ['published', 'hidden'], true)) {
             return Inertia::render('user/unavailable/index', [
                 'title' => 'Program Tidak Tersedia',
@@ -162,65 +165,70 @@ class CertificationProgramController extends Controller
             ])->toResponse($request)->setStatusCode(404);
         }
 
-        $program->load(['schedules', 'socializationSchedules', 'category', 'mentors']);
+        $program->load(['category', 'schedules', 'socializationSchedules', 'mentors']);
 
         $hasAccess = false;
+        $activeInstallment = null;
+        $pendingInvoice = null;
         $pendingInvoiceUrl = null;
         $regularApplication = null;
         $scholarshipApplication = null;
-
-        $isScholarship = $request->boolean('scholarship', false);
-        if ($program->type === 'scholarship') {
-            $isScholarship = true;
-        }
+        $isScholarship = $request->has('scholarship') && $request->scholarship == '1';
 
         if (Auth::check()) {
-            $userId = Auth::id();
+            $user = Auth::user();
 
-            $hasAccess = Invoice::where('user_id', $userId)
+            // Cek apakah user sudah punya akses lunas
+            $hasAccess = Invoice::where('user_id', $user->id)
                 ->where('status', 'paid')
                 ->whereHas('certificationProgramItems', function ($query) use ($program) {
                     $query->where('certification_program_id', $program->id);
                 })
                 ->exists();
 
-            if (!$hasAccess) {
-                $invoice = Invoice::where('user_id', $userId)
-                    ->where('status', 'pending')
-                    ->whereHas('certificationProgramItems', function ($query) use ($program) {
-                        $query->where('certification_program_id', $program->id);
-                    })
-                    ->latest()
-                    ->first();
+            // Cek cicilan aktif untuk program sertifikasi ini
+            $activeInstallment = Invoice::getActiveInstallmentForUser($user->id, 'certification_program', $program->id);
 
-                if ($invoice) {
-                    $pendingInvoice = [
-                        'id' => $invoice->id,
-                        'invoice_code' => $invoice->invoice_code,
-                        'status' => $invoice->status,
-                        'amount' => $invoice->amount,
-                        'payment_method' => $invoice->payment_method,
-                        'invoice_url' => $invoice->invoice_url,
-                        'va_number' => $invoice->va_number,
-                        'qr_code_url' => $invoice->qr_code_url,
-                        'bank_name' => $invoice->bank_name ?? null,
-                        'created_at' => $invoice->created_at,
-                        'expires_at' => $invoice->expires_at,
-                    ];
-                    $pendingInvoiceUrl = $invoice->invoice_url;
-                }
+            // Cek invoice pending non-cicilan
+            $pendingInvoiceModel = Invoice::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->whereNull('parent_invoice_id')
+                ->where('is_installment', false)
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->whereHas('certificationProgramItems', function ($query) use ($program) {
+                    $query->where('certification_program_id', $program->id);
+                })
+                ->latest()
+                ->first();
+
+            if ($pendingInvoiceModel) {
+                $pendingInvoice = [
+                    'id' => $pendingInvoiceModel->id,
+                    'invoice_code' => $pendingInvoiceModel->invoice_code,
+                    'amount' => $pendingInvoiceModel->amount,
+                    'payment_method' => $pendingInvoiceModel->payment_method,
+                    'invoice_url' => $pendingInvoiceModel->invoice_url,
+                    'va_number' => $pendingInvoiceModel->va_number,
+                    'qr_code_url' => $pendingInvoiceModel->qr_code_url,
+                    'bank_name' => $pendingInvoiceModel->bank_name ?? null,
+                    'created_at' => $pendingInvoiceModel->created_at,
+                    'expires_at' => $pendingInvoiceModel->expires_at,
+                ];
+                $pendingInvoiceUrl = $pendingInvoiceModel->invoice_url;
             }
 
-            if ($program->document_required && !$isScholarship) {
+            if ($program->type === 'regular' && $program->document_required) {
                 $regularApplication = CertificationProgramApplication::where('certification_program_id', $program->id)
-                    ->where('user_id', $userId)
+                    ->where('user_id', $user->id)
                     ->latest()
                     ->first();
             }
 
-            if ($isScholarship) {
+            if ($program->type === 'scholarship') {
                 $scholarshipApplication = CertificationProgramScholarshipApplication::where('certification_program_id', $program->id)
-                    ->where('email', Auth::user()->email)
+                    ->where('email', $user->email)
                     ->latest()
                     ->first();
             }
@@ -229,11 +237,14 @@ class CertificationProgramController extends Controller
         return Inertia::render('user/certification-program/register/index', [
             'program' => $program,
             'hasAccess' => $hasAccess,
+            'activeInstallment' => $activeInstallment,
             'pendingInvoice' => $pendingInvoice,
             'pendingInvoiceUrl' => $pendingInvoiceUrl,
             'regularApplication' => $regularApplication,
             'scholarshipApplication' => $scholarshipApplication,
             'isScholarship' => $isScholarship,
+            'referralInfo' => $this->getReferralInfo(),
+            'installmentTerms' => $program->installmentTerms()->get(['term_number', 'amount', 'due_date']),
         ]);
     }
 
@@ -458,5 +469,31 @@ class CertificationProgramController extends Controller
         }
 
         return $phoneNumber;
+    }
+
+    /**
+     * Get referral info untuk frontend
+     */
+    private function getReferralInfo(): array
+    {
+        $code = session('affiliate_code') ?? session('referral_code');
+        return [
+            'code' => $code,
+            'hasActive' => $code && $code !== 'SGW2025',
+        ];
+    }
+
+    /**
+     * Handle referral code dari URL parameter
+     */
+    private function handleReferralCode(Request $request): void
+    {
+        $referralCode = $request->query('ref');
+        if ($referralCode) {
+            session([
+                'affiliate_code' => $referralCode,
+                'referral_code' => $referralCode,
+            ]);
+        }
     }
 }
