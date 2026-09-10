@@ -469,17 +469,26 @@ class InvoiceController extends Controller
                 $discountCode->incrementUsage();
             }
 
+            $cancelUrl = match ($type) {
+                'course' => route('course.checkout', ['course' => $item->slug]),
+                'bootcamp' => route('bootcamp.register', ['bootcamp' => $item->slug]),
+                'webinar' => route('webinar.register', ['webinar' => $item->slug]),
+                'certification_program' => route('certification-programs.register', ['program' => $item->slug]),
+                default => route('doku.callback.cancel', ['invoice_number' => $invoice_code]),
+            };
+
             $dokuService = app(\App\Services\DokuService::class);
             $dokuResponse = $dokuService->createCheckout(
                 $invoice_code,
                 $totalAmount,
                 [
-                    'customer_id' => 'USER-' . $userId,
-                    'customer_name' => Auth::user()->name,
-                    'customer_email' => Auth::user()->email,
-                    'customer_phone' => Auth::user()->phone_number,
-                    'item_name' => $item->title,
-                    'item_description' => 'Pembayaran ' . $type . ' ' . $item->title,
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $item->title,
+                    'item_description'    => 'Pembayaran ' . $type . ' ' . $item->title,
+                    'callback_url_cancel' => $cancelUrl,
                 ]
             );
 
@@ -706,12 +715,13 @@ class InvoiceController extends Controller
                 $invoice_code,
                 $totalAmount,
                 [
-                    'customer_id' => 'USER-' . $userId,
-                    'customer_name' => Auth::user()->name,
-                    'customer_email' => Auth::user()->email,
-                    'customer_phone' => Auth::user()->phone_number,
-                    'item_name' => $bundle->title,
-                    'item_description' => 'Pembayaran Paket Bundling: ' . $bundle->title,
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $bundle->title,
+                    'item_description'    => 'Pembayaran Paket Bundling: ' . $bundle->title,
+                    'callback_url_cancel' => route('bundle.checkout', ['bundle' => $bundle->slug]),
                 ]
             );
 
@@ -890,8 +900,14 @@ class InvoiceController extends Controller
             'courseItems.course',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
-            'certificationProgramItems.certificationProgram'
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle'
         ])->findOrFail($id);
+
+        if ($invoice->status === 'pending') {
+            return redirect($this->getInvoiceProductUrl($invoice));
+        }
+
         return Inertia::render('user/checkout/success', ['invoice' => $invoice]);
     }
 
@@ -1314,13 +1330,116 @@ class InvoiceController extends Controller
     public function dokuReturn(Request $request)
     {
         $invoiceCode = $request->query('invoice_number');
-        $invoice = Invoice::where('invoice_code', $invoiceCode)->first();
+        $baseCode = $invoiceCode ? explode('_', $invoiceCode)[0] : null;
+
+        $invoice = Invoice::with([
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle'
+        ])
+        ->where('invoice_code', $invoiceCode)
+        ->when($baseCode, function ($q) use ($baseCode) {
+            return $q->orWhere('invoice_code', $baseCode);
+        })
+        ->first();
 
         if ($invoice) {
-            return redirect()->route('invoice.show', ['id' => $invoice->id]);
+            $parentInvoice = ($invoice->isInstallmentChild() && $invoice->parent_invoice_id)
+                ? Invoice::with([
+                    'courseItems.course',
+                    'bootcampItems.bootcamp',
+                    'webinarItems.webinar',
+                    'certificationProgramItems.certificationProgram',
+                    'bundleEnrollments.bundle'
+                ])->find($invoice->parent_invoice_id)
+                : null;
+
+            if ($invoice->status === 'pending') {
+                return redirect($this->getInvoiceProductUrl($parentInvoice ?? $invoice));
+            }
+
+            $targetId = $parentInvoice ? $parentInvoice->id : $invoice->id;
+            return redirect()->route('invoice.show', ['id' => $targetId]);
         }
 
         return redirect()->route('home');
+    }
+
+    public function dokuCancel(Request $request)
+    {
+        $invoiceCode = $request->query('invoice_number');
+        $baseCode = $invoiceCode ? explode('_', $invoiceCode)[0] : null;
+
+        $invoice = Invoice::with([
+            'courseItems.course',
+            'bootcampItems.bootcamp',
+            'webinarItems.webinar',
+            'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle'
+        ])
+        ->where('invoice_code', $invoiceCode)
+        ->when($baseCode, function ($q) use ($baseCode) {
+            return $q->orWhere('invoice_code', $baseCode);
+        })
+        ->first();
+
+        if ($invoice) {
+            return redirect($this->getInvoiceProductUrl($invoice));
+        }
+
+        return redirect()->route('home');
+    }
+
+    private function getInvoiceProductUrl(Invoice $invoice): string
+    {
+        if ($invoice->isInstallmentChild() && $invoice->parent_invoice_id) {
+            $parent = Invoice::with([
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'certificationProgramItems.certificationProgram',
+                'bundleEnrollments.bundle'
+            ])->find($invoice->parent_invoice_id);
+
+            if ($parent) {
+                $invoice = $parent;
+            }
+        }
+
+        if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
+            $bundle = $invoice->bundleEnrollments->first()->bundle;
+            if ($bundle) {
+                return route('bundle.checkout', ['bundle' => $bundle->slug]);
+            }
+        } elseif ($invoice->courseItems && $invoice->courseItems->count() > 0) {
+            $course = $invoice->courseItems->first()->course;
+            if ($course) {
+                return route('course.checkout', ['course' => $course->slug]);
+            }
+        } elseif ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) {
+            $bootcamp = $invoice->bootcampItems->first()->bootcamp;
+            if ($bootcamp) {
+                return route('bootcamp.register', ['bootcamp' => $bootcamp->slug]);
+            }
+        } elseif ($invoice->webinarItems && $invoice->webinarItems->count() > 0) {
+            $webinar = $invoice->webinarItems->first()->webinar;
+            if ($webinar) {
+                return route('webinar.register', ['webinar' => $webinar->slug]);
+            }
+        } elseif ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) {
+            $program = $invoice->certificationProgramItems->first()->certificationProgram;
+            if ($program) {
+                return route('certification-programs.register', ['program' => $program->slug]);
+            }
+        }
+
+        if ($invoice->is_installment || $invoice->parent_invoice_id) {
+            return route('profile.installments');
+        }
+
+        return route('profile.index');
     }
 
     /**

@@ -538,6 +538,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
 Route::post('/api/discount-codes/validate', [DiscountCodeController::class, 'validate'])->name('api.discount-codes.validate');
 
 Route::get('/doku/callback', [InvoiceController::class, 'dokuReturn'])->name('doku.callback.web');
+Route::get('/doku/cancel', [InvoiceController::class, 'dokuCancel'])->name('doku.callback.cancel');
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';
