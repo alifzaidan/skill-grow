@@ -21,9 +21,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Xendit\Configuration;
-use Xendit\Invoice\CreateInvoiceRequest;
-use Xendit\Invoice\InvoiceApi;
+use App\Services\DokuService;
+// use Xendit\Configuration;
+// use Xendit\Invoice\CreateInvoiceRequest;
+// use Xendit\Invoice\InvoiceApi;
 
 class InstallmentController extends Controller
 {
@@ -31,7 +32,7 @@ class InstallmentController extends Controller
 
     public function __construct()
     {
-        Configuration::setXenditKey(config('xendit.API_KEY'));
+        // Configuration::setXenditKey(config('xendit.API_KEY'));
     }
 
     private function formatPhoneNumber(string $phoneNumber): string
@@ -215,15 +216,46 @@ class InstallmentController extends Controller
             ];
             $enrollmentClass::create($enrollmentData);
 
-            // Buat Xendit Invoice hanya untuk termin ke-1 (DP)
-            $xenditInvoice = $this->createXenditInvoice($firstChildInvoice, $item, Auth::user());
-            $firstChildInvoice->update(['invoice_url' => $xenditInvoice['invoice_url']]);
+            // ===== XENDIT (dicomment) =====
+            // // Buat Xendit Invoice hanya untuk termin ke-1 (DP)
+            // $xenditInvoice = $this->createXenditInvoice($firstChildInvoice, $item, Auth::user());
+            // $firstChildInvoice->update(['invoice_url' => $xenditInvoice['invoice_url']]);
+            // ===== END XENDIT =====
+
+            $cancelUrl = match ($type) {
+                'course' => route('course.checkout', ['course' => $item->slug]),
+                'bootcamp' => route('bootcamp.register', ['bootcamp' => $item->slug]),
+                'webinar' => route('webinar.register', ['webinar' => $item->slug]),
+                'certification_program' => route('certification-programs.register', ['program' => $item->slug]),
+                'bundle' => route('bundle.checkout', ['bundle' => $item->slug]),
+                default => route('profile.installments'),
+            };
+
+            // ===== DOKU =====
+            $productTitle = $item->title ?? $item->name ?? 'Produk';
+            $dokuService = app(DokuService::class);
+            $dokuResponse = $dokuService->createCheckout(
+                $firstChildInvoice->invoice_code,
+                $firstChildInvoice->amount,
+                [
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $productTitle . ' (DP Cicilan 1)',
+                    'item_description'    => 'Pembayaran DP Cicilan: ' . $productTitle,
+                    'callback_url_cancel' => $cancelUrl,
+                ]
+            );
+            $paymentUrl = $dokuResponse['response']['payment']['url'] ?? '';
+            $firstChildInvoice->update(['invoice_url' => $paymentUrl]);
+            // ===== END DOKU =====
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'payment_url' => $xenditInvoice['invoice_url'],
+                'payment_url' => $paymentUrl,
                 'invoice_id' => $parentInvoice->id,
                 'invoice_code' => $parentCode,
                 'dp_amount' => $dpAmount,
@@ -297,19 +329,46 @@ class InstallmentController extends Controller
             $item = $this->getProductFromInvoice($productInvoice);
 
             $uniqueExternalId = $nextTerm->invoice_code . '_' . time();
-            $xenditInvoice = $this->createXenditInvoice($nextTerm, $item, Auth::user(), $uniqueExternalId);
+
+            // ===== XENDIT (dicomment) =====
+            // $xenditInvoice = $this->createXenditInvoice($nextTerm, $item, Auth::user(), $uniqueExternalId);
+            // $nextTerm->update([
+            //     'status' => 'pending',
+            //     'invoice_url' => $xenditInvoice['invoice_url'],
+            //     'expires_at' => Carbon::now()->addHours(24),
+            // ]);
+            // ===== END XENDIT =====
+
+            // ===== DOKU =====
+            $productName = $item?->title ?? $item?->name ?? 'Produk';
+            $dokuService = app(DokuService::class);
+            $dokuResponse = $dokuService->createCheckout(
+                $uniqueExternalId,
+                $nextTerm->amount,
+                [
+                    'customer_id'         => 'USER-' . $userId,
+                    'customer_name'       => Auth::user()->name,
+                    'customer_email'      => Auth::user()->email,
+                    'customer_phone'      => Auth::user()->phone_number,
+                    'item_name'           => $productName . ' (Cicilan ke-' . $nextTerm->installment_number . ')',
+                    'item_description'    => 'Pembayaran Cicilan ke-' . $nextTerm->installment_number . ' ' . $productName,
+                    'callback_url_cancel' => route('profile.installments'),
+                ]
+            );
+            $paymentUrl = $dokuResponse['response']['payment']['url'] ?? '';
             $nextTerm->update([
                 'status' => 'pending',
-                'invoice_url' => $xenditInvoice['invoice_url'],
+                'invoice_url' => $paymentUrl,
                 'expires_at' => Carbon::now()->addHours(24),
             ]);
+            // ===== END DOKU =====
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'payment_url' => $xenditInvoice['invoice_url'],
-                'invoice_url' => $xenditInvoice['invoice_url'],
+                'payment_url' => $paymentUrl,
+                'invoice_url' => $paymentUrl,
                 'term_number' => $nextTerm->installment_number,
                 'installment_number' => $nextTerm->installment_number,
                 'invoice_code' => $nextTerm->invoice_code,
