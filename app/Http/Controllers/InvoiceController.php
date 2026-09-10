@@ -931,6 +931,15 @@ class InvoiceController extends Controller
             $invoice = $query->firstOrFail();
 
             $this->expireInvoiceInDoku($invoice->invoice_code);
+            if ($invoice->is_installment) {
+                $childInvoices = Invoice::where('parent_invoice_id', $invoice->id)
+                    ->where('status', 'pending')
+                    ->get();
+                foreach ($childInvoices as $child) {
+                    $this->expireInvoiceInDoku($child->invoice_code);
+                    $child->update(['status' => 'failed']);
+                }
+            }
 
             if ($invoice->discountUsage) {
                 $discountCode = $invoice->discountUsage->discountCode;
@@ -940,26 +949,8 @@ class InvoiceController extends Controller
                 $invoice->discountUsage->delete();
             }
 
-            if ($invoice->courseItems->count() > 0) {
-                EnrollmentCourse::where('invoice_id', $invoice->id)->delete();
-            }
-
-            if ($invoice->bootcampItems->count() > 0) {
-                EnrollmentBootcamp::where('invoice_id', $invoice->id)->delete();
-            }
-
-            if ($invoice->webinarItems->count() > 0) {
-                EnrollmentWebinar::where('invoice_id', $invoice->id)->delete();
-            }
-
-            if ($invoice->bundleEnrollments->count() > 0) {
-                EnrollmentBundle::where('invoice_id', $invoice->id)->delete();
-            }
-
-            if ($invoice->certificationProgramItems->count() > 0) {
-                EnrollmentCertificationProgram::where('invoice_id', $invoice->id)->delete();
-            }
-
+            // Note: Jangan hapus record enrollment agar invoice tetap memiliki histori item produk yang dibeli
+            // Akses belajar user otomatis terkunci karena status invoice menjadi 'failed'
             $userId = $invoice->user_id;
 
             foreach ($invoice->courseItems as $courseItem) {
@@ -1257,7 +1248,12 @@ class InvoiceController extends Controller
 
             // Hanya proses jika status invoice masih pending untuk menghindari duplikasi
             if ($invoice->status !== 'pending') {
-                return response()->json(['message' => 'Invoice already processed'], 200);
+                Log::warning('DOKU Callback received for non-pending invoice', [
+                    'invoice_code' => $invoiceCode,
+                    'current_status' => $invoice->status,
+                    'transaction_status' => $request->input('transaction.status'),
+                ]);
+                return response()->json(['message' => 'Invoice already processed or not pending'], 200);
             }
 
             $isSuccess = ($request->input('transaction.status') === 'SUCCESS');
