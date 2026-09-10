@@ -502,7 +502,7 @@ class CertificationProgramController extends Controller
             }
             $message .= "\nJika sudah selesai, silakan lanjutkan ke tahap berikutnya sesuai instruksi.\n\n";
             $message .= "Terima kasih dan selamat bergabung! 🚀\n\n";
-            $message .= "*Araska - Customer Support*";
+            $message .= "*Skill Grow*";
 
             self::sendText([
                 [
@@ -541,7 +541,7 @@ class CertificationProgramController extends Controller
             $message .= "Hai *{$application->user->name}*,\n\n";
             $message .= "Mohon maaf, pendaftaran Sertifikasi *{$program->title}* Anda belum dapat kami terima.\n\n";
             $message .= "Terima kasih atas ketertarikannya.\n\n";
-            $message .= "*Araska - Customer Support*";
+            $message .= "*Skill Grow*";
 
             self::sendText([
                 [
@@ -587,7 +587,7 @@ class CertificationProgramController extends Controller
                 $message .= "{$program->socialization_group_url}\n";
             }
             $message .= "\nTerima kasih dan selamat bergabung! 🚀\n\n";
-            $message .= "*Araska - Customer Support*";
+            $message .= "*Skill Grow*";
 
             self::sendText([
                 [
@@ -625,7 +625,7 @@ class CertificationProgramController extends Controller
             $message .= "Hai Kak *{$application->name}*,\n\n";
             $message .= "Mohon maaf, Anda belum lolos sebagai penerima Beasiswa *{$program->title}*.\n\n";
             $message .= "Terima kasih atas partisipasi dan ketertarikannya pada program ini.\n\n";
-            $message .= "*Araska - Customer Support*";
+            $message .= "*Skill Grow*";
 
             self::sendText([
                 [

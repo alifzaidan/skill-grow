@@ -1439,9 +1439,9 @@ class InvoiceController extends Controller
             $message .= "Hai *{$user->name}*,\n\n";
             $message .= "Maaf, pembayaran {$itemType} untuk invoice *{$invoice->invoice_code}* tidak berhasil atau telah kadaluarsa.\n\n";
             $message .= "Silakan melakukan pembelian ulang jika Anda masih berminat.\n\n";
-            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
+            $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285184012430* (atau klik wa.me/6285184012430).\n\n";
             $message .= "Terima kasih atas perhatiannya.\n\n";
-            $message .= "*Araska - Customer Support*";
+            $message .= "*Skill Grow*";
 
             $waData = [
                 [
@@ -1647,14 +1647,14 @@ class InvoiceController extends Controller
             }
         }
 
-        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285142505794* (atau klik wa.me/6285142505794).\n\n";
+        $message .= "Jika Anda memiliki pertanyaan atau membutuhkan bantuan, silakan hubungi Admin kami via WhatsApp di nomor *6285184012430* (atau klik wa.me/6285184012430).\n\n";
         if ($isFreePurchase) {
             $message .= "Terima kasih telah bergabung dengan Skillgrow! 🚀\n\n";
         } else {
             $message .= "Selamat belajar! 🚀\n\n";
         }
 
-        $message .= "*Araska - Customer Support*";
+        $message .= "*Skill Grow*";
 
         return $message;
     }
@@ -1946,7 +1946,7 @@ class InvoiceController extends Controller
             'company' => [
                 'name' => 'Skillgrow',
                 'address' => 'Perumahan Permata Permadani, Blok B1. Kel. Pendem Kec. Junrejo Kota Batu Prov. Jawa Timur, 65324',
-                'phone' => '+6285142505794',
+                'phone' => '+6285184012430',
                 'email' => 'skillgrow@gmail.com',
                 'website' => 'www.Skillgrow.id'
             ]
