@@ -59,11 +59,29 @@ class InstallmentTermController extends Controller
             'terms.*.due_date' => 'required_with:terms|date',
         ]);
 
+        $product = $this->resolveProduct($request->type, $request->id);
+        $enabled = (bool) $request->installment_enabled;
+
+        if ($enabled) {
+            $terms = $request->terms ?? [];
+            if (count($terms) < 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Minimal harus ada 2 termin cicilan.'
+                ], 422);
+            }
+
+            $totalNominal = collect($terms)->sum('amount');
+            if ($totalNominal < $product->price) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Total nominal cicilan tidak boleh kurang dari harga produk.'
+                ], 422);
+            }
+        }
+
         DB::beginTransaction();
         try {
-            $product = $this->resolveProduct($request->type, $request->id);
-            $enabled = (bool) $request->installment_enabled;
-
             $product->update(['installment_enabled' => $enabled]);
 
             if ($enabled && !empty($request->terms)) {
@@ -126,6 +144,9 @@ class InstallmentTermController extends Controller
         $term = ProductInstallmentTerm::findOrFail($id);
         $term->delete();
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Termin cicilan berhasil dihapus.',
+        ]);
     }
 }

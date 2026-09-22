@@ -1,7 +1,6 @@
 'use client';
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
-import InstallmentMonitorModal from '@/components/admin/installment-monitor-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,12 +8,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
 import { Clock, FileText, Image, User } from 'lucide-react';
 
 interface User {
     id: string;
     name: string;
     phone_number: string | null;
+    email?: string | null;
 }
 
 interface FreeRequirement {
@@ -31,34 +32,14 @@ export interface Invoice {
     invoice_code: string;
     invoice_url: string | null;
     amount: number;
-    status: 'paid' | 'pending' | 'failed' | 'expired' | 'completed' | 'installment_pending';
-    paid_at: string | null;
-    created_at: string;
+    status: 'paid' | 'pending' | 'failed' | 'installment_pending';
     is_installment?: boolean;
     access_suspended_at?: string | null;
+    paid_at: string | null;
+    created_at: string;
+    installment_terms?: InstallmentTermItem[];
+    installmentTerms?: InstallmentTermItem[];
     webinar_items: WebinarItem[];
-    installment_terms?: Array<{
-        id: string;
-        installment_number: number;
-        invoice_code: string;
-        amount: number;
-        status: 'paid' | 'pending' | 'failed';
-        installment_due_date?: string | null;
-        due_date?: string | null;
-        paid_at?: string | null;
-        invoice_url?: string | null;
-    }>;
-    installmentTerms?: Array<{
-        id: string;
-        installment_number: number;
-        invoice_code: string;
-        amount: number;
-        status: 'paid' | 'pending' | 'failed';
-        installment_due_date?: string | null;
-        due_date?: string | null;
-        paid_at?: string | null;
-        invoice_url?: string | null;
-    }>;
 }
 
 export interface WebinarItem {
@@ -75,7 +56,7 @@ function ProofModal({ requirement, userName }: { requirement: FreeRequirement; u
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="size-8">
                     <Image className="size-4" />
                 </Button>
             </DialogTrigger>
@@ -186,16 +167,15 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
     const { roles, isAdmin } = usePermission();
     const isStaff = roles.includes('staff') && !isAdmin;
     const invoice = row.original;
+    const webinarItem = invoice.webinar_items[0];
     const terms = invoice.installment_terms || invoice.installmentTerms || [];
     const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
 
     const hasProof =
-        invoice.webinar_items &&
-        invoice.webinar_items.length > 0 &&
-        invoice.webinar_items[0].free_requirement &&
-        (invoice.webinar_items[0].free_requirement.ig_follow_proof ||
-            invoice.webinar_items[0].free_requirement.tiktok_follow_proof ||
-            invoice.webinar_items[0].free_requirement.tag_friend_proof);
+        webinarItem?.free_requirement &&
+        (webinarItem.free_requirement.ig_follow_proof ||
+            webinarItem.free_requirement.tiktok_follow_proof ||
+            webinarItem.free_requirement.tag_friend_proof);
 
     return (
         <div className="flex items-center justify-center gap-1">
@@ -237,7 +217,7 @@ function ActionCell({ row }: { row: Row<Invoice> }) {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
-                            <ProofModal requirement={invoice.webinar_items[0].free_requirement!} userName={invoice.user?.name || 'Unknown'} />
+                            <ProofModal requirement={webinarItem.free_requirement!} userName={invoice.user?.name || 'Unknown'} />
                         </div>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -284,27 +264,32 @@ export const columns: ColumnDef<Invoice>[] = [
                 const isSuspended = !!invoice.access_suspended_at;
 
                 return (
-                    <div className="flex flex-col gap-1 items-start">
-                        {isFullyPaid ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
-                                Cicilan Lunas
-                            </Badge>
-                        ) : isSuspended ? (
-                            <Badge variant="destructive">
-                                Akses Dibekukan
-                            </Badge>
-                        ) : (
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                                Cicilan ({paidCount}/{totalCount || '?'})
-                            </Badge>
-                        )}
-                    </div>
+                    <InstallmentMonitorModal
+                        invoice={invoice as any}
+                        trigger={
+                            <div className="flex flex-col gap-1 items-start cursor-pointer hover:opacity-80 transition-opacity" title="Klik untuk monitor cicilan">
+                                {isFullyPaid ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 cursor-pointer">
+                                        Cicilan Lunas
+                                    </Badge>
+                                ) : isSuspended ? (
+                                    <Badge variant="destructive" className="cursor-pointer">
+                                        Akses Dibekukan
+                                    </Badge>
+                                ) : (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 cursor-pointer">
+                                        Cicilan ({paidCount}/{totalCount || '?'})
+                                    </Badge>
+                                )}
+                            </div>
+                        }
+                    />
                 );
             }
 
             const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClasses: Record<string, string> = {
+            const statusClasses = {
                 paid: 'bg-green-100 text-green-800',
                 completed: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',

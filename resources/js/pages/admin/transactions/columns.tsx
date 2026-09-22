@@ -2,7 +2,6 @@
 
 import { DataTableColumnHeader } from '@/components/data-table-column-header';
 import DeleteConfirmDialog from '@/components/delete-dialog';
-import InstallmentMonitorModal from '@/components/admin/installment-monitor-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,6 +10,7 @@ import type { Row } from '@tanstack/react-table';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import InstallmentMonitorModal, { InstallmentTermItem } from '@/components/admin/installment-monitor-modal';
 import { Clock, FileText, Trash } from 'lucide-react';
 import { useState } from 'react';
 
@@ -23,6 +23,8 @@ interface User {
     id: string;
     name: string;
     phone_number: string | null;
+    email?: string | null;
+    referrer: Referrer | null;
 }
 
 interface Course {
@@ -74,10 +76,11 @@ export interface Invoice {
     invoice_code: string;
     invoice_url: string | null;
     nett_amount: number;
-    status: 'paid' | 'pending' | 'failed' | 'expired' | 'completed' | 'installment_pending';
-    paid_at: string | null;
+    amount?: number;
+    status: 'paid' | 'pending' | 'failed' | 'installment_pending';
     is_installment?: boolean;
     access_suspended_at?: string | null;
+    paid_at: string | null;
     course_items?: EnrollmentCourse[];
     courseItems?: EnrollmentCourse[];
     bootcamp_items?: EnrollmentBootcamp[];
@@ -88,29 +91,9 @@ export interface Invoice {
     bundleEnrollments?: BundleEnrollment[];
     certification_program_items?: CertificationProgramItem[];
     certificationProgramItems?: CertificationProgramItem[];
+    installment_terms?: InstallmentTermItem[];
+    installmentTerms?: InstallmentTermItem[];
     created_at: string;
-    installment_terms?: Array<{
-        id: string;
-        installment_number: number;
-        invoice_code: string;
-        amount: number;
-        status: 'paid' | 'pending' | 'failed';
-        installment_due_date?: string | null;
-        due_date?: string | null;
-        paid_at?: string | null;
-        invoice_url?: string | null;
-    }>;
-    installmentTerms?: Array<{
-        id: string;
-        installment_number: number;
-        invoice_code: string;
-        amount: number;
-        status: 'paid' | 'pending' | 'failed';
-        installment_due_date?: string | null;
-        due_date?: string | null;
-        paid_at?: string | null;
-        invoice_url?: string | null;
-    }>;
 }
 
 import { usePermission } from '@/hooks/use-permission';
@@ -138,7 +121,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
     const invoice = row.original;
     const user = invoice.user;
     const terms = invoice.installment_terms || invoice.installmentTerms || [];
-    const isInstallment = Boolean(invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0);
+    const isInstallment = invoice.is_installment || invoice.status === 'installment_pending' || terms.length > 0;
     let whatsappUrl = '';
 
     if (user?.phone_number) {
@@ -167,7 +150,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
             {invoice.status === 'paid' && !isStaff && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                 <FileText className="size-4" />
                             </a>
@@ -201,7 +184,7 @@ function ActionsCell({ row }: { row: Row<Invoice> }) {
             {whatsappUrl && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" asChild>
+                        <Button variant="ghost" size="icon" className="size-8" asChild>
                             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                                 <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="w-4 fill-[#25D366]">
                                     <title>WhatsApp</title>
@@ -286,25 +269,25 @@ export const columns: ColumnDef<Invoice>[] = [
         header: 'Nama Produk',
         filterFn: (row, _columnId, filterValue) => {
             const invoice = row.original;
-            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course?.title || '');
-            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp?.title || '');
-            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar?.title || '');
-            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle?.title || '');
+            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course.title);
+            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp.title);
+            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar.title);
+            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle.title);
             const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
                 (item) => item.certificationProgram?.title || item.certification_program?.title || '',
             );
 
-            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles].filter(Boolean);
+            const allTitles = [...courseTitles, ...bootcampTitles, ...webinarTitles, ...bundleTitles, ...certTitles];
             return allTitles.some((title) =>
                 title.toLowerCase().includes(String(filterValue).toLowerCase()),
             );
         },
         cell: ({ row }) => {
             const invoice = row.original;
-            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course?.title || '');
-            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp?.title || '');
-            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar?.title || '');
-            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle?.title || '');
+            const courseTitles = (invoice.courseItems || invoice.course_items || []).map((item) => item.course.title);
+            const bootcampTitles = (invoice.bootcampItems || invoice.bootcamp_items || []).map((item) => item.bootcamp.title);
+            const webinarTitles = (invoice.webinarItems || invoice.webinar_items || []).map((item) => item.webinar.title);
+            const bundleTitles = (invoice.bundleEnrollments || invoice.bundle_enrollments || []).map((item) => item.bundle.title);
             const certTitles = (invoice.certificationProgramItems || invoice.certification_program_items || []).map(
                 (item) => item.certificationProgram?.title || item.certification_program?.title || '',
             );
@@ -346,30 +329,35 @@ export const columns: ColumnDef<Invoice>[] = [
                 const paidCount = terms.filter((t) => t.status === 'paid').length;
                 const totalCount = terms.length;
                 const isFullyPaid = totalCount > 0 && paidCount === totalCount;
-                const isSuspended = !invoice.access_suspended_at ? false : true;
+                const isSuspended = !!invoice.access_suspended_at;
 
                 return (
-                    <div className="flex flex-col gap-1 items-start">
-                        {isFullyPaid ? (
-                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300">
-                                Cicilan Lunas
-                            </Badge>
-                        ) : isSuspended ? (
-                            <Badge variant="destructive">
-                                Akses Dibekukan
-                            </Badge>
-                        ) : (
-                            <Badge className="bg-amber-100 text-amber-800 border-amber-300">
-                                Cicilan ({paidCount}/{totalCount || '?'})
-                            </Badge>
-                        )}
-                    </div>
+                    <InstallmentMonitorModal
+                        invoice={invoice as any}
+                        trigger={
+                            <div className="flex flex-col gap-1 items-start cursor-pointer hover:opacity-80 transition-opacity" title="Klik untuk monitor cicilan">
+                                {isFullyPaid ? (
+                                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 cursor-pointer">
+                                        Cicilan Lunas
+                                    </Badge>
+                                ) : isSuspended ? (
+                                    <Badge variant="destructive" className="cursor-pointer">
+                                        Akses Dibekukan
+                                    </Badge>
+                                ) : (
+                                    <Badge className="bg-amber-100 text-amber-800 border-amber-300 cursor-pointer">
+                                        Cicilan ({paidCount}/{totalCount || '?'})
+                                    </Badge>
+                                )}
+                            </div>
+                        }
+                    />
                 );
             }
 
             const status = invoice.status;
             const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-            const statusClasses: Record<string, string> = {
+            const statusClasses = {
                 paid: 'bg-green-100 text-green-800',
                 completed: 'bg-green-100 text-green-800',
                 pending: 'bg-yellow-100 text-yellow-800',

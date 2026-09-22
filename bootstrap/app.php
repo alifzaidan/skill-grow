@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('invoices:expire-old')->hourly();
     })
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*');
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

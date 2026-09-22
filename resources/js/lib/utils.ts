@@ -28,3 +28,11 @@ export const rupiahFormatter = new Intl.NumberFormat('id-ID', {
 export const parseRupiah = (value: string) => {
     return Number(value.replace(/[^0-9,-]+/g, '').replace(',', '.'));
 };
+
+export function formatExternalUrl(url?: string | null): string {
+    if (!url) return '';
+    const trimmed = url.trim();
+    if (!trimmed) return '';
+    return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+

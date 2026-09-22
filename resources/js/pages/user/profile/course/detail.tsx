@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
+import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, PlayCircle, Star } from 'lucide-react';
+import { ArrowLeft, Award, BadgeCheck, CheckCircle, Download, Eye, MessageCircle, PlayCircle, Star } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -22,6 +23,7 @@ interface Course {
     category: Category;
     course_url: string;
     registration_url: string;
+    group_url?: string | null;
     key_points: string;
     description: string | null;
     short_description: string | null;
@@ -53,6 +55,11 @@ interface CourseProps {
     course_items: EnrollmentCourseItem[];
     created_at: string;
     updated_at: string;
+    is_installment?: boolean;
+    installment_terms?: any[];
+    access_suspended_at?: string | null;
+    has_active_access?: boolean;
+    is_fully_paid?: boolean;
 }
 
 interface CourseRating {
@@ -122,9 +129,30 @@ export default function DetailMyCourse({
     const courseItem = course.course_items?.[0];
     const courseData = courseItem?.course;
     const courseInvoiceStatus = course.status;
+    const isInstallment = !!course.is_installment;
+    const isSuspended = !!course.access_suspended_at;
+    const terms = course.installment_terms || (course as any).installmentTerms || [];
+    const firstTermPaid = terms.some((t: any) => t.installment_number === 1 && t.status === 'paid');
+
+    const hasActiveAccess = Boolean(
+        course.has_active_access ?? (
+            isInstallment
+                ? (!isSuspended && firstTermPaid)
+                : (courseInvoiceStatus === 'paid' || courseInvoiceStatus === 'completed')
+        )
+    );
+
+    const isFullyPaid = Boolean(
+        course.is_fully_paid ?? (
+            isInstallment
+                ? (terms.length > 0 && terms.every((t: any) => t.status === 'paid'))
+                : (courseInvoiceStatus === 'paid' || courseInvoiceStatus === 'completed')
+        )
+    );
+
     const keyPointList = parseList(courseData?.key_points);
     const isCompleted = courseItem?.progress === 100;
-    const hasCertificate = certificate && isCompleted && courseRating && courseInvoiceStatus === 'paid';
+    const hasCertificate = certificate && isCompleted && courseRating && isFullyPaid;
 
     const renderCertificateSection = () => {
         if (!courseItem || courseItem.progress !== 100) return null;
@@ -166,7 +194,11 @@ export default function DetailMyCourse({
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">🎉 Terima kasih atas rating Anda!</h3>
                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    {!certificate ? 'Sertifikat belum dibuat untuk course ini.' : 'Sertifikat sedang diproses.'}
+                                    {!certificate
+                                        ? 'Sertifikat belum dibuat untuk course ini.'
+                                        : !isFullyPaid
+                                          ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk membuka sertifikat.')
+                                          : 'Sertifikat sedang diproses.'}
                                 </p>
                                 <div className="mt-2 flex items-center gap-1">
                                     {[1, 2, 3, 4, 5].map((star) => (
@@ -181,7 +213,11 @@ export default function DetailMyCourse({
                         </div>
                         <Button disabled variant="outline">
                             <Download className="mr-2 h-4 w-4" />
-                            {!certificate ? 'Sertifikat Belum Tersedia' : 'Menunggu Sertifikat'}
+                            {!certificate
+                                ? 'Sertifikat Belum Tersedia'
+                                : !isFullyPaid
+                                  ? (isInstallment ? 'Lunasi Seluruh Cicilan' : 'Selesaikan Pembayaran')
+                                  : 'Menunggu Sertifikat'}
                         </Button>
                     </div>
                 </div>
@@ -279,7 +315,23 @@ export default function DetailMyCourse({
                         </div>
 
                         {/* Payment Warning */}
-                        {courseInvoiceStatus !== 'paid' && (
+                        {isSuspended ? (
+                            <div className="rounded-2xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50 p-6 shadow-lg dark:border-red-700 dark:from-red-900/20 dark:to-pink-900/20">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-800">
+                                        <span className="text-2xl">⚠️</span>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-red-900 dark:text-red-100">
+                                            ⚠️ Akses Kelas Dibekukan
+                                        </h3>
+                                        <p className="text-sm text-red-700 dark:text-red-300">
+                                            Akses kelas dibekukan karena ada tagihan cicilan yang melewati jatuh tempo. Silakan lakukan pelunasan di menu Transaksi.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : !hasActiveAccess ? (
                             <div className="rounded-2xl border-2 border-red-200 bg-gradient-to-br from-red-50 to-pink-50 p-6 shadow-lg dark:border-red-700 dark:from-red-900/20 dark:to-pink-900/20">
                                 <div className="flex items-center gap-4">
                                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-800">
@@ -297,7 +349,23 @@ export default function DetailMyCourse({
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        ) : isInstallment && !isFullyPaid ? (
+                            <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 p-6 shadow-lg dark:border-amber-700 dark:from-amber-900/20 dark:to-yellow-900/20">
+                                <div className="flex items-center gap-4">
+                                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-800">
+                                        <span className="text-2xl">ℹ️</span>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-amber-900 dark:text-amber-100">
+                                            ℹ️ Pembayaran Cicilan Aktif
+                                        </h3>
+                                        <p className="text-sm text-amber-700 dark:text-amber-300">
+                                            Anda memiliki akses penuh ke materi kelas.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
 
                         {/* Certificate Section */}
                         {renderCertificateSection()}
@@ -391,10 +459,36 @@ export default function DetailMyCourse({
                                     <Button
                                         className="mt-4 w-full"
                                         onClick={() => router.get(route('learn.course.detail', { course: courseData.slug }))}
+                                        disabled={!hasActiveAccess}
                                     >
                                         <PlayCircle className="mr-2 h-4 w-4" />
                                         {isCompleted ? 'Lihat Kembali Materi' : 'Lanjutkan Belajar'}
                                     </Button>
+
+                                    {courseData.group_url && (
+                                        <Button
+                                            variant="outline"
+                                            className="mt-2 w-full border-green-600/30 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-500/30 dark:text-green-400 dark:hover:bg-green-950/30"
+                                            asChild={hasActiveAccess}
+                                            disabled={!hasActiveAccess}
+                                        >
+                                            {hasActiveAccess ? (
+                                                <a
+                                                    href={formatExternalUrl(courseData.group_url)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <MessageCircle size={16} className="mr-2" />
+                                                    Masuk Grup WA
+                                                </a>
+                                            ) : (
+                                                <span>
+                                                    <MessageCircle size={16} className="mr-2" />
+                                                    Masuk Grup WA
+                                                </span>
+                                            )}
+                                        </Button>
+                                    )}
 
                                     <div className="mt-4 space-y-2 text-sm">
                                         <div className="flex items-center justify-between">
