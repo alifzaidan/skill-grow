@@ -199,7 +199,7 @@ export default function ShowBundle({ bundle, groupedItems, totalOriginalPrice, d
             email: enrollment.invoice?.user?.email || '-',
             phone_number: null,
         },
-        referrer: null,
+        referred_by_user: (enrollment.invoice as any)?.referred_by_user || (enrollment.invoice as any)?.referredByUser || (enrollment.invoice?.user as any)?.referrer || null,
         invoice_code: enrollment.invoice?.invoice_code || '-',
         invoice_url: null,
         amount: enrollment.invoice?.amount || 0,

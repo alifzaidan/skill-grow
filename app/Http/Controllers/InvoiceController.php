@@ -50,6 +50,9 @@ class InvoiceController extends Controller
         // Buat query dasar (hanya transaksi utama / parent invoice)
         $invoicesQuery = Invoice::with([
             'user.referrer',
+            'referrer',
+            'referredByUser',
+            'referralUser',
             'installmentTerms',
             'courseItems.course',
             'bootcampItems.bootcamp',
@@ -1015,6 +1018,10 @@ class InvoiceController extends Controller
 
             DB::commit();
 
+            if (request()->header('X-Inertia')) {
+                return redirect()->back()->with('success', 'Transaksi berhasil dibatalkan.');
+            }
+
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -1022,13 +1029,132 @@ class InvoiceController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Invoice berhasil dibatalkan.');
+            return redirect()->back()->with('success', 'Transaksi berhasil dibatalkan.');
         } catch (\Exception $e) {
             DB::rollBack();
+            if (request()->header('X-Inertia')) {
+                return redirect()->back()->with('error', 'Gagal membatalkan transaksi: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'message' => 'Gagal membatalkan invoice. ' . $e->getMessage(),
                 'success' => false
             ], 400);
+        }
+    }
+
+    /**
+     * Approve a pending invoice manually (mark as paid with DOKU payment method)
+     * Also records affiliate commission and fires TransactionPaid event
+     */
+    public function approvePending($id)
+    {
+        DB::beginTransaction();
+        try {
+            $invoice = Invoice::with([
+                'user',
+                'courseItems.course',
+                'bootcampItems.bootcamp',
+                'webinarItems.webinar',
+                'certificationProgramItems.certificationProgram',
+                'bundleEnrollments.bundle.bundleItems.bundleable',
+            ])
+                ->where('id', $id)
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            // Update invoice to paid with DOKU payment method
+            $invoice->update([
+                'status'           => 'paid',
+                'paid_at'          => Carbon::now('Asia/Jakarta'),
+                'payment_method'   => 'DOKU',
+                'payment_channel'  => 'DOKU',
+            ]);
+
+            // Process bundle individual enrollments if any
+            if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) {
+                foreach ($invoice->bundleEnrollments as $bundleEnrollment) {
+                    $bundleEnrollment->createIndividualEnrollments();
+                    $bundle = $bundleEnrollment->bundle;
+                    if ($bundle && $bundle->bundleItems) {
+                        foreach ($bundle->bundleItems as $item) {
+                            $type = $item->getTypeSlug();
+                            $this->addToCertificateParticipants($type, $item->bundleable_id, $invoice->user_id);
+                        }
+                    }
+                }
+            }
+
+            // Add to certificate participants for course/bootcamp/webinar items
+            $this->addEnrollmentToCertificateParticipants($invoice);
+
+            // Record affiliate commission
+            $this->recordAffiliateCommissionHelper($invoice);
+
+            // Fire event for referral rewards & other side effects
+            event(new \App\Events\TransactionPaid($invoice));
+
+            DB::commit();
+
+            // Kirim notifikasi WhatsApp via Wablas setelah transaksi berhasil di-approve
+            try {
+                $this->sendWhatsAppNotification($invoice);
+            } catch (\Exception $e) {
+                Log::error('Failed to send WhatsApp notification after manual approve', [
+                    'invoice_id' => $invoice->id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Transaksi berhasil di-approve dan statusnya menjadi Paid.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to approve invoice: ' . $e->getMessage(), ['invoice_id' => $id]);
+            return redirect()->back()->with('error', 'Gagal meng-approve transaksi: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Record affiliate commission for an invoice (helper for approvePending)
+     */
+    private function recordAffiliateCommissionHelper(Invoice $invoice)
+    {
+        $buyer = $invoice->user;
+        $referredByUserId = $buyer?->referred_by_user_id ?? $invoice->referred_by_user_id ?? $invoice->referral_user_id;
+
+        if (!$referredByUserId) {
+            $defaultAffiliate = User::where('affiliate_code', 'SGW2025')->first()
+                ?? User::role('affiliate')->first();
+            if ($defaultAffiliate && $defaultAffiliate->id !== $invoice->user_id) {
+                $referredByUserId = $defaultAffiliate->id;
+                if ($buyer && empty($buyer->referred_by_user_id)) {
+                    $buyer->update(['referred_by_user_id' => $referredByUserId]);
+                }
+                if (empty($invoice->referred_by_user_id)) {
+                    $invoice->update(['referred_by_user_id' => $referredByUserId]);
+                }
+            }
+        }
+
+        if ($referredByUserId) {
+            $affiliate = User::find($referredByUserId);
+            if ($affiliate && $affiliate->affiliate_status === 'Active' && $affiliate->commission > 0) {
+                // Avoid duplicate affiliate earning for this invoice
+                $alreadyExists = AffiliateEarning::where('invoice_id', $invoice->id)
+                    ->where('affiliate_user_id', $affiliate->id)
+                    ->exists();
+
+                if (!$alreadyExists) {
+                    $commissionAmount = $invoice->nett_amount * ($affiliate->commission / 100);
+                    AffiliateEarning::create([
+                        'affiliate_user_id' => $affiliate->id,
+                        'invoice_id'        => $invoice->id,
+                        'amount'            => $commissionAmount,
+                        'rate'              => $affiliate->commission,
+                        'status'            => 'approved',
+                    ]);
+                }
+            }
         }
     }
 
@@ -1861,20 +1987,40 @@ class InvoiceController extends Controller
 
         $referredByUserId = $invoice->referred_by_user_id ?? ($buyer ? ($buyer->referred_by_user_id ?? null) : null);
 
+        if (!$referredByUserId) {
+            $defaultAffiliate = User::where('affiliate_code', 'SGW2025')->first()
+                ?? User::role('affiliate')->first();
+            if ($defaultAffiliate && $defaultAffiliate->id !== $invoice->user_id) {
+                $referredByUserId = $defaultAffiliate->id;
+                if ($buyer && empty($buyer->referred_by_user_id)) {
+                    $buyer->update(['referred_by_user_id' => $referredByUserId]);
+                }
+                if (empty($invoice->referred_by_user_id)) {
+                    $invoice->update(['referred_by_user_id' => $referredByUserId]);
+                }
+            }
+        }
+
         if ($referredByUserId) {
             $affiliate = User::find($referredByUserId);
 
             // Memastikan afiliasi ada, aktif, dan memiliki rate komisi
             if ($affiliate && $affiliate->affiliate_status === 'Active' && $affiliate->commission > 0) {
-                $commissionAmount = $invoice->nett_amount * ($affiliate->commission / 100);
+                $alreadyExists = AffiliateEarning::where('invoice_id', $invoice->id)
+                    ->where('affiliate_user_id', $affiliate->id)
+                    ->exists();
 
-                AffiliateEarning::create([
-                    'affiliate_user_id' => $affiliate->id,
-                    'invoice_id' => $invoice->id,
-                    'amount' => $commissionAmount,
-                    'rate' => $affiliate->commission,
-                    'status' => 'approved',
-                ]);
+                if (!$alreadyExists) {
+                    $commissionAmount = $invoice->nett_amount * ($affiliate->commission / 100);
+
+                    AffiliateEarning::create([
+                        'affiliate_user_id' => $affiliate->id,
+                        'invoice_id' => $invoice->id,
+                        'amount' => $commissionAmount,
+                        'rate' => $affiliate->commission,
+                        'status' => 'approved',
+                    ]);
+                }
             }
         }
 

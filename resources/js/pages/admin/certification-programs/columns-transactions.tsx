@@ -20,7 +20,8 @@ interface User {
 export interface Invoice {
     id: string;
     user: User;
-    referrer: { id: string; name: string } | null;
+    referred_by_user?: { id: string; name: string } | null;
+    referredByUser?: { id: string; name: string } | null;
     invoice_code: string;
     invoice_url: string | null;
     amount: number;
@@ -118,9 +119,32 @@ export const transactionColumns: ColumnDef<Invoice>[] = [
         cell: ({ row }) => <PriceCell row={row} />,
     },
     {
-        accessorKey: 'referrer.name',
+        id: 'affiliate',
+        accessorFn: (row) => {
+            const inv = row as any;
+            return (
+                inv.user?.referrer?.name ||
+                inv.referred_by_user?.name ||
+                inv.referredByUser?.name ||
+                inv.referral_user?.name ||
+                inv.referralUser?.name ||
+                inv.referrer?.name ||
+                '-'
+            );
+        },
         header: ({ column }) => <DataTableColumnHeader column={column} title="Afiliasi" />,
-        cell: ({ row }) => <p>{row.original.referrer?.name || '-'}</p>,
+        cell: ({ row }) => {
+            const inv = row.original as any;
+            const name =
+                inv.user?.referrer?.name ||
+                inv.referred_by_user?.name ||
+                inv.referredByUser?.name ||
+                inv.referral_user?.name ||
+                inv.referralUser?.name ||
+                inv.referrer?.name ||
+                '-';
+            return <p>{name}</p>;
+        },
     },
     {
         accessorKey: 'status',
