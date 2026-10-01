@@ -244,7 +244,7 @@ class CertificationProgramController extends Controller
             'scholarshipApplication' => $scholarshipApplication,
             'isScholarship' => $isScholarship,
             'referralInfo' => $this->getReferralInfo(),
-            'installmentTerms' => $program->installmentTerms()->get(['term_number', 'amount', 'due_date']),
+            'installmentTerms' => $program->installment_enabled ? $program->installmentTerms()->get(['term_number', 'amount', 'due_date']) : [],
         ]);
     }
 
@@ -267,8 +267,8 @@ class CertificationProgramController extends Controller
             ->where('user_id', $userId)
             ->first();
 
-        if ($existing && $existing->status === 'rejected') {
-            return back()->with('error', 'Pengajuan Anda sudah ditolak dan tidak dapat diajukan ulang.');
+        if ($existing && $existing->status === 'approved') {
+            return back()->with('error', 'Dokumen Anda sudah disetujui sebelumnya.');
         }
 
         $documentPath = $request->file('document_attachment')->store('certification-programs/documents', 'public');
@@ -282,6 +282,7 @@ class CertificationProgramController extends Controller
                 'status' => 'pending',
                 'approved_at' => null,
                 'rejected_at' => null,
+                'notes' => null,
             ]);
         } else {
             CertificationProgramApplication::create([

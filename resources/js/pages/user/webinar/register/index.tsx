@@ -146,7 +146,7 @@ export default function RegisterWebinar({
 }) {
     const [activeInstallment, setActiveInstallment] = useState<ActiveInstallmentData | null>(initialActiveInstallment);
     const [paymentTab, setPaymentTab] = useState<'full' | 'installment'>(initialActiveInstallment ? 'installment' : 'full');
-    const hasInstallments = Boolean((installmentTerms && installmentTerms.length > 0) || activeInstallment);
+    const hasInstallments = Boolean((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid));
     const { auth } = usePage<SharedData>().props;
     const isLoggedIn = !!auth.user;
     const isProfileComplete = isLoggedIn && auth.user?.phone_number && auth.user?.instance && auth.user?.city;
@@ -1017,9 +1017,11 @@ export default function RegisterWebinar({
                                                 </TabsTrigger>
                                                 <TabsTrigger value="installment" className="flex items-center justify-center gap-1.5">
                                                     <span>Cicilan</span>
-                                                    {installmentTerms && installmentTerms.length > 0 && (
+                                                    {((installmentTerms && installmentTerms.length > 0) || (activeInstallment && !activeInstallment.is_fully_paid)) && (
                                                         <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                                                            {installmentTerms.length}x
+                                                            {activeInstallment && !activeInstallment.is_fully_paid
+                                                                ? `${activeInstallment.total_terms || activeInstallment.terms?.length}x`
+                                                                : `${installmentTerms?.length || 0}x`}
                                                         </span>
                                                     )}
                                                 </TabsTrigger>
