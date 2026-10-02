@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link, router } from '@inertiajs/react';
-import {
+import { 
     ArrowLeft,
     Award,
     BadgeCheck,
@@ -19,8 +19,7 @@ import {
     MessageSquare,
     Upload,
     Users,
-    X,
-} from 'lucide-react';
+    X, ArrowRight, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 interface Category {
@@ -66,6 +65,19 @@ interface Bootcamp {
     status: string;
     schedules: BootcampSchedule[];
     has_submission_link: boolean;
+    has_certificate?: boolean;
+    requires_review?: boolean;
+    next_step_product?: {
+        id: string;
+        title: string;
+        slug: string;
+        thumbnail?: string | null;
+        price: number;
+        strikethrough_price?: number;
+        type: string;
+        type_label: string;
+        url: string;
+    } | null;
     created_at: string;
     updated_at: string;
 }
@@ -385,8 +397,15 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
     const hasReview = bootcampItem.rating && bootcampItem.review;
 
+    const offersCertificate = bootcampData.has_certificate ?? true;
+    const requiresReview = bootcampData.requires_review ?? true;
+
     const hasCertificate =
-        certificate && isCompleted && isFullyPaid && allAttendanceVerified && (!needsSubmission || hasSubmission) && hasReview;
+        offersCertificate &&
+        Boolean(certificate) &&
+        isCompleted &&
+        isFullyPaid &&
+        (!requiresReview || (allAttendanceVerified && (!needsSubmission || hasSubmission) && hasReview));
 
     return (
         <UserLayout>
@@ -462,7 +481,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                 ) : null}
 
                 {/* Completion Message */}
-                {isCompleted && hasCertificate && (
+                {isCompleted && (hasCertificate || !offersCertificate) && (
                     <div className="relative mb-6 rounded-2xl border-2 border-green-200 bg-gradient-to-br from-green-50 via-white to-emerald-100 p-8 shadow-lg dark:border-green-700 dark:from-green-900/20 dark:to-emerald-800/20">
                         <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-bl-full bg-gradient-to-bl from-green-300 to-transparent opacity-30" />
                         <div className="relative z-10">
@@ -496,9 +515,11 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                         <Upload className="h-5 w-5 text-white" />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold italic">Bukti Kehadiran & Rekaman</h2>
+                                        <h2 className="text-xl font-bold italic">{requiresReview ? "Bukti Kehadiran & Rekaman" : "Rekaman Pertemuan"}</h2>
                                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            Upload bukti kehadiran per pertemuan ({verifiedAttendances}/{totalSchedules} terverifikasi)
+                                            {requiresReview
+                                                ? `Upload bukti kehadiran per pertemuan (${verifiedAttendances}/${totalSchedules} terverifikasi)`
+                                                : "Akses rekaman materi per pertemuan bootcamp"}
                                         </p>
                                     </div>
                                 </div>
@@ -543,7 +564,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        {attendance && (
+                                                        {attendance && requiresReview && (
                                                             <div className="mt-2 flex items-center gap-2">
                                                                 {attendance.verified ? (
                                                                     <span className="flex items-center gap-1 text-sm text-green-600">
@@ -560,42 +581,44 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                         )}
                                                     </div>
 
-                                                    <div className="flex items-center gap-2">
-                                                        {attendance?.verified ? (
-                                                            <Button size="sm" variant="outline" disabled>
-                                                                <CheckCircle size={14} className="mr-1" />
-                                                                Verified
-                                                            </Button>
-                                                        ) : attendance ? (
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() =>
-                                                                    setShowUploadForms((prev) => ({
-                                                                        ...prev,
-                                                                        [schedule.id]: !showForm,
-                                                                    }))
-                                                                }
-                                                            >
-                                                                <Upload size={14} className="mr-1" />
-                                                                Edit Bukti
-                                                            </Button>
-                                                        ) : (
-                                                            <Button
-                                                                size="sm"
-                                                                disabled={!isPast}
-                                                                onClick={() =>
-                                                                    setShowUploadForms((prev) => ({
-                                                                        ...prev,
-                                                                        [schedule.id]: !showForm,
-                                                                    }))
-                                                                }
-                                                            >
-                                                                <Upload size={14} className="mr-1" />
-                                                                {isPast ? 'Upload Bukti' : 'Belum Dimulai'}
-                                                            </Button>
-                                                        )}
-                                                    </div>
+                                                    {requiresReview && (
+                                                        <div className="flex items-center gap-2">
+                                                            {attendance?.verified ? (
+                                                                <Button size="sm" variant="outline" disabled>
+                                                                    <CheckCircle size={14} className="mr-1" />
+                                                                    Verified
+                                                                </Button>
+                                                            ) : attendance ? (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        setShowUploadForms((prev) => ({
+                                                                            ...prev,
+                                                                            [schedule.id]: !showForm,
+                                                                        }))
+                                                                    }
+                                                                >
+                                                                    <Upload size={14} className="mr-1" />
+                                                                    Edit Bukti
+                                                                </Button>
+                                                            ) : (
+                                                                <Button
+                                                                    size="sm"
+                                                                    disabled={!isPast}
+                                                                    onClick={() =>
+                                                                        setShowUploadForms((prev) => ({
+                                                                            ...prev,
+                                                                            [schedule.id]: !showForm,
+                                                                        }))
+                                                                    }
+                                                                >
+                                                                    <Upload size={14} className="mr-1" />
+                                                                    {isPast ? 'Upload Bukti' : 'Belum Dimulai'}
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Recording Video Section */}
@@ -627,7 +650,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 )}
 
                                                 {/* Upload Form */}
-                                                {showForm && (
+                                                {requiresReview && showForm && (
                                                     <div className="mt-4 space-y-3 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
                                                         <div className="flex items-center justify-between">
                                                             <h5 className="font-medium">Upload Bukti Kehadiran</h5>
@@ -711,7 +734,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 )}
 
                                                 {/* Show existing attendance proof */}
-                                                {attendance && !showForm && (
+                                                {requiresReview && attendance && !showForm && (
                                                     <div className="mt-3">
                                                         <img
                                                             src={`/storage/${attendance.attendance_proof}`}
@@ -928,6 +951,68 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 ))}
                             </div>
                         </div>
+                        {/* Next Step Pelatihan Recommendation Card */}
+                        {bootcampData.next_step_product && (
+                            <div className="rounded-2xl border bg-white p-6 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                                <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-700">
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles className="h-5 w-5 text-amber-500" />
+                                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Langkah Pelatihan Selanjutnya</h3>
+                                    </div>
+                                    <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
+                                        {bootcampData.next_step_product.type_label}
+                                    </span>
+                                </div>
+                                <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                                    Tingkatkan skill Anda ke level berikutnya dengan program lanjutan yang kami rekomendasikan
+                                </p>
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex flex-1 items-start gap-4">
+                                        {bootcampData.next_step_product.thumbnail ? (
+                                            <img
+                                                src={bootcampData.next_step_product.thumbnail}
+                                                alt={bootcampData.next_step_product.title}
+                                                className="h-20 w-32 shrink-0 rounded-lg object-cover shadow-sm"
+                                            />
+                                        ) : (
+                                            <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-400 dark:bg-zinc-700">
+                                                <Sparkles className="h-8 w-8" />
+                                            </div>
+                                        )}
+                                        <div className="space-y-1">
+                                            <h4 className="line-clamp-2 text-base font-bold text-gray-900 dark:text-white">
+                                                {bootcampData.next_step_product.title}
+                                            </h4>
+                                            <div className="flex items-baseline gap-2">
+                                                {bootcampData.next_step_product.price === 0 ? (
+                                                    <span className="text-base font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                ) : (
+                                                    <>
+                                                        <span className="text-base font-bold text-gray-900 dark:text-white">
+                                                            Rp {bootcampData.next_step_product.price.toLocaleString('id-ID')}
+                                                        </span>
+                                                        {bootcampData.next_step_product.strikethrough_price != null &&
+                                                        bootcampData.next_step_product.strikethrough_price > bootcampData.next_step_product.price ? (
+                                                            <span className="text-xs text-gray-400 line-through">
+                                                                Rp {bootcampData.next_step_product.strikethrough_price.toLocaleString('id-ID')}
+                                                            </span>
+                                                        ) : null}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="sm:shrink-0">
+                                        <Button asChild className="w-full sm:w-auto">
+                                            <a href={bootcampData.next_step_product.url} target="_blank" rel="noopener noreferrer">
+                                                Daftar Sekarang
+                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                            </a>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Sidebar */}
@@ -1026,12 +1111,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 ? 'Sertifikat belum dibuat untuk bootcamp ini.'
                                                 : !isFullyPaid
                                                   ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk mendapatkan sertifikat.')
-                                                  : !allAttendanceVerified
-                                                    ? `Lengkapi bukti kehadiran (${verifiedAttendances}/${totalSchedules} terverifikasi).`
-                                                    : needsSubmission && !hasSubmission
-                                                      ? 'Upload link submission project terlebih dahulu.'
-                                                      : !hasReview
-                                                        ? 'Berikan rating dan review untuk mendapatkan sertifikat.'
+                                                  : requiresReview && !allAttendanceVerified ? `Lengkapi bukti kehadiran (${verifiedAttendances}/${totalSchedules} terverifikasi).`
+                                                    : requiresReview && needsSubmission && !hasSubmission ? 'Upload link submission project terlebih dahulu.'
+                                                      : requiresReview && !hasReview ? 'Berikan rating dan review untuk mendapatkan sertifikat.'
                                                         : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
                                         </p>
                                         <Button className="mt-3 w-full" disabled>
@@ -1053,7 +1135,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                             </div>
 
                             {/* Review Section */}
-                            {hasActiveAccess && allAttendanceVerified && (!needsSubmission || hasSubmission) && isCompleted && (
+                            {hasActiveAccess && allAttendanceVerified && (!needsSubmission || hasSubmission) && isCompleted && offersCertificate && requiresReview && (
                                 <div className="rounded-2xl border bg-white p-6 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-3">
                                         <div className="rounded-full bg-gradient-to-br from-amber-400 to-orange-600 p-2">
