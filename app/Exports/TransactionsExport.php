@@ -50,18 +50,37 @@ class TransactionsExport implements
         $query = Invoice::with([
             'user.referrer',
             'courseItems.course',
+            'parentInvoice.user',
+            'parentInvoice.courseItems.course',
+            'parentInvoice.bootcampItems.bootcamp',
+            'parentInvoice.webinarItems.webinar',
+            'parentInvoice.bundleEnrollments.bundle',
+            'parentInvoice.certificationProgramItems.certificationProgram',
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'bundleEnrollments.bundle',
             'certificationProgramItems.certificationProgram'
         ]);
 
+        $query->where(function ($q) {
+            $q->where(function ($sq) {
+                $sq->whereNull('parent_invoice_id')->where('is_installment', false);
+            })->orWhereNotNull('parent_invoice_id');
+        });
+
         // Apply date filter
         if ($this->startDate && $this->endDate) {
-            $query->whereBetween('created_at', [
-                Carbon::parse($this->startDate)->startOfDay(),
-                Carbon::parse($this->endDate)->endOfDay()
-            ]);
+            $start = Carbon::parse($this->startDate)->startOfDay();
+            $end = Carbon::parse($this->endDate)->endOfDay();
+            $query->where(function ($q) use ($start, $end) {
+                $q->where(function ($q2) use ($start, $end) {
+                    $q2->where('status', 'paid')
+                        ->whereBetween('paid_at', [$start, $end]);
+                })->orWhere(function ($q2) use ($start, $end) {
+                    $q2->where('status', '!=', 'paid')
+                        ->whereBetween('created_at', [$start, $end]);
+                });
+            });
         }
 
         // Apply status filter
@@ -198,7 +217,7 @@ class TransactionsExport implements
             }
         }
 
-        return $query->latest();
+        return $query->orderByRaw('COALESCE(paid_at, created_at) DESC');
     }
 
     public function headings(): array
@@ -253,22 +272,30 @@ class TransactionsExport implements
         static $index = 0;
         $index++;
 
+        $user = $invoice->user ?? $invoice->parentInvoice?->user;
+        $referrerName = $user?->referrer?->name ?? $invoice->parentInvoice?->user?->referrer?->name ?? $invoice->referrer?->name ?? $invoice->parentInvoice?->referrer?->name ?? '-';
+
+        $statusLabel = ucfirst($invoice->status);
+        if ($invoice->installment_number) {
+            $statusLabel = 'Cicilan ke-' . $invoice->installment_number . ' (' . ($invoice->status === 'paid' ? 'Lunas' : ucfirst($invoice->status)) . ')';
+        }
+
         if ($this->isStaff) {
             return [
                 $index,
                 $invoice->invoice_code,
-                $invoice->user->name ?? '-',
-                $invoice->user->email ?? '-',
-                $invoice->user->phone_number ?? '-',
-                $invoice->user->instance ?? '-',
-                $invoice->user->city ?? '-',
+                $user->name ?? '-',
+                $user->email ?? '-',
+                $user->phone_number ?? '-',
+                $user->instance ?? '-',
+                $user->city ?? '-',
                 $this->getProductNames($invoice),
                 $this->getProductType($invoice),
-                ucfirst($invoice->status),
+                $statusLabel,
                 $invoice->nett_amount === 0 ? 'Gratis' : 'Berbayar',
                 $invoice->payment_method ?? '-',
                 $invoice->payment_channel ?? '-',
-                $invoice->user->referrer->name ?? '-',
+                $referrerName,
                 $invoice->created_at ? $invoice->created_at->format('d M Y, H:i') : '-',
                 $invoice->paid_at ? Carbon::parse($invoice->paid_at)->format('d M Y, H:i') : '-',
             ];
@@ -277,22 +304,22 @@ class TransactionsExport implements
         return [
             $index,
             $invoice->invoice_code,
-            $invoice->user->name ?? '-',
-            $invoice->user->email ?? '-',
-            $invoice->user->phone_number ?? '-',
-            $invoice->user->instance ?? '-',
-            $invoice->user->city ?? '-',
+            $user->name ?? '-',
+            $user->email ?? '-',
+            $user->phone_number ?? '-',
+            $user->instance ?? '-',
+            $user->city ?? '-',
             $this->getProductNames($invoice),
             $this->getProductType($invoice),
             'Rp ' . number_format($invoice->amount, 0, ',', '.'),
             'Rp ' . number_format($invoice->discount_amount ?? 0, 0, ',', '.'),
             'Rp ' . number_format($invoice->transaction_fee ?? 0, 0, ',', '.'),
             'Rp ' . number_format($invoice->nett_amount, 0, ',', '.'),
-            ucfirst($invoice->status),
+            $statusLabel,
             $invoice->nett_amount === 0 ? 'Gratis' : 'Berbayar',
             $invoice->payment_method ?? '-',
             $invoice->payment_channel ?? '-',
-            $invoice->user->referrer->name ?? '-',
+            $referrerName,
             $invoice->created_at ? $invoice->created_at->format('d M Y, H:i') : '-',
             $invoice->paid_at ? Carbon::parse($invoice->paid_at)->format('d M Y, H:i') : '-',
         ];
@@ -361,43 +388,44 @@ class TransactionsExport implements
 
     private function getProductNames($invoice): string
     {
+        $target = $invoice->parentInvoice ?? $invoice;
         $names = [];
 
         if (empty($this->productType) || $this->productType === 'course') {
-            if ($invoice->courseItems) {
-                foreach ($invoice->courseItems as $item) {
+            if ($target->courseItems) {
+                foreach ($target->courseItems as $item) {
                     $names[] = $item->course->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'bootcamp') {
-            if ($invoice->bootcampItems) {
-                foreach ($invoice->bootcampItems as $item) {
+            if ($target->bootcampItems) {
+                foreach ($target->bootcampItems as $item) {
                     $names[] = $item->bootcamp->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'webinar') {
-            if ($invoice->webinarItems) {
-                foreach ($invoice->webinarItems as $item) {
+            if ($target->webinarItems) {
+                foreach ($target->webinarItems as $item) {
                     $names[] = $item->webinar->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'bundle') {
-            if ($invoice->bundleEnrollments) {
-                foreach ($invoice->bundleEnrollments as $item) {
+            if ($target->bundleEnrollments) {
+                foreach ($target->bundleEnrollments as $item) {
                     $names[] = $item->bundle->title ?? '-';
                 }
             }
         }
 
         if (empty($this->productType) || $this->productType === 'certification_program') {
-            if ($invoice->certificationProgramItems) {
-                foreach ($invoice->certificationProgramItems as $item) {
+            if ($target->certificationProgramItems) {
+                foreach ($target->certificationProgramItems as $item) {
                     $names[] = $item->certificationProgram->title ?? '-';
                 }
             }
@@ -408,6 +436,7 @@ class TransactionsExport implements
 
     private function getProductType($invoice): string
     {
+        $target = $invoice->parentInvoice ?? $invoice;
         if (!empty($this->productType)) {
             switch ($this->productType) {
                 case 'bundle': return 'Bundle';
@@ -418,11 +447,11 @@ class TransactionsExport implements
             }
         }
 
-        if ($invoice->bundleEnrollments && $invoice->bundleEnrollments->count() > 0) return 'Bundle';
-        if ($invoice->courseItems && $invoice->courseItems->count() > 0) return 'Kelas Online';
-        if ($invoice->bootcampItems && $invoice->bootcampItems->count() > 0) return 'Bootcamp';
-        if ($invoice->webinarItems && $invoice->webinarItems->count() > 0) return 'Webinar';
-        if ($invoice->certificationProgramItems && $invoice->certificationProgramItems->count() > 0) return 'Sertifikasi';
+        if ($target->bundleEnrollments && $target->bundleEnrollments->count() > 0) return 'Bundle';
+        if ($target->courseItems && $target->courseItems->count() > 0) return 'Kelas Online';
+        if ($target->bootcampItems && $target->bootcampItems->count() > 0) return 'Bootcamp';
+        if ($target->webinarItems && $target->webinarItems->count() > 0) return 'Webinar';
+        if ($target->certificationProgramItems && $target->certificationProgramItems->count() > 0) return 'Sertifikasi';
         return '-';
     }
 }

@@ -21,6 +21,7 @@ use App\Http\Controllers\DiscountCodeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\Admin\InstallmentTermController;
+use App\Http\Controllers\Admin\ReferralAdminController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\MentorController;
 use App\Http\Controllers\QuestionController;
