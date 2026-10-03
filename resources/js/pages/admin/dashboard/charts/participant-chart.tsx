@@ -44,9 +44,11 @@ export function ParticipantChart({ data }: ParticipantChartProps) {
                     course: 0,
                     bootcamp: 0,
                     webinar: 0,
+                    certification_program: 0,
                 });
             }
-            dateMap.get(date)[item.type] += item.count;
+            const current = dateMap.get(date);
+            current[item.type] = (current[item.type] || 0) + item.count;
         });
 
         return Array.from(dateMap.values()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -72,7 +74,7 @@ export function ParticipantChart({ data }: ParticipantChartProps) {
     }, [transformedData, timeRange]);
 
     const totalParticipants = React.useMemo(() => {
-        return filteredData.reduce((sum, item) => sum + item.course + item.bootcamp + item.webinar, 0);
+        return filteredData.reduce((sum, item) => sum + (item.course || 0) + (item.bootcamp || 0) + (item.webinar || 0) + (item.certification_program || 0), 0);
     }, [filteredData]);
 
     return (

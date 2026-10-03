@@ -142,16 +142,16 @@ const getInvoiceItemName = (invoice: RecentSale): string => {
     const source = invoice.parentInvoice || invoice.parent_invoice || invoice;
 
     const courses = source.courseItems || source.course_items;
-    if (courses?.length && courses.length > 0) return `Kelas: ${courses[0].course.title}`;
+    if (courses?.length && courses.length > 0 && courses[0]?.course?.title) return `Kelas: ${courses[0].course.title}`;
 
     const bootcamps = source.bootcampItems || source.bootcamp_items;
-    if (bootcamps?.length && bootcamps.length > 0) return `Bootcamp: ${bootcamps[0].bootcamp.title}`;
+    if (bootcamps?.length && bootcamps.length > 0 && bootcamps[0]?.bootcamp?.title) return `Bootcamp: ${bootcamps[0].bootcamp.title}`;
 
     const webinars = source.webinarItems || source.webinar_items;
-    if (webinars?.length && webinars.length > 0) return `Webinar: ${webinars[0].webinar.title}`;
+    if (webinars?.length && webinars.length > 0 && webinars[0]?.webinar?.title) return `Webinar: ${webinars[0].webinar.title}`;
 
     const bundles = source.bundleEnrollments || source.bundle_enrollments;
-    if (bundles?.length && bundles.length > 0) return `Bundle: ${bundles[0].bundle.title}`;
+    if (bundles?.length && bundles.length > 0 && bundles[0]?.bundle?.title) return `Bundle: ${bundles[0].bundle.title}`;
 
     const certs = source.certificationProgramItems || source.certification_program_items;
     if (certs?.length && certs.length > 0) {
@@ -477,7 +477,7 @@ export default function AdminDashboard({ stats, filters }: StatsProps) {
                                     <div key={sale.id} className="flex items-center">
                                         <div className="flex-1 space-y-1">
                                             <div className="flex items-center gap-2">
-                                                <p className="text-sm leading-none font-medium">{sale.user?.name || sale.parentInvoice?.user?.name || '-'}</p>
+                                                <p className="text-sm leading-none font-medium">{sale.user?.name || sale.parentInvoice?.user?.name || sale.parent_invoice?.user?.name || '-'}</p>
                                                 {sale.installment_number && (
                                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300">
                                                         Cicilan ke-{sale.installment_number}
