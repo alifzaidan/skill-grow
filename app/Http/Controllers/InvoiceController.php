@@ -1401,6 +1401,50 @@ class InvoiceController extends Controller
 
             $isSuccess = ($request->input('transaction.status') === 'SUCCESS');
 
+            // ====== INSTALLMENT CHILD HANDLER ======
+            if ($invoice->isInstallmentChild() && $isSuccess) {
+                $invoice->update([
+                    'paid_at' => Carbon::now('Asia/Jakarta'),
+                    'status' => 'paid',
+                    'payment_method' => $request->input('payment.payment_method', 'DOKU'),
+                    'payment_channel' => $request->input('payment.payment_channel', 'DOKU'),
+                ]);
+
+                $parentInvoice = Invoice::with([
+                    'user',
+                    'courseItems.course',
+                    'bootcampItems.bootcamp',
+                    'webinarItems.webinar',
+                    'certificationProgramItems.certificationProgram',
+                    'bundleEnrollments.bundle',
+                ])->find($invoice->parent_invoice_id);
+
+                if ($parentInvoice) {
+                    // Jika termin ke-1 (DP): aktifkan akses
+                    if ($invoice->installment_number === 1) {
+                        $this->activateInstallmentEnrollments($parentInvoice);
+                    }
+
+                    // Pulihkan akses jika sebelumnya dibekukan
+                    $parentInvoice->update(['access_suspended_at' => null]);
+
+                    // Catat komisi affiliate + mentor untuk termin ini
+                    $this->recordAffiliateCommissionForTerm($invoice, $parentInvoice);
+
+                    // Cek apakah semua termin lunas
+                    if ($parentInvoice->isFullyPaid()) {
+                        $parentInvoice->update(['status' => 'paid', 'paid_at' => Carbon::now('Asia/Jakarta')]);
+                        event(new \App\Events\TransactionPaid($parentInvoice));
+                        $this->sendWhatsAppInstallmentComplete($parentInvoice, $invoice);
+                    } else {
+                        $this->sendWhatsAppTermPaid($invoice, $parentInvoice);
+                    }
+                }
+
+                return response()->json(['message' => 'Success'], 200);
+            }
+            // ====== END INSTALLMENT CHILD HANDLER ======
+
             if ($isSuccess) {
                 $invoice->update([
                     'paid_at' => Carbon::now('Asia/Jakarta'),
@@ -2197,8 +2241,10 @@ class InvoiceController extends Controller
         // 2. Invoice parent cicilan yang sudah lunas (status=paid)
         // 3. Invoice anak cicilan (termin) yang statusnya paid
         $isAllowed = false;
-        if ($invoice->status === 'paid') {
+        if (in_array($invoice->status, ['paid', 'completed'])) {
             $isAllowed = true;
+        } elseif ($invoice->is_installment) {
+            $isAllowed = $invoice->installmentTerms()->where('status', 'paid')->exists();
         } elseif ($invoice->isInstallmentChild() && $invoice->status === 'paid') {
             $isAllowed = true;
         }

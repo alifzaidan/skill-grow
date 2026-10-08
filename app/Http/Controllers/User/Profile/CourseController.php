@@ -28,7 +28,15 @@ class CourseController extends Controller
             ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/profile/course/index', ['myCourses' => $myCourses]);
+        return 
+        $course->append(['has_active_access', 'is_fully_paid']);
+        $pId = $course->courseItems->first()?->course_id;
+        $activeInstallment = null;
+        if ($pId && $course->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'course', $pId);
+        }
+        Inertia::render('user/profile/course/index', [
+            'active_installment' => $activeInstallment,'myCourses' => $myCourses]);
     }
 
     public function detail($slug)
@@ -75,11 +83,18 @@ class CourseController extends Controller
 
         $course->append(['has_active_access', 'is_fully_paid']);
 
+        $courseId = $course->courseItems->first()?->course_id;
+        $activeInstallment = null;
+        if ($courseId && $course->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'course', $courseId);
+        }
+
         return Inertia::render('user/profile/course/detail', [
             'course' => $course,
             'courseRating' => $courseRating,
             'certificate' => $certificate,
-            'certificateParticipant' => $certificateParticipant
+            'certificateParticipant' => $certificateParticipant,
+            'active_installment' => $activeInstallment,
         ]);
     }
 

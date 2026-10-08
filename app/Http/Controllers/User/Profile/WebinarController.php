@@ -29,7 +29,9 @@ class WebinarController extends Controller
             ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/profile/webinar/index', ['myWebinars' => $myWebinars]);
+        return Inertia::render('user/profile/webinar/index', [
+            'myWebinars' => $myWebinars
+        ]);
     }
 
     public function detail($slug)
@@ -79,10 +81,17 @@ class WebinarController extends Controller
 
         $webinar->append(['has_active_access', 'is_fully_paid']);
 
+        $webinarId = $webinar->webinarItems->first()?->webinar_id;
+        $activeInstallment = null;
+        if ($webinarId && $webinar->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'webinar', $webinarId);
+        }
+
         return Inertia::render('user/profile/webinar/detail', [
             'webinar' => $webinar,
             'certificate' => $certificate,
-            'certificateParticipant' => $certificateParticipant
+            'certificateParticipant' => $certificateParticipant,
+            'active_installment' => $activeInstallment,
         ]);
     }
 

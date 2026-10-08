@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
-import { formatExternalUrl } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
+import { formatExternalUrl } from '@/lib/utils';
 import {
     ArrowLeft,
     BellRing,
@@ -15,6 +15,7 @@ import {
     CalendarDays,
     CheckCircle2,
     Clock,
+    CreditCard,
     ExternalLink,
     FileText,
     Home,
@@ -23,6 +24,7 @@ import {
     ReceiptText,
     Users,
 } from 'lucide-react';
+import ProfileInstallmentAction from '@/components/profile-installment-action';
 
 interface Schedule {
     id: string;
@@ -70,21 +72,22 @@ interface Invoice {
     nett_amount: number;
     discount_amount: number;
     status: 'paid' | 'pending' | 'failed' | 'completed' | 'installment_pending';
+    is_installment?: boolean;
+    is_access_suspended?: boolean;
+    is_fully_paid?: boolean;
+    paid_terms?: number;
+    total_terms?: number;
     paid_at: string | null;
     created_at: string;
     payment_method: string | null;
     payment_channel: string | null;
-    is_installment?: boolean;
-    is_access_suspended?: boolean;
-    paid_terms?: number;
-    total_terms?: number;
-    is_fully_paid?: boolean;
     certificationProgramItems?: CertificationProgramItem[];
 }
 
 interface Props {
     invoice: Invoice;
     programItem: CertificationProgramItem;
+    active_installment?: any | null;
 }
 
 function parseList(items?: string | null): string[] {
@@ -100,7 +103,7 @@ function getYoutubeId(url: string) {
     return match && match[2].length === 11 ? match[2] : '';
 }
 
-export default function CertificationProgramDetail({ invoice, programItem }: Props) {
+export default function CertificationProgramDetail({ invoice, programItem, active_installment }: Props) {
     const program = programItem?.certificationProgram;
     const isScholarship = programItem?.is_scholarship;
 
@@ -178,10 +181,17 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                 </span>
                             </div>
                         ) : invoice.is_installment && !invoice.is_fully_paid ? (
-                            <div className="mt-4 flex justify-center">
-                                <span className="rounded-lg border border-amber-200 bg-amber-50/80 px-4 py-2 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
-                                    ℹ️ Pembayaran Cicilan Aktif ({invoice.paid_terms}/{invoice.total_terms} Termin). Pastikan membayar termin berikutnya tepat waktu.
-                                </span>
+                            <div className="mt-4 flex justify-center w-full">
+                                <ProfileInstallmentAction
+                                    variant="banner"
+                                    activeInstallment={active_installment}
+                                    invoiceId={invoice.id}
+                                    isInstallment={invoice.is_installment}
+                                    isFullyPaid={invoice.is_fully_paid}
+                                    isSuspended={invoice.is_access_suspended}
+                                    paidTerms={invoice.paid_terms}
+                                    totalTerms={invoice.total_terms}
+                                />
                             </div>
                         ) : null}
                     </div>
@@ -211,8 +221,9 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                             </Alert>
                         )}
 
+                        {/* Alert: Notifikasi Cicilan Sedang Berjalan & Akses Sertifikat */}
                         {invoice.is_installment && !invoice.is_fully_paid && !invoice.is_access_suspended && (
-                            <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20">
+                            <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20">
                                 <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                 <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">
                                     Pembayaran Cicilan Berjalan ({invoice.paid_terms}/{invoice.total_terms} Termin)
@@ -624,6 +635,7 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                             <span className="font-medium">{invoice.payment_method}</span>
                                         </div>
                                     )}
+                                    {/* Hanya tampilkan tombol unduh invoice jika bukan cicilan atau cicilan sudah lunas */}
                                     {(!invoice.is_installment || invoice.is_fully_paid) && (
                                         <Button asChild variant="outline" className="mt-4 w-full" size="sm">
                                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
@@ -633,12 +645,18 @@ export default function CertificationProgramDetail({ invoice, programItem }: Pro
                                         </Button>
                                     )}
                                     {invoice.is_installment && (
-                                        <Button asChild variant="outline" className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400" size="sm">
-                                            <Link href={route('profile.installments')}>
-                                                <Clock className="mr-2 h-4 w-4" />
-                                                Kelola Cicilan Saya
-                                            </Link>
-                                        </Button>
+                                        <div className="mt-4">
+                                            <ProfileInstallmentAction
+                                                variant="card"
+                                                activeInstallment={active_installment}
+                                                invoiceId={invoice.id}
+                                                isInstallment={invoice.is_installment}
+                                                isFullyPaid={invoice.is_fully_paid}
+                                                isSuspended={invoice.is_access_suspended}
+                                                paidTerms={invoice.paid_terms}
+                                                totalTerms={invoice.total_terms}
+                                            />
+                                        </div>
                                     )}
                                 </CardContent>
                             </Card>

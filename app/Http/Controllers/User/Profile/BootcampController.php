@@ -30,7 +30,15 @@ class BootcampController extends Controller
             ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
             ->get();
-        return Inertia::render('user/profile/bootcamp/index', ['myBootcamps' => $myBootcamps]);
+        return 
+        $bootcamp->append(['has_active_access', 'is_fully_paid']);
+        $pId = $bootcamp->bootcampItems->first()?->bootcamp_id;
+        $activeInstallment = null;
+        if ($pId && $bootcamp->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bootcamp', $pId);
+        }
+        Inertia::render('user/profile/bootcamp/index', [
+            'active_installment' => $activeInstallment,'myBootcamps' => $myBootcamps]);
     }
 
     public function detail($slug)
@@ -82,10 +90,17 @@ class BootcampController extends Controller
 
         $bootcamp->append(['has_active_access', 'is_fully_paid']);
 
+        $bootcampId = $bootcamp->bootcampItems->first()?->bootcamp_id;
+        $activeInstallment = null;
+        if ($bootcampId && $bootcamp->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'bootcamp', $bootcampId);
+        }
+
         return Inertia::render('user/profile/bootcamp/detail', [
             'bootcamp' => $bootcamp,
             'certificate' => $certificate,
-            'certificateParticipant' => $certificateParticipant
+            'certificateParticipant' => $certificateParticipant,
+            'active_installment' => $activeInstallment,
         ]);
     }
 

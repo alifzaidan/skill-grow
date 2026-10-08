@@ -53,7 +53,15 @@ class CertificationProgramController extends Controller
             ];
         })->toArray();
 
-        return Inertia::render('user/profile/certification-program/index', [
+        return 
+        $program->append(['has_active_access', 'is_fully_paid']);
+        $pId = $program->certificationProgramItems->first()?->certification_program_id;
+        $activeInstallment = null;
+        if ($pId && $program->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'certification_program', $pId);
+        }
+        Inertia::render('user/profile/certification-program/index', [
+            'active_installment' => $activeInstallment,
             'myCertificationPrograms' => $myCertificationPrograms,
         ]);
     }
@@ -62,8 +70,9 @@ class CertificationProgramController extends Controller
     {
         $userId = Auth::id();
 
-        // Get all paid/completed invoices with certification items
+        // Get all purchased invoices with certification items
         $invoices = Invoice::with([
+            'installmentTerms',
             'certificationProgramItems.certificationProgram.category',
             'certificationProgramItems.certificationProgram.schedules' => function($q) {
                 $q->orderBy('schedule_date')->orderBy('start_time');
@@ -71,7 +80,6 @@ class CertificationProgramController extends Controller
             'certificationProgramItems.certificationProgram.socializationSchedules' => function($q) {
                 $q->orderBy('schedule_date')->orderBy('start_time');
             },
-            'installmentTerms',
         ])
             ->purchasedByUser($userId)
             ->orderBy('created_at', 'desc')
@@ -95,6 +103,12 @@ class CertificationProgramController extends Controller
             abort(404, 'Sertifikasi program tidak ditemukan atau Anda belum terdaftar.');
         }
 
+        $programId = $matchedItem->certification_program_id ?? $matchedItem->certificationProgram?->id;
+        $activeInstallment = null;
+        if ($programId && $matchedInvoice->is_installment) {
+            $activeInstallment = Invoice::getActiveInstallmentForUser($userId, 'certification_program', $programId);
+        }
+
         // Explicitly structure data for Inertia serialization
         return Inertia::render('user/profile/certification-program/detail', [
             'invoice' => [
@@ -105,15 +119,15 @@ class CertificationProgramController extends Controller
                 'nett_amount' => $matchedInvoice->nett_amount,
                 'discount_amount' => $matchedInvoice->discount_amount,
                 'status' => $matchedInvoice->status,
+                'is_installment' => $matchedInvoice->is_installment,
+                'is_access_suspended' => $matchedInvoice->isAccessSuspended(),
+                'paid_terms' => $matchedInvoice->paidTermsCount(),
+                'total_terms' => $matchedInvoice->installmentTerms->count(),
+                'is_fully_paid' => $matchedInvoice->isFullyPaid(),
                 'paid_at' => $matchedInvoice->paid_at,
                 'created_at' => $matchedInvoice->created_at,
                 'payment_method' => $matchedInvoice->payment_method,
                 'payment_channel' => $matchedInvoice->payment_channel,
-                'is_installment' => (bool) $matchedInvoice->is_installment,
-                'is_access_suspended' => $matchedInvoice->isAccessSuspended(),
-                'paid_terms' => $matchedInvoice->paidTermsCount(),
-                'total_terms' => $matchedInvoice->installmentTerms ? $matchedInvoice->installmentTerms->count() : 0,
-                'is_fully_paid' => $matchedInvoice->isFullyPaid(),
             ],
             'programItem' => [
                 'id' => $matchedItem->id,
@@ -160,6 +174,7 @@ class CertificationProgramController extends Controller
                     })->toArray(),
                 ],
             ],
+            'active_installment' => $activeInstallment,
         ]);
     }
 }
