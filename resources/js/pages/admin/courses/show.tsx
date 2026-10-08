@@ -75,10 +75,10 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
     const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
     const role = auth.role[0];
-    const isAdmin = role === 'admin';
-    const isMentor = role === 'mentor';
-    const isAffiliate = role === 'affiliate';
-    const canManageCourse = canManage('courses') && !isAffiliate;
+    const isAdmin = auth.role.includes('admin') || role === 'admin';
+    const isMentor = auth.role.includes('mentor') || role === 'mentor';
+    const isAffiliate = auth.role.includes('affiliate') || role === 'affiliate';
+    const canManageCourse = (canManage('courses') || isMentor) && !isAffiliate;
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -108,6 +108,9 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
     };
 
     const canPublish = () => {
+        if (isMentor) {
+            return false;
+        }
         if (isAdmin || canManage('courses')) {
             return !!certificate;
         }
@@ -186,15 +189,17 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                                 {(course.status === 'draft' || course.status === 'archived') && (
                                     <>
                                         {renderPublishMessage()}
-                                        <Button asChild className="w-full" disabled={!canPublish()}>
-                                            <Link method="post" href={route('courses.publish', { course: course.id })}>
-                                                <Send />
-                                                {course.status === 'draft' ? 'Terbitkan' : 'Aktifkan Kembali'}
-                                            </Link>
-                                        </Button>
+                                        {!isMentor && (
+                                            <Button asChild className="w-full" disabled={!canPublish()}>
+                                                <Link method="post" href={route('courses.publish', { course: course.id })}>
+                                                    <Send />
+                                                    {course.status === 'draft' ? 'Terbitkan' : 'Aktifkan Kembali'}
+                                                </Link>
+                                            </Button>
+                                        )}
                                     </>
                                 )}
-                                {course.status === 'published' && (
+                                {course.status === 'published' && !isMentor && (
                                     <Button asChild className="w-full">
                                         <Link method="post" href={route('courses.archive', { course: course.id })}>
                                             <CircleX />
@@ -214,11 +219,13 @@ export default function ShowCourse({ course, transactions, ratings, certificate,
                                             <Copy /> Duplicate
                                         </Link>
                                     </Button>
-                                    <Button asChild className="w-full" variant="secondary" disabled={course.status === 'archived'}>
-                                        <Link method="post" href={route('courses.archive', { course: course.id })}>
-                                            <CircleX /> Arsipkan
-                                        </Link>
-                                    </Button>
+                                    {!isMentor && (
+                                        <Button asChild className="w-full" variant="secondary" disabled={course.status === 'archived'}>
+                                            <Link method="post" href={route('courses.archive', { course: course.id })}>
+                                                <CircleX /> Arsipkan
+                                            </Link>
+                                        </Button>
+                                    )}
                                     <DeleteConfirmDialog
                                         trigger={
                                             <Button variant="destructive" className="w-full">

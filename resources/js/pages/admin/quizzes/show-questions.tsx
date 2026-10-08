@@ -1,3 +1,4 @@
+import { SharedData } from '@/types';
 import DeleteConfirmDialog from '@/components/delete-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePermission } from '@/hooks/use-permission';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { Check, ChevronDown, ChevronRight, Edit, FileText, Search, Trash, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -44,8 +45,10 @@ interface QuizQuestionProps {
 }
 
 export default function QuizQuestion({ questions, course, quiz }: QuizQuestionProps) {
+    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
-    const canManageCourses = canManage('courses');
+    const isMentor = auth.role.includes('mentor');
+    const canManageCourse = canManage('courses') || isMentor;
 
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [currentPage, setCurrentPage] = useState<number>(1);
@@ -169,7 +172,7 @@ export default function QuizQuestion({ questions, course, quiz }: QuizQuestionPr
                                                         {question.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar/Salah'}
                                                     </Badge>
                                                 </div>
-                                                {canManageCourses && (
+                                                {canManageCourse && (
                                                     <div className="ml-4 flex items-center gap-2">
                                                         <Button
                                                             asChild

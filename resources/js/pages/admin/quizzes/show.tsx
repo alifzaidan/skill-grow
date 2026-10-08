@@ -5,8 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermission } from '@/hooks/use-permission';
 import AdminLayout from '@/layouts/admin-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { SharedData, type BreadcrumbItem } from '@/types';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Download, FileOutput, FileUp, LoaderCircle, Plus, Upload } from 'lucide-react';
@@ -56,8 +56,10 @@ interface QuizzesProps {
 }
 
 export default function Quizzes({ course, quiz, submissions = [], flash }: QuizzesProps) {
+    const { auth } = usePage<SharedData>().props;
     const { canManage } = usePermission();
-    const canManageCourses = canManage('courses');
+    const isMentor = auth.role.includes('mentor');
+    const canManageCourse = canManage('courses') || isMentor;
     const [importModalOpen, setImportModalOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -135,7 +137,7 @@ export default function Quizzes({ course, quiz, submissions = [], flash }: Quizz
                     <div className="order-first lg:order-last">
                         <h2 className="my-2 text-lg font-medium">Informasi Quiz</h2>
                         <div className="rounded-lg border p-4">
-                            {canManageCourses && (
+                            {canManageCourse && (
                                 <>
                                     <Button asChild className="w-full hover:cursor-pointer">
                                         <Link href={route('questions.create', { course: course.id, quiz: quiz.id })}>

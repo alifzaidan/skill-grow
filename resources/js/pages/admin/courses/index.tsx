@@ -59,7 +59,8 @@ export default function Courses({ courses, statistics, flash, filters }: CourseP
     const { canManage, roles, isAdmin } = usePermission();
     const isAffiliate = auth.role.includes('affiliate');
     const isStaff = (roles?.includes('staff') || auth?.role?.includes('staff')) && !isAdmin && !auth?.role?.includes('admin');
-    const canManageCourse = canManage('courses') && !isAffiliate;
+    const isMentor = auth.role.includes('mentor');
+    const canManageCourse = (canManage('courses') || isMentor) && !isAffiliate;
     const [showMoreStats, setShowMoreStats] = useState(false);
 
     useEffect(() => {
