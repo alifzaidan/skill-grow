@@ -191,6 +191,19 @@ class InstallmentController extends Controller
             ], 422);
         }
 
+        $dpTerm = $terms->first();
+        // Jadwal termin 1 mengikuti batas pendaftaran jika produk bukan kelas online dan memiliki registration_deadline
+        $dpDueDate = ($type !== 'course' && !empty($item->registration_deadline))
+            ? Carbon::parse($item->registration_deadline)
+            : ($dpTerm->due_date ? Carbon::parse($dpTerm->due_date) : null);
+
+        if ($dpDueDate && Carbon::now('Asia/Jakarta')->gt($dpDueDate->copy()->endOfDay())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Opsi pembayaran cicilan untuk program ini telah ditutup karena batas waktu pendaftaran / termin pertama telah terlewati.',
+            ], 422);
+        }
+
         $adminFeePerTerm = 5000;
         $termsCount = $terms->count();
         $totalNettAmount = $terms->sum('amount');
@@ -230,6 +243,9 @@ class InstallmentController extends Controller
             $firstChildInvoice = null;
             foreach ($terms as $term) {
                 $childCode = $parentCode . '-T' . $term->term_number;
+                $childDueDate = ($term->term_number === 1 && $dpDueDate)
+                    ? $dpDueDate
+                    : ($term->due_date ? Carbon::parse($term->due_date) : null);
 
                 $child = Invoice::create([
                     'user_id' => $userId,
@@ -243,7 +259,7 @@ class InstallmentController extends Controller
                     'parent_invoice_id' => $parentInvoice->id,
                     'installment_term_id' => $term->id,
                     'installment_number' => $term->term_number,
-                    'installment_due_date' => Carbon::parse($term->due_date),
+                    'installment_due_date' => $childDueDate,
                     'expires_at' => Carbon::now()->addHours(24),
                 ]);
 

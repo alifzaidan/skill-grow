@@ -132,6 +132,7 @@ class InstallmentTermController extends Controller
             'amount' => $request->amount,
             'due_date' => $request->due_date,
         ]);
+        $term->syncWithPendingInvoices();
 
         return response()->json(['success' => true, 'term' => $term]);
     }

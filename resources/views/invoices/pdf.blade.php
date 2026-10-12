@@ -241,6 +241,63 @@
                 $itemNumber = 1;
                 $subtotal = 0;
             @endphp
+            @if ($invoice->isInstallmentChild())
+                @php
+                    $parentInv = $invoice->parentInvoice ?? $invoice;
+                    $productTitle = 'Produk Pelatihan';
+                    $categoryBadge = 'Cicilan';
+                    $badgeStyle = 'background-color: #0284c7; color: white;';
+                    $productDesc = null;
+
+                    if ($parentInv->courseItems && $parentInv->courseItems->count() > 0) {
+                        $productTitle = $parentInv->courseItems->first()->course->title ?? 'Kelas Online';
+                        $categoryBadge = 'Kelas Online';
+                        $badgeStyle = 'background-color: #198754; color: white;';
+                        $productDesc = $parentInv->courseItems->first()->course->description ?? null;
+                    } elseif ($parentInv->bootcampItems && $parentInv->bootcampItems->count() > 0) {
+                        $productTitle = $parentInv->bootcampItems->first()->bootcamp->title ?? 'Bootcamp';
+                        $categoryBadge = 'Bootcamp';
+                        $badgeStyle = 'background-color: #fd7e14; color: white;';
+                        $productDesc = $parentInv->bootcampItems->first()->bootcamp->description ?? null;
+                    } elseif ($parentInv->webinarItems && $parentInv->webinarItems->count() > 0) {
+                        $productTitle = $parentInv->webinarItems->first()->webinar->title ?? 'Webinar';
+                        $categoryBadge = 'Webinar';
+                        $badgeStyle = 'background-color: #6f42c1; color: white;';
+                        $productDesc = $parentInv->webinarItems->first()->webinar->description ?? null;
+                    } elseif ($parentInv->certificationProgramItems && $parentInv->certificationProgramItems->count() > 0) {
+                        $productTitle = $parentInv->certificationProgramItems->first()->certificationProgram->title ?? 'Sertifikasi Program';
+                        $categoryBadge = 'Sertifikasi Program';
+                        $badgeStyle = 'background-color: #198754; color: white;';
+                        $productDesc = $parentInv->certificationProgramItems->first()->certificationProgram->description ?? null;
+                    } elseif (isset($parentInv->privateItems) && $parentInv->privateItems->count() > 0) {
+                        $productTitle = $parentInv->privateItems->first()->privateClass->title ?? 'Private Class';
+                        $categoryBadge = 'Private Class';
+                        $badgeStyle = 'background-color: #0d6efd; color: white;';
+                        $productDesc = $parentInv->privateItems->first()->privateClass->description ?? null;
+                    } elseif (isset($parentInv->bundleEnrollments) && $parentInv->bundleEnrollments->count() > 0) {
+                        $productTitle = $parentInv->bundleEnrollments->first()->bundle->title ?? 'Paket Bundling';
+                        $categoryBadge = 'Paket Bundling';
+                        $badgeStyle = 'background-color: #0d6efd; color: white;';
+                        $productDesc = $parentInv->bundleEnrollments->first()->bundle->description ?? null;
+                    }
+
+                    $subtotal = $invoice->nett_amount;
+                @endphp
+                <tr>
+                    <td class="text-center">1</td>
+                    <td>
+                        <span class="badge" style="{{ $badgeStyle }}">{{ $categoryBadge }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ $productTitle }}</strong>
+                        <br><span style="color: #0284c7; font-weight: 600;">Pembayaran Cicilan Termin ke-{{ $invoice->installment_number }}{{ $invoice->installment_number == 1 ? ' (DP)' : '' }}</span>
+                        @if ($productDesc)
+                            <br><small style="color: #666;">{{ Str::limit($productDesc, 100) }}</small>
+                        @endif
+                    </td>
+                    <td class="text-right">Rp {{ number_format($invoice->nett_amount, 0, ',', '.') }}</td>
+                </tr>
+            @else
 
             @foreach ($invoice->courseItems as $item)
                 <tr>
@@ -310,6 +367,7 @@
                 </tr>
                 @php $subtotal += $item->price; @endphp
             @endforeach
+            @endif
         </tbody>
     </table>
 

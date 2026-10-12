@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 class CertificationProgram extends Model
 {
     use HasUuids;
+    protected static function booted()
+    {
+        static::updated(function ($certificationprogram) {
+            if ($certificationprogram->wasChanged('registration_deadline') && !empty($certificationprogram->registration_deadline)) {
+                ProductInstallmentTerm::syncFirstTermRegistrationDeadline($certificationprogram, $certificationprogram->registration_deadline);
+            }
+        });
+    }
+
 
     protected function groupUrl(): Attribute
     {

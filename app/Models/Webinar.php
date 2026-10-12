@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 class Webinar extends Model
 {
     use HasUuids;
+    protected static function booted()
+    {
+        static::updated(function ($webinar) {
+            if ($webinar->wasChanged('registration_deadline') && !empty($webinar->registration_deadline)) {
+                ProductInstallmentTerm::syncFirstTermRegistrationDeadline($webinar, $webinar->registration_deadline);
+            }
+        });
+    }
+
 
     protected function groupUrl(): Attribute
     {

@@ -9,6 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 class Bootcamp extends Model
 {
     use HasUuids;
+    protected static function booted()
+    {
+        static::updated(function ($bootcamp) {
+            if ($bootcamp->wasChanged('registration_deadline') && !empty($bootcamp->registration_deadline)) {
+                ProductInstallmentTerm::syncFirstTermRegistrationDeadline($bootcamp, $bootcamp->registration_deadline);
+            }
+        });
+    }
+
 
     protected function groupUrl(): Attribute
     {
