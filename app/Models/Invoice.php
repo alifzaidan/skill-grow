@@ -309,25 +309,30 @@ class Invoice extends Model
         return !is_null($this->parent_invoice_id);
     }
 
-    public function getInvoiceType(): string
+        public function getInvoiceType(): string
     {
-        if ($this->hasBundle()) {
+        $target = $this;
+        if ($this->isInstallmentChild() && $this->parent_invoice_id) {
+            $target = $this->parentInvoice ?? Invoice::find($this->parent_invoice_id) ?? $this;
+        }
+
+        if ($target->hasBundle()) {
             return 'bundle';
         }
 
-        if ($this->courseItems->count() > 0) {
+        if ($target->courseItems->count() > 0) {
             return 'course';
         }
 
-        if ($this->bootcampItems->count() > 0) {
+        if ($target->bootcampItems->count() > 0) {
             return 'bootcamp';
         }
 
-        if ($this->webinarItems->count() > 0) {
+        if ($target->webinarItems->count() > 0) {
             return 'webinar';
         }
 
-        if ($this->certificationProgramItems->count() > 0) {
+        if ($target->certificationProgramItems->count() > 0) {
             return 'certification_program';
         }
 

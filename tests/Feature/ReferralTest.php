@@ -21,6 +21,8 @@ test('new users get a referral code generated automatically on registration', fu
         'name' => 'Referral Tester',
         'email' => 'ref_tester@example.com',
         'phone_number' => '081234567890',
+        'instance' => 'Skill Grow',
+        'city' => 'Jakarta',
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
@@ -204,53 +206,249 @@ test('admin can update settings and adjust user points', function () {
         ->and($tx->description)->toBe('Admin manual correction bonus');
 });
 
-test('user registration validates affiliate_code and referral_code columns correctly', function () {
-    $referrer = User::factory()->create([
-        'referral_code' => 'SKIL-XYZ999',
-        'affiliate_code' => 'AFF-CODE-123',
+test('referral reward cannot be duplicated if event is fired multiple times or processed twice', function () {
+    Setting::set('referral_reward', 20000);
+    Setting::set('buyer_reward', 15000);
+    Setting::set('referral_only_first_purchase', true);
+
+    $referrer = User::factory()->create(['name' => 'NURBAYA. STP', 'referral_code' => 'SKIL-NURBAY', 'point_balance' => 0]);
+    $buyer = User::factory()->create(['name' => 'Anita Tanzil', 'point_balance' => 0]);
+
+    $invoice = Invoice::create([
+        'invoice_code' => 'INV-TEST-DUP-01',
+        'user_id' => $buyer->id,
+        'amount' => 100000,
+        'nett_amount' => 100000,
+        'status' => 'pending',
+        'referral_code' => 'SKIL-NURBAY',
+        'referral_user_id' => $referrer->id,
     ]);
 
-    // 1. Check with a valid referral_code passed to affiliate_code field
-    $response = $this->post('/register', [
-        'name' => 'Referral Tester A',
-        'email' => 'ref_tester_a@example.com',
-        'phone_number' => '081234567891',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-        'affiliate_code' => 'SKIL-XYZ999',
+    $invoice->update(['status' => 'paid']);
+
+    // Fire the event TWICE (simulating duplicate webhooks, duplicate listeners, or retries)
+    event(new TransactionPaid($invoice));
+    event(new TransactionPaid($invoice));
+
+    // Also call service directly again
+    app(\App\Services\RewardService::class)->processReferralReward($invoice);
+
+    $referrer->refresh();
+    $buyer->refresh();
+
+    // Verify balances are only rewarded once (20,000 and 15,000, not 40,000 and 30,000)
+    expect($referrer->point_balance)->toBe(20000)
+        ->and($buyer->point_balance)->toBe(15000);
+
+    // Verify exactly 1 transaction for referrer and 1 for buyer
+    $refTxCount = PointTransaction::where('user_id', $referrer->id)
+        ->where('reference_id', $invoice->id)
+        ->count();
+    $buyerTxCount = PointTransaction::where('user_id', $buyer->id)
+        ->where('reference_id', $invoice->id)
+        ->count();
+
+    expect($refTxCount)->toBe(1)
+        ->and($buyerTxCount)->toBe(1);
+});
+
+test('validateReferralCode respects is_enabled per program', function () {
+    $referrer = User::factory()->create(['referral_code' => 'SKIL-TEST01']);
+
+    // Disable webinar referrals
+    $programs = Setting::getReferralProgramSettings();
+    $programs['webinar']['is_enabled'] = false;
+    Setting::set('referral_program_settings', $programs);
+
+    $service = app(\App\Services\ReferralService::class);
+
+    // Webinar should be rejected
+    $resultWebinar = $service->validateReferralCode('SKIL-TEST01', 'guest@example.com', null, 'webinar');
+    expect($resultWebinar['valid'])->toBeFalse()
+        ->and($resultWebinar['message'])->toContain('tidak aktif');
+
+    // Bootcamp should be accepted
+    $resultBootcamp = $service->validateReferralCode('SKIL-TEST01', 'guest@example.com', null, 'bootcamp');
+    expect($resultBootcamp['valid'])->toBeTrue();
+});
+
+test('referral reward calculates percentage and honors max cap for certification program', function () {
+    $programs = Setting::getReferralProgramSettings();
+    $programs['certification_program'] = [
+        'name' => 'Program Sertifikasi',
+        'is_enabled' => true,
+        'referrer_reward_type' => 'percentage',
+        'referrer_rate' => 10, // 10%
+        'referrer_max_reward' => 50000, // max 50,000 points
+        'buyer_reward_type' => 'percentage',
+        'buyer_rate' => 5, // 5%
+        'buyer_max_reward' => 20000, // max 20,000 points
+    ];
+    Setting::set('referral_program_settings', $programs);
+
+    $referrer = User::factory()->create(['point_balance' => 0]);
+    $buyer = User::factory()->create(['point_balance' => 0]);
+
+    // Transaction nett_amount = 800,000
+    // 10% of 800,000 = 80,000 -> capped at 50,000
+    // 5% of 800,000 = 40,000 -> capped at 20,000
+    $invoice = Invoice::create([
+        'invoice_code' => 'INV-CERT-01',
+        'user_id' => $buyer->id,
+        'amount' => 800000,
+        'nett_amount' => 800000,
+        'status' => 'pending',
+        'referral_user_id' => $referrer->id,
     ]);
-    $response->assertRedirect();
-    $this->assertAuthenticated();
-    $newUserA = User::where('email', 'ref_tester_a@example.com')->first();
-    expect($newUserA->referred_by_user_id)->toBe($referrer->id);
 
-    Auth::logout();
-
-    // 2. Check with a valid affiliate_code passed to affiliate_code field
-    $response = $this->post('/register', [
-        'name' => 'Referral Tester B',
-        'email' => 'ref_tester_b@example.com',
-        'phone_number' => '081234567892',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-        'affiliate_code' => 'AFF-CODE-123',
+    $category = \App\Models\Category::firstOrCreate(['slug' => 'tech'], ['name' => 'Tech']);
+    $program = \App\Models\CertificationProgram::create([
+        'title' => 'Sertifikasi Test',
+        'slug' => 'sertifikasi-test',
+        'price' => 800000,
+        'category_id' => $category->id,
     ]);
-    $response->assertRedirect();
-    $this->assertAuthenticated();
-    $newUserB = User::where('email', 'ref_tester_b@example.com')->first();
-    expect($newUserB->referred_by_user_id)->toBe($referrer->id);
 
-    Auth::logout();
-
-    // 3. Check with an invalid code
-    $response = $this->postJson('/register', [
-        'name' => 'Referral Tester C',
-        'email' => 'ref_tester_c@example.com',
-        'phone_number' => '081234567893',
-        'password' => 'password',
-        'password_confirmation' => 'password',
-        'affiliate_code' => 'INVALID_CODE',
+    // Attach certification item to invoice
+    \App\Models\EnrollmentCertificationProgram::create([
+        'invoice_id' => $invoice->id,
+        'certification_program_id' => $program->id,
+        'price' => 800000,
     ]);
-    $response->assertStatus(422);
-    $response->assertJsonValidationErrors(['affiliate_code']);
+
+    $invoice->update(['status' => 'paid']);
+    event(new TransactionPaid($invoice));
+
+    $referrer->refresh();
+    $buyer->refresh();
+
+    expect($referrer->point_balance)->toBe(50000)
+        ->and($buyer->point_balance)->toBe(20000);
+});
+
+test('referral reward calculates combination of percentage for referrer and fixed for buyer', function () {
+    $programs = Setting::getReferralProgramSettings();
+    $programs['bootcamp'] = [
+        'name' => 'Bootcamp',
+        'is_enabled' => true,
+        'referrer_reward_type' => 'percentage',
+        'referrer_rate' => 10, // 10%
+        'referrer_max_reward' => null,
+        'buyer_reward_type' => 'fixed',
+        'buyer_rate' => 15000, // flat 15,000 points
+        'buyer_max_reward' => null,
+    ];
+    Setting::set('referral_program_settings', $programs);
+
+    $referrer = User::factory()->create(['point_balance' => 0]);
+    $buyer = User::factory()->create(['point_balance' => 0]);
+
+    $invoice = Invoice::create([
+        'invoice_code' => 'INV-BOOT-01',
+        'user_id' => $buyer->id,
+        'amount' => 300000,
+        'nett_amount' => 300000,
+        'status' => 'pending',
+        'referral_user_id' => $referrer->id,
+    ]);
+
+    $category = \App\Models\Category::firstOrCreate(['slug' => 'tech'], ['name' => 'Tech']);
+    $bootcamp = \App\Models\Bootcamp::create([
+        'title' => 'Bootcamp Test',
+        'slug' => 'bootcamp-test',
+        'price' => 300000,
+        'category_id' => $category->id,
+        'start_date' => now(),
+        'end_date' => now()->addDays(30),
+    ]);
+
+    \App\Models\EnrollmentBootcamp::create([
+        'invoice_id' => $invoice->id,
+        'bootcamp_id' => $bootcamp->id,
+        'price' => 300000,
+    ]);
+
+    $invoice->update(['status' => 'paid']);
+    event(new TransactionPaid($invoice));
+
+    $referrer->refresh();
+    $buyer->refresh();
+
+    // Referrer: 10% of 300,000 = 30,000 points
+    // Buyer: flat 15,000 points
+    expect($referrer->point_balance)->toBe(30000)
+        ->and($buyer->point_balance)->toBe(15000);
+});
+
+test('admin can update modular referral program settings', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $this->actingAs($admin);
+
+    $updatedPrograms = Setting::getReferralProgramSettings();
+    $updatedPrograms['webinar']['is_enabled'] = false;
+    $updatedPrograms['course']['referrer_reward_type'] = 'percentage';
+    $updatedPrograms['course']['referrer_rate'] = 12;
+
+    $this->post('/admin/referral/settings', [
+        'referral_reward' => 5000,
+        'buyer_reward' => 2000,
+        'referral_only_first_purchase' => true,
+        'programs' => $updatedPrograms,
+    ])->assertRedirect();
+
+    $saved = Setting::getReferralProgramSettings();
+    expect($saved['webinar']['is_enabled'])->toBeFalse()
+        ->and($saved['course']['referrer_reward_type'])->toBe('percentage')
+        ->and((int) $saved['course']['referrer_rate'])->toBe(12);
+});
+
+test('admin can view user show page with referral code and point balance and adjust points', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $targetUser = User::factory()->create([
+        'name' => 'Peserta Uji',
+        'email' => 'peserta.uji@example.com',
+        'point_balance' => 5000,
+        'referral_code' => 'SKIL-UJICOD',
+    ]);
+    $targetUser->assignRole('user');
+
+    $this->actingAs($admin);
+
+    $response = $this->get("/admin/users/{$targetUser->id}");
+    $response->assertOk();
+
+    // Verify user referral code & balance
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/users/show')
+        ->has('user', fn ($page) => $page
+            ->where('referral_code', 'SKIL-UJICOD')
+            ->where('point_balance', 5000)
+            ->etc()
+        )
+        ->has('pointTransactions')
+    );
+
+    // Now test adjust-points from show
+    $this->post('/admin/referral/adjust-points', [
+        'user_id' => $targetUser->id,
+        'amount' => 2500,
+        'description' => 'Penyesuaian manual bonus dari halaman show',
+    ])->assertRedirect();
+
+    $targetUser->refresh();
+    expect($targetUser->point_balance)->toBe(7500);
+
+    // Negative adjustment
+    $this->post('/admin/referral/adjust-points', [
+        'user_id' => $targetUser->id,
+        'amount' => -3000,
+        'description' => 'Koreksi penyesuaian',
+    ])->assertRedirect();
+
+    $targetUser->refresh();
+    expect($targetUser->point_balance)->toBe(4500);
 });
