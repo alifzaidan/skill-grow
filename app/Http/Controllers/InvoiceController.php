@@ -400,7 +400,7 @@ class InvoiceController extends Controller
                 }
                 
                 $referralService = app(\App\Services\ReferralService::class);
-                $validationResult = $referralService->validateReferralCode($referralCode, null, Auth::user());
+                $validationResult = $referralService->validateReferralCode($referralCode, null, Auth::user(), $type);
                 
                 if (!$validationResult['valid']) {
                     throw new \Exception($validationResult['message']);
@@ -628,7 +628,7 @@ class InvoiceController extends Controller
                 }
                 
                 $referralService = app(\App\Services\ReferralService::class);
-                $validationResult = $referralService->validateReferralCode($referralCode, null, Auth::user());
+                $validationResult = $referralService->validateReferralCode($referralCode, null, Auth::user(), 'bundle');
                 
                 if (!$validationResult['valid']) {
                     throw new \Exception($validationResult['message']);

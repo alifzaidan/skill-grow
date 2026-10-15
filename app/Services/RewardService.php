@@ -8,7 +8,7 @@ use App\Models\Setting;
 use App\Models\PointTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Cache;
 
 class RewardService
 {
@@ -20,133 +20,152 @@ class RewardService
     }
 
     /**
-     * Process referral rewards for a successful payment.
-     *
-     * @param Invoice $invoice
-     * @return void
+     * Proses reward referral setelah pembayaran berhasil.
+     * Kolom referral di invoice: 'referral_user_id'.
      */
     public function processReferralReward(Invoice $invoice): void
     {
         Log::info('processReferralReward started', [
-            'invoice_code' => $invoice->invoice_code,
-            'status' => $invoice->status,
-            'referral_user_id' => $invoice->referral_user_id
+            'invoice_code'     => $invoice->invoice_code,
+            'status'           => $invoice->status,
+            'referral_user_id' => $invoice->referral_user_id,
         ]);
 
-        DB::transaction(function () use ($invoice) {
-            // Ensure invoice is paid
-            if ($invoice->status !== 'paid') {
-                Log::warning('processReferralReward skipped: invoice status is not paid', [
-                    'invoice_code' => $invoice->invoice_code,
-                    'status' => $invoice->status
-                ]);
-                return;
-            }
+        $lockKey = "referral_reward_invoice_{$invoice->id}";
+        $lock = Cache::lock($lockKey, 15);
 
-            // Check if there is an associated referrer
-            if (!$invoice->referral_user_id) {
-                Log::warning('processReferralReward skipped: no referral_user_id on invoice', [
-                    'invoice_code' => $invoice->invoice_code
-                ]);
-                return;
-            }
+        try {
+            $lock->block(5, function () use ($invoice) {
+                DB::transaction(function () use ($invoice) {
+                    $lockedInvoice = Invoice::where('id', $invoice->id)->lockForUpdate()->first();
 
-            // Prevent duplicate rewards for the same invoice
-            $rewardExists = PointTransaction::where('reference_type', Invoice::class)
-                ->where('reference_id', $invoice->id)
-                ->where('source', 'referral')
-                ->exists();
+                    if (!$lockedInvoice) {
+                        Log::warning('processReferralReward skipped: invoice not found', [
+                            'invoice_id' => $invoice->id
+                        ]);
+                        return;
+                    }
 
-            if ($rewardExists) {
-                Log::info('Referral reward already processed for invoice', ['invoice_code' => $invoice->invoice_code]);
-                return;
-            }
+                    if ($lockedInvoice->status !== 'paid') {
+                        Log::warning('processReferralReward skipped: not paid', ['invoice_code' => $lockedInvoice->invoice_code]);
+                        return;
+                    }
 
-            $buyer = User::find($invoice->user_id);
-            $referrer = User::find($invoice->referral_user_id);
+                    if (!$lockedInvoice->referral_user_id) {
+                        Log::warning('processReferralReward skipped: no referral_user_id', ['invoice_code' => $lockedInvoice->invoice_code]);
+                        return;
+                    }
 
-            if (!$buyer || !$referrer) {
-                Log::error('processReferralReward skipped: buyer or referrer user not found', [
-                    'buyer_id' => $invoice->user_id,
-                    'referrer_id' => $invoice->referral_user_id
-                ]);
-                return;
-            }
+                    $rewardExists = PointTransaction::where('reference_type', Invoice::class)
+                        ->where('reference_id', $lockedInvoice->id)
+                        ->where('source', 'referral')
+                        ->exists();
 
-            // Check if referral reward is only allowed on first purchase
-            $onlyFirstPurchase = Setting::get('referral_only_first_purchase', true);
-            Log::info('Referral configurations', [
-                'only_first_purchase' => $onlyFirstPurchase,
-                'buyer_id' => $buyer->id,
-                'referrer_id' => $referrer->id
-            ]);
+                    if ($rewardExists) {
+                        Log::info('Referral reward already processed', ['invoice_code' => $lockedInvoice->invoice_code]);
+                        return;
+                    }
 
-            if ($onlyFirstPurchase) {
-                // Since this invoice is already marked as paid, the count will be 1 if it's the first purchase
-                $paidInvoicesCount = Invoice::where('user_id', $buyer->id)
-                    ->where('status', 'paid')
-                    ->count();
+                    $buyer    = User::find($lockedInvoice->user_id);
+                    $referrer = User::find($lockedInvoice->referral_user_id);
 
-                Log::info('Buyer paid invoices count', [
-                    'buyer_id' => $buyer->id,
-                    'paid_count' => $paidInvoicesCount
-                ]);
+                    if (!$buyer || !$referrer) {
+                        Log::error('processReferralReward: buyer or referrer not found');
+                        return;
+                    }
 
-                if ($paidInvoicesCount > 1) {
-                    Log::info('Referral reward skipped: not the buyer\'s first purchase', [
-                        'buyer_id' => $buyer->id,
-                        'invoice_code' => $invoice->invoice_code
+                    $onlyFirstPurchase = Setting::get('referral_only_first_purchase', true);
+                    if ($onlyFirstPurchase) {
+                        $paidInvoicesCount = Invoice::where('user_id', $buyer->id)->where('status', 'paid')->count();
+                        if ($paidInvoicesCount > 1) {
+                            Log::info('Referral reward skipped: not first purchase', ['buyer_id' => $buyer->id]);
+                            return;
+                        }
+                    }
+
+                    // Get product type and corresponding referral settings
+                    $productType = $lockedInvoice->getInvoiceType();
+                    $programSettings = Setting::getReferralProgramSettings();
+                    $programConfig = $programSettings[$productType] ?? null;
+
+                    // If referral is disabled for this program type, skip processing
+                    if ($programConfig && empty($programConfig['is_enabled'])) {
+                        Log::info('Referral reward skipped: referral disabled for program', [
+                            'invoice_code' => $lockedInvoice->invoice_code,
+                            'product_type' => $productType
+                        ]);
+                        return;
+                    }
+
+                    // Calculate Referrer reward
+                    $referrerRewardType = $programConfig['referrer_reward_type'] ?? 'fixed';
+                    $referrerRate = (int) ($programConfig['referrer_rate'] ?? Setting::get('referral_reward', 5000));
+                    $referrerMaxReward = !empty($programConfig['referrer_max_reward']) ? (int) $programConfig['referrer_max_reward'] : null;
+
+                    if ($referrerRewardType === 'percentage') {
+                        $referrerRewardAmount = (int) round($lockedInvoice->nett_amount * ($referrerRate / 100));
+                        if ($referrerMaxReward !== null && $referrerRewardAmount > $referrerMaxReward) {
+                            $referrerRewardAmount = $referrerMaxReward;
+                        }
+                    } else {
+                        $referrerRewardAmount = $referrerRate;
+                    }
+                    $referrerRewardAmount = max(0, $referrerRewardAmount);
+
+                    // Calculate Buyer reward
+                    $buyerRewardType = $programConfig['buyer_reward_type'] ?? 'fixed';
+                    $buyerRate = (int) ($programConfig['buyer_rate'] ?? Setting::get('buyer_reward', 2000));
+                    $buyerMaxReward = !empty($programConfig['buyer_max_reward']) ? (int) $programConfig['buyer_max_reward'] : null;
+
+                    if ($buyerRewardType === 'percentage') {
+                        $buyerRewardAmount = (int) round($lockedInvoice->nett_amount * ($buyerRate / 100));
+                        if ($buyerMaxReward !== null && $buyerRewardAmount > $buyerMaxReward) {
+                            $buyerRewardAmount = $buyerMaxReward;
+                        }
+                    } else {
+                        $buyerRewardAmount = $buyerRate;
+                    }
+                    $buyerRewardAmount = max(0, $buyerRewardAmount);
+
+                    if ($referrerRewardAmount > 0) {
+                        $this->pointService->addTransaction(
+                            $referrer,
+                            $referrerRewardAmount,
+                            'reward',
+                            'referral',
+                            "Bonus referral dari pembelian pertama oleh {$buyer->name}",
+                            Invoice::class,
+                            $lockedInvoice->id
+                        );
+                    }
+
+                    if ($buyerRewardAmount > 0) {
+                        $this->pointService->addTransaction(
+                            $buyer,
+                            $buyerRewardAmount,
+                            'reward',
+                            'referral',
+                            "Bonus pembelian menggunakan kode referral dari {$referrer->name}",
+                            Invoice::class,
+                            $lockedInvoice->id
+                        );
+                    }
+
+                    Log::info('Referral reward processed successfully', [
+                        'invoice_code'    => $lockedInvoice->invoice_code,
+                        'product_type'    => $productType,
+                        'referrer'        => $referrer->name,
+                        'referrer_amount' => $referrerRewardAmount,
+                        'buyer'           => $buyer->name,
+                        'buyer_amount'    => $buyerRewardAmount,
                     ]);
-                    return;
-                }
-            }
-
-            // Save the referral connection permanently on the buyer's user record if column exists
-            if (Schema::hasColumn('users', 'referred_by_user_id')) {
-                if (empty($buyer->referred_by_user_id)) {
-                    $buyer->update([
-                        'referred_by_user_id' => $referrer->id
-                    ]);
-                }
-            } else {
-                Log::info('users table does not have referred_by_user_id column, skipped user record update.');
-            }
-
-            // Get reward configurations
-            $referrerRewardAmount = (int) Setting::get('referral_reward', 5000);
-            $buyerRewardAmount = (int) Setting::get('buyer_reward', 2000);
-
-            // Grant Referrer reward
-            if ($referrerRewardAmount > 0) {
-                $this->pointService->addTransaction(
-                    $referrer,
-                    $referrerRewardAmount,
-                    'reward',
-                    'referral',
-                    "Bonus referral dari pembelian pertama oleh {$buyer->name}",
-                    Invoice::class,
-                    $invoice->id
-                );
-            }
-
-            // Grant Buyer reward
-            if ($buyerRewardAmount > 0) {
-                $this->pointService->addTransaction(
-                    $buyer,
-                    $buyerRewardAmount,
-                    'reward',
-                    'referral',
-                    "Bonus pembelian menggunakan kode referral dari {$referrer->name}",
-                    Invoice::class,
-                    $invoice->id
-                );
-            }
-
-            Log::info('Referral reward successfully processed', [
+                });
+            });
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+            Log::warning('Referral reward skipped: lock acquisition timed out', [
                 'invoice_code' => $invoice->invoice_code,
-                'referrer' => $referrer->name,
-                'buyer' => $buyer->name
+                'message'      => $e->getMessage(),
             ]);
-        });
+        }
     }
 }
