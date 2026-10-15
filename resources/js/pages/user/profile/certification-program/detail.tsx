@@ -7,6 +7,7 @@ import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { formatExternalUrl } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 import {
     ArrowLeft,
     BellRing,
@@ -104,16 +105,17 @@ function getYoutubeId(url: string) {
 }
 
 export default function CertificationProgramDetail({ invoice, programItem, active_installment }: Props) {
+    const { t, i18n } = useTranslation();
     const program = programItem?.certificationProgram;
     const isScholarship = programItem?.is_scholarship;
 
     if (!program || !programItem) {
         return (
             <UserLayout>
-                <Head title="Program Sertifikasi Tidak Ditemukan" />
+                <Head title={t('profile.certificationDetail.headTitleNotFound')} />
                 <ProfileLayout>
                     <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-                        <p className="text-red-700">Program sertifikasi tidak ditemukan atau Anda belum memiliki akses.</p>
+                        <p className="text-red-700">{t('profile.certificationDetail.notFoundDesc')}</p>
                     </div>
                 </ProfileLayout>
             </UserLayout>
@@ -137,7 +139,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
 
     return (
         <UserLayout>
-            <Head title={`${program.title} - Sertifikasi Saya`} />
+            <Head title={t('profile.certificationDetail.headTitle', { title: program.title })} />
             <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white">
                 <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
                     <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
@@ -146,13 +148,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                 <div className="relative mx-auto max-w-7xl px-4 text-center">
                     <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
                         <Link href="/profile/my-certification-programs">
-                            <ArrowLeft /> Kembali Ke Sertifikasi Saya
+                            <ArrowLeft /> {t('profile.certificationDetail.btnBackToCertifications')}
                         </Link>
                     </Button>
                     <div className="col-span-2">
                         <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                                📌 {isScholarship ? 'Beasiswa' : 'Reguler'}
+                                📌 {isScholarship ? t('profile.certificationDetail.badgeScholarship') : t('profile.certificationDetail.badgeRegular')}
                             </span>
                         </div>
 
@@ -164,12 +166,12 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                     isScholarship ? 'border-emerald-300 bg-emerald-500 text-white' : 'border-amber-300 bg-amber-500 text-white'
                                 }
                             >
-                                {isScholarship ? 'Jalur Beasiswa' : 'Jalur Reguler'}
+                                {isScholarship ? t('profile.certificationDetail.badgeTrackScholarship') : t('profile.certificationDetail.badgeTrackRegular')}
                             </Badge>
                             <Button asChild size="sm" variant="secondary">
                                 <Link href={route('certification-programs.detail', { program: program.slug })}>
                                     <ExternalLink className="mr-2 h-4 w-4" />
-                                    Lihat Detail Publik
+                                    {t('profile.certificationDetail.btnViewPublic')}
                                 </Link>
                             </Button>
                         </div>
@@ -177,7 +179,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                         {invoice.is_access_suspended ? (
                             <div className="mt-4 flex justify-center">
                                 <span className="rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300">
-                                    ⚠️ Akses program dibekukan karena ada tagihan cicilan yang melewati jatuh tempo. Silakan lakukan pelunasan di menu Transaksi.
+                                    {t('profile.certificationDetail.suspendedBanner')}
                                 </span>
                             </div>
                         ) : invoice.is_installment && !invoice.is_fully_paid ? (
@@ -206,15 +208,15 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                             <Alert variant="destructive" className="border-red-300 bg-red-50 dark:border-red-900/50 dark:bg-red-900/20">
                                 <Lock className="h-5 w-5 text-red-600 dark:text-red-400" />
                                 <AlertTitle className="text-lg font-bold text-red-800 dark:text-red-300">
-                                    Akses Program Dibekukan Sementara
+                                    {t('profile.certificationDetail.suspendedAlertTitle')}
                                 </AlertTitle>
                                 <AlertDescription className="mt-2 space-y-3 text-red-700 dark:text-red-400">
                                     <p>
-                                        Akses Anda ke materi, jadwal sesi, dan link grup sertifikasi ini sedang dibekukan karena ada termin cicilan yang telah melewati tanggal jatuh tempo.
+                                        {t('profile.certificationDetail.suspendedAlertDesc')}
                                     </p>
                                     <Button asChild size="sm" variant="destructive">
                                         <Link href={route('profile.installments')}>
-                                            Buka Cicilan Saya & Bayar Sekarang
+                                            {t('profile.certificationDetail.btnPayInstallmentNow')}
                                         </Link>
                                     </Button>
                                 </AlertDescription>
@@ -226,10 +228,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                             <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/20">
                                 <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                                 <AlertTitle className="font-semibold text-amber-800 dark:text-amber-300">
-                                    Pembayaran Cicilan Berjalan ({invoice.paid_terms}/{invoice.total_terms} Termin)
+                                    {t('profile.certificationDetail.activeInstallmentAlertTitle', {
+                                        paid: invoice.paid_terms,
+                                        total: invoice.total_terms,
+                                    })}
                                 </AlertTitle>
                                 <AlertDescription className="mt-1 text-sm text-amber-700 dark:text-amber-400">
-                                    Materi dan jadwal program dapat diakses selama pembayaran cicilan tepat waktu. Sertifikat program baru dapat diklaim dan diunduh setelah seluruh cicilan telah lunas.
+                                    {t('profile.certificationDetail.activeInstallmentAlertDesc')}
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -238,23 +243,23 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                         {hasActivityToday && !invoice.is_access_suspended && (
                             <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-900/20">
                                 <BellRing className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                <AlertTitle className="text-lg font-bold text-blue-800 dark:text-blue-300">Ada Jadwal Hari Ini!</AlertTitle>
+                                <AlertTitle className="text-lg font-bold text-blue-800 dark:text-blue-300">{t('profile.certificationDetail.todayScheduleAlertTitle')}</AlertTitle>
                                 <AlertDescription className="mt-2 space-y-2 text-blue-700 dark:text-blue-400">
-                                    <p>Jangan lewatkan jadwal Anda hari ini. Persiapkan diri Anda dengan baik.</p>
+                                    <p>{t('profile.certificationDetail.todayScheduleAlertDesc')}</p>
                                     <div className="mt-3 flex flex-col gap-2">
-                                        {todaySchedules.map((schedule) => (
+                                        {todaySchedules.map((schedule, idx) => (
                                             <div key={schedule.id} className="flex items-center gap-2 rounded-md bg-white/60 p-2 dark:bg-black/20">
-                                                <Badge className="bg-blue-600 text-white hover:bg-blue-700">Kelas</Badge>
-                                                <span className="font-medium">{schedule.title || 'Sesi Kelas'}</span>
+                                                <Badge className="bg-blue-600 text-white hover:bg-blue-700">{t('profile.certificationDetail.badgeClass')}</Badge>
+                                                <span className="font-medium">{schedule.title || `${t('profile.certificationDetail.defaultClassSession')} ${idx + 1}`}</span>
                                                 <span className="ml-auto text-sm opacity-80">
                                                     {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
                                                 </span>
                                             </div>
                                         ))}
-                                        {todaySocializations.map((schedule) => (
+                                        {todaySocializations.map((schedule, idx) => (
                                             <div key={schedule.id} className="flex items-center gap-2 rounded-md bg-white/60 p-2 dark:bg-black/20">
-                                                <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">Sosialisasi</Badge>
-                                                <span className="font-medium">{schedule.title || 'Sesi Sosialisasi'}</span>
+                                                <Badge className="bg-emerald-600 text-white hover:bg-emerald-700">{t('profile.certificationDetail.badgeSocialization')}</Badge>
+                                                <span className="font-medium">{schedule.title || `${t('profile.certificationDetail.defaultSocializationSession')} ${idx + 1}`}</span>
                                                 <span className="ml-auto text-sm opacity-80">
                                                     {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
                                                 </span>
@@ -270,44 +275,44 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <LinkIcon className="h-5 w-5" />
-                                    Akses Penting
+                                    {t('profile.certificationDetail.importantAccessTitle')}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div className="flex flex-col items-start gap-2 rounded-xl border bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                                     <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                                        <Users className="h-4 w-4" /> Grup Kelas
+                                        <Users className="h-4 w-4" /> {t('profile.certificationDetail.classGroupTitle')}
                                     </div>
                                     <p className="flex-1 text-sm text-gray-600 dark:text-gray-400">
-                                        Bergabunglah ke dalam grup untuk berkomunikasi dengan peserta dan mentor.
+                                        {t('profile.certificationDetail.classGroupDesc')}
                                     </p>
                                     {invoice.is_access_suspended ? (
                                         <Button size="sm" variant="destructive" className="mt-2 w-full sm:w-auto" disabled>
-                                            <Lock className="mr-1.5 h-3.5 w-3.5" /> Akses Dibekukan
+                                            <Lock className="mr-1.5 h-3.5 w-3.5" /> {t('profile.certificationDetail.accessSuspendedBtn')}
                                         </Button>
                                     ) : program.group_url ? (
                                         <Button asChild size="sm" className="mt-2 w-full sm:w-auto">
                                             <a href={formatExternalUrl(program.group_url)} target="_blank" rel="noopener noreferrer">
-                                                Gabung Grup Kelas
+                                                {t('profile.certificationDetail.btnJoinClassGroup')}
                                             </a>
                                         </Button>
                                     ) : (
                                         <Button size="sm" variant="secondary" className="mt-2 w-full sm:w-auto" disabled>
-                                            Belum Tersedia
+                                            {t('profile.certificationDetail.btnNotAvailable')}
                                         </Button>
                                     )}
                                 </div>
 
                                 <div className="flex flex-col items-start gap-2 rounded-xl border bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-900">
                                     <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                                        <BookOpen className="h-4 w-4" /> Link Program
+                                        <BookOpen className="h-4 w-4" /> {t('profile.certificationDetail.programLinkTitle')}
                                     </div>
                                     <p className="flex-1 text-sm text-gray-600 dark:text-gray-400">
-                                        Akses materi, tugas, dan modul program utama melalui tautan ini.
+                                        {t('profile.certificationDetail.programLinkDesc')}
                                     </p>
                                     {invoice.is_access_suspended ? (
                                         <Button size="sm" variant="destructive" className="mt-2 w-full sm:w-auto" disabled>
-                                            <Lock className="mr-1.5 h-3.5 w-3.5" /> Akses Dibekukan
+                                            <Lock className="mr-1.5 h-3.5 w-3.5" /> {t('profile.certificationDetail.accessSuspendedBtn')}
                                         </Button>
                                     ) : program.program_url ? (
                                         <Button
@@ -317,12 +322,12 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                             className="border-primary text-primary hover:bg-primary/10 mt-2 w-full sm:w-auto"
                                         >
                                             <a href={formatExternalUrl(program.program_url)} target="_blank" rel="noopener noreferrer">
-                                                Buka Program
+                                                {t('profile.certificationDetail.btnOpenProgram')}
                                             </a>
                                         </Button>
                                     ) : (
                                         <Button size="sm" variant="secondary" className="mt-2 w-full sm:w-auto" disabled>
-                                            Belum Tersedia
+                                            {t('profile.certificationDetail.btnNotAvailable')}
                                         </Button>
                                     )}
                                 </div>
@@ -334,14 +339,14 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <CalendarDays className="h-5 w-5" />
-                                    Jadwal Program
+                                    {t('profile.certificationDetail.programScheduleTitle')}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Tabs defaultValue="class" className="w-full">
                                     <TabsList className={`mb-6 grid w-full ${isScholarship ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                                        <TabsTrigger value="class">Jadwal Kelas</TabsTrigger>
-                                        {isScholarship && <TabsTrigger value="socialization">Jadwal Sosialisasi</TabsTrigger>}
+                                        <TabsTrigger value="class">{t('profile.certificationDetail.tabClassSchedule')}</TabsTrigger>
+                                        {isScholarship && <TabsTrigger value="socialization">{t('profile.certificationDetail.tabSocializationSchedule')}</TabsTrigger>}
                                     </TabsList>
                                     <TabsContent value="class" className="space-y-4">
                                         {program.schedules && program.schedules.length > 0 ? (
@@ -355,7 +360,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                             <div className="flex items-center gap-4">
                                                                 <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                                                                     <span className="text-xs font-medium uppercase">
-                                                                        {new Date(schedule.schedule_date).toLocaleDateString('id-ID', { month: 'short' })}
+                                                                        {new Date(schedule.schedule_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', { month: 'short' })}
                                                                     </span>
                                                                     <span className="text-lg leading-none font-bold">
                                                                         {new Date(schedule.schedule_date).getDate()}
@@ -363,13 +368,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                 </div>
                                                                 <div>
                                                                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                                                                        {schedule.title || `Sesi Kelas ${idx + 1}`}
+                                                                        {schedule.title || `${t('profile.certificationDetail.defaultClassSession')} ${idx + 1}`}
                                                                     </h4>
                                                                     <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                                                                         <span className="flex items-center gap-1 capitalize">
                                                                             <Calendar className="h-3.5 w-3.5" />
                                                                             {schedule.day},{' '}
-                                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                            {new Date(schedule.schedule_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                                                 year: 'numeric',
                                                                             })}
                                                                         </span>
@@ -383,13 +388,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                             {schedule.recording_url && (
                                                                 invoice.is_access_suspended ? (
                                                                     <Button size="sm" variant="destructive" className="mt-2 w-full sm:mt-0 sm:w-auto" disabled>
-                                                                        <Lock className="mr-1 h-3.5 w-3.5" /> Akses Dibekukan
+                                                                        <Lock className="mr-1 h-3.5 w-3.5" /> {t('profile.certificationDetail.accessSuspendedBtn')}
                                                                     </Button>
                                                                 ) : (
                                                                     <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
                                                                         <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
                                                                             <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                                                                            Buka di YouTube
+                                                                            {t('profile.certificationDetail.openInYoutube')}
                                                                         </a>
                                                                     </Button>
                                                                 )
@@ -403,7 +408,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                     <iframe
                                                                         className="aspect-video w-full rounded-lg border"
                                                                         src={embedUrl}
-                                                                        title={`Rekaman ${schedule.title || `Sesi Kelas ${idx + 1}`}`}
+                                                                        title={t('profile.certificationDetail.recordingTitle', { title: schedule.title || `${t('profile.certificationDetail.defaultClassSession')} ${idx + 1}` })}
                                                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                                         allowFullScreen
                                                                     />
@@ -415,7 +420,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                             </div>
                                         ) : (
                                             <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center dark:bg-zinc-900/50">
-                                                <p className="text-gray-500">Belum ada jadwal kelas yang ditambahkan.</p>
+                                                <p className="text-gray-500">{t('profile.certificationDetail.noClassSchedules')}</p>
                                             </div>
                                         )}
                                     </TabsContent>
@@ -432,7 +437,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                 <div className="flex items-center gap-4">
                                                                     <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                                                                         <span className="text-xs font-medium uppercase">
-                                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                            {new Date(schedule.schedule_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                                                 month: 'short',
                                                                             })}
                                                                         </span>
@@ -442,13 +447,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                     </div>
                                                                     <div>
                                                                         <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                                                                            {schedule.title || `Sesi Sosialisasi ${idx + 1}`}
+                                                                            {schedule.title || `${t('profile.certificationDetail.defaultSocializationSession')} ${idx + 1}`}
                                                                         </h4>
                                                                         <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                                                                             <span className="flex items-center gap-1 capitalize">
                                                                                 <Calendar className="h-3.5 w-3.5" />
                                                                                 {schedule.day},{' '}
-                                                                                {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                                                {new Date(schedule.schedule_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                                                     year: 'numeric',
                                                                                 })}
                                                                             </span>
@@ -462,13 +467,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                 {schedule.recording_url && (
                                                                     invoice.is_access_suspended ? (
                                                                         <Button size="sm" variant="destructive" className="mt-2 w-full sm:mt-0 sm:w-auto" disabled>
-                                                                            <Lock className="mr-1 h-3.5 w-3.5" /> Akses Dibekukan
+                                                                            <Lock className="mr-1 h-3.5 w-3.5" /> {t('profile.certificationDetail.accessSuspendedBtn')}
                                                                         </Button>
                                                                     ) : (
                                                                         <Button asChild size="sm" variant="outline" className="mt-2 w-full sm:mt-0 sm:w-auto">
                                                                             <a href={schedule.recording_url} target="_blank" rel="noopener noreferrer">
                                                                                 <ExternalLink className="mr-1 h-3.5 w-3.5" />
-                                                                                Buka di YouTube
+                                                                                {t('profile.certificationDetail.openInYoutube')}
                                                                             </a>
                                                                         </Button>
                                                                     )
@@ -482,7 +487,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                                         <iframe
                                                                             className="aspect-video w-full rounded-lg border"
                                                                             src={embedUrl}
-                                                                            title={`Rekaman ${schedule.title || `Sesi Sosialisasi ${idx + 1}`}`}
+                                                                            title={t('profile.certificationDetail.recordingTitle', { title: schedule.title || `${t('profile.certificationDetail.defaultSocializationSession')} ${idx + 1}` })}
                                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                                             allowFullScreen
                                                                         />
@@ -495,20 +500,20 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                         <div className="mt-4 flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
                                                             <div>
                                                                 <h5 className="font-medium text-emerald-800 dark:text-emerald-300">
-                                                                    Grup Sosialisasi
+                                                                    {t('profile.certificationDetail.socializationGroupTitle')}
                                                                 </h5>
                                                                 <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                                                                    Gabung grup sosialisasi untuk informasi lebih lanjut
+                                                                    {t('profile.certificationDetail.socializationGroupDesc')}
                                                                 </p>
                                                             </div>
                                                             {invoice.is_access_suspended ? (
                                                                 <Button size="sm" variant="destructive" disabled>
-                                                                    <Lock className="mr-1.5 h-3.5 w-3.5" /> Akses Dibekukan
+                                                                    <Lock className="mr-1.5 h-3.5 w-3.5" /> {t('profile.certificationDetail.accessSuspendedBtn')}
                                                                 </Button>
                                                             ) : (
                                                                 <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700">
                                                                     <a href={formatExternalUrl(program.socialization_group_url)} target="_blank" rel="noopener noreferrer">
-                                                                        Gabung Grup
+                                                                        {t('profile.certificationDetail.btnJoinGroup')}
                                                                     </a>
                                                                 </Button>
                                                             )}
@@ -517,7 +522,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                                 </div>
                                             ) : (
                                                 <div className="rounded-xl border border-dashed bg-gray-50 py-8 text-center dark:bg-zinc-900/50">
-                                                    <p className="text-gray-500">Belum ada jadwal sosialisasi yang ditambahkan.</p>
+                                                    <p className="text-gray-500">{t('profile.certificationDetail.noSocializationSchedules')}</p>
                                                 </div>
                                             )}
                                         </TabsContent>
@@ -532,13 +537,13 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <FileText className="h-5 w-5" />
-                                        Informasi & Materi Program
+                                        {t('profile.certificationDetail.programInfoTitle')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     {program.description && (
                                         <div className="space-y-2">
-                                            <h3 className="text-lg font-semibold">Deskripsi Program</h3>
+                                            <h3 className="text-lg font-semibold">{t('profile.certificationDetail.programDescTitle')}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert max-w-none text-gray-600 dark:text-gray-300"
                                                 dangerouslySetInnerHTML={{ __html: program.description }}
@@ -548,7 +553,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
 
                                     {benefitsList.length > 0 && (
                                         <div className="space-y-3">
-                                            <h3 className="text-lg font-semibold">Materi & Benefit yang Didapatkan</h3>
+                                            <h3 className="text-lg font-semibold">{t('profile.certificationDetail.benefitsTitle')}</h3>
                                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                                 {benefitsList.map((benefit, idx) => (
                                                     <div
@@ -574,24 +579,24 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                         <div className="sticky top-6 space-y-4">
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">Ringkasan Pembelian</CardTitle>
+                                    <CardTitle className="text-lg">{t('profile.certificationDetail.purchaseSummaryTitle')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 text-sm">
                                     <div className="flex flex-col gap-3">
                                         <div className="rounded-lg border bg-gray-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
-                                            <p className="text-xs text-gray-500">Kategori</p>
+                                            <p className="text-xs text-gray-500">{t('profile.certificationDetail.categoryLabel')}</p>
                                             <p className="mt-1 font-medium">{program.category?.name || '-'}</p>
                                         </div>
                                         <div className="rounded-lg border bg-gray-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
-                                            <p className="text-xs text-gray-500">Tanggal Pembelian</p>
+                                            <p className="text-xs text-gray-500">{t('profile.certificationDetail.purchaseDateLabel')}</p>
                                             <p className="mt-1 font-medium">
-                                                {invoice.paid_at ? new Date(invoice.paid_at).toLocaleString('id-ID') : '-'}
+                                                {invoice.paid_at ? new Date(invoice.paid_at).toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID') : '-'}
                                             </p>
                                         </div>
                                         <div className="rounded-lg border bg-gray-50 p-3 dark:border-zinc-800 dark:bg-zinc-900">
-                                            <p className="text-xs text-gray-500">Harga Program</p>
+                                            <p className="text-xs text-gray-500">{t('profile.certificationDetail.programPriceLabel')}</p>
                                             <p className="mt-1 font-medium text-emerald-600">
-                                                Rp {(isScholarship ? program.scholarship_price : program.price || 0)?.toLocaleString('id-ID')}
+                                                Rp {(isScholarship ? program.scholarship_price : program.price || 0)?.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                             </p>
                                         </div>
                                     </div>
@@ -600,15 +605,19 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg">{invoice.is_installment ? 'Detail Cicilan' : 'Detail Invoice'}</CardTitle>
+                                    <CardTitle className="text-lg">
+                                        {invoice.is_installment
+                                            ? t('profile.certificationDetail.installmentDetailTitle')
+                                            : t('profile.certificationDetail.invoiceDetailTitle')}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-3 text-sm">
                                     <div className="flex items-center justify-between gap-4">
-                                        <span className="text-gray-500">Kode Invoice</span>
+                                        <span className="text-gray-500">{t('profile.certificationDetail.invoiceCodeLabel')}</span>
                                         <span className="font-medium">{invoice.invoice_code}</span>
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
-                                        <span className="text-gray-500">Status</span>
+                                        <span className="text-gray-500">{t('profile.certificationDetail.statusLabel')}</span>
                                         <span
                                             className={`font-medium ${
                                                 invoice.is_access_suspended
@@ -619,19 +628,22 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                             }`}
                                         >
                                             {invoice.is_access_suspended
-                                                ? 'Akses Dibekukan'
+                                                ? t('profile.certificationDetail.statusSuspended')
                                                 : invoice.is_installment && !invoice.is_fully_paid
-                                                  ? `Cicilan (${invoice.paid_terms}/${invoice.total_terms})`
-                                                  : 'Sudah Dibayar'}
+                                                  ? t('profile.certificationDetail.statusInstallment', {
+                                                        paid: invoice.paid_terms,
+                                                        total: invoice.total_terms,
+                                                    })
+                                                  : t('profile.certificationDetail.statusPaid')}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between gap-4">
-                                        <span className="text-gray-500">Total</span>
-                                        <span className="font-medium">Rp {invoice.amount.toLocaleString('id-ID')}</span>
+                                        <span className="text-gray-500">{t('profile.certificationDetail.totalLabel')}</span>
+                                        <span className="font-medium">Rp {invoice.amount.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}</span>
                                     </div>
                                     {invoice.payment_method && (
                                         <div className="flex items-center justify-between gap-4">
-                                            <span className="text-gray-500">Metode</span>
+                                            <span className="text-gray-500">{t('profile.certificationDetail.methodLabel')}</span>
                                             <span className="font-medium">{invoice.payment_method}</span>
                                         </div>
                                     )}
@@ -640,7 +652,7 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
                                         <Button asChild variant="outline" className="mt-4 w-full" size="sm">
                                             <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                                 <FileText className="mr-2 h-4 w-4" />
-                                                Unduh Invoice
+                                                {t('profile.certificationDetail.btnDownloadInvoice')}
                                             </a>
                                         </Button>
                                     )}
@@ -663,19 +675,19 @@ export default function CertificationProgramDetail({ invoice, programItem, activ
 
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2 text-lg">Tautan Lainnya</CardTitle>
+                                    <CardTitle className="flex items-center gap-2 text-lg">{t('profile.certificationDetail.otherLinksTitle')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-col gap-2">
                                     <Button asChild size="sm" variant="outline" className="w-full justify-start">
                                         <Link href={route('profile.transactions')}>
                                             <ReceiptText className="mr-2 h-4 w-4" />
-                                            Riwayat Transaksi
+                                            {t('profile.certificationDetail.btnTransactionHistory')}
                                         </Link>
                                     </Button>
                                     <Button asChild size="sm" variant="outline" className="w-full justify-start">
                                         <Link href={route('profile.certification-programs')}>
                                             <Home className="mr-2 h-4 w-4" />
-                                            Sertifikasi Saya
+                                            {t('profile.certificationDetail.btnMyCertifications')}
                                         </Link>
                                     </Button>
                                 </CardContent>

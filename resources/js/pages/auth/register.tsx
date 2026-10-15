@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
@@ -21,6 +22,7 @@ type RegisterForm = {
 };
 
 export default function Register({ affiliate_code }: { affiliate_code?: string }) {
+    const { t } = useTranslation('auth');
     const [showPassword, setShowPassword] = useState(false);
 
     const getReferralCode = (): string => {
@@ -74,12 +76,12 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
     };
 
     return (
-        <AuthLayout title="Buat Akun Skill Grow" description="Silahkan isi form untuk mendaftar.">
-            <Head title="Daftar" />
+        <AuthLayout title={t('register.title', 'Buat Akun Skill Grow')} description={t('register.description', 'Silahkan isi form untuk mendaftar.')}>
+            <Head title={t('register.headTitle', 'Daftar')} />
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
                     <div className="grid gap-2">
-                        <Label htmlFor="name">Nama</Label>
+                        <Label htmlFor="name">{t('register.name', 'Nama')}</Label>
                         <Input
                             id="name"
                             type="text"
@@ -90,13 +92,13 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
                             disabled={processing}
-                            placeholder="Nama lengkap Anda"
+                            placeholder={t('register.namePlaceholder', 'Nama lengkap Anda')}
                         />
                         <InputError message={errors.name} className="mt-2" />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="email">{t('login.email', 'Email')}</Label>
                         <Input
                             id="email"
                             type="email"
@@ -112,7 +114,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="phone_number">No. Telepon</Label>
+                        <Label htmlFor="phone_number">{t('register.phone', 'No. Telepon')}</Label>
                         <Input
                             id="phone_number"
                             type="phone_number"
@@ -122,13 +124,13 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             value={data.phone_number}
                             onChange={(e) => setData('phone_number', e.target.value)}
                             disabled={processing}
-                            placeholder="08xxxxxxxxxx"
+                            placeholder={t('register.phonePlaceholder', '08xxxxxxxxxx')}
                         />
                         <InputError message={errors.phone_number} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="instance">Instansi</Label>
+                        <Label htmlFor="instance">{t('register.instance', 'Instansi')}</Label>
                         <Input
                             id="instance"
                             type="text"
@@ -137,14 +139,14 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             value={data.instance}
                             onChange={(e) => setData('instance', e.target.value)}
                             disabled={processing}
-                            placeholder="Masukkan instansi Anda"
+                            placeholder={t('register.instancePlaceholder', 'Masukkan instansi Anda')}
                             required
                         />
                         <InputError message={errors.instance} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="city">Kota Domisili</Label>
+                        <Label htmlFor="city">{t('register.city', 'Kota Domisili')}</Label>
                         <Input
                             id="city"
                             type="text"
@@ -154,13 +156,13 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             value={data.city}
                             onChange={(e) => setData('city', e.target.value)}
                             disabled={processing}
-                            placeholder="Masukkan kota domisili Anda"
+                            placeholder={t('register.cityPlaceholder', 'Masukkan kota domisili Anda')}
                         />
                         <InputError message={errors.city} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">{t('login.password', 'Password')}</Label>
                         <div className="relative">
                             <Input
                                 id="password"
@@ -171,7 +173,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 disabled={processing}
-                                placeholder="Password"
+                                placeholder={t('login.password', 'Password')}
                                 className="pr-10"
                             />
                             <button
@@ -180,14 +182,14 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <Eye className="size-4 text-gray-500" /> : <EyeOff className="size-4 text-gray-500" />}
-                                <span className="sr-only">{showPassword ? 'Sembunyikan' : 'Tampilkan'} password</span>
+                                <span className="sr-only">{showPassword ? t('login.hidePassword', 'Sembunyikan password') : t('login.showPassword', 'Tampilkan password')}</span>
                             </button>
                         </div>
                         <InputError message={errors.password} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation">Konfirmasi password</Label>
+                        <Label htmlFor="password_confirmation">{t('register.confirmPassword', 'Konfirmasi password')}</Label>
                         <div className="relative">
                             <Input
                                 id="password_confirmation"
@@ -198,7 +200,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                                 value={data.password_confirmation}
                                 onChange={(e) => setData('password_confirmation', e.target.value)}
                                 disabled={processing}
-                                placeholder="Konfirmasi password"
+                                placeholder={t('register.confirmPassword', 'Konfirmasi password')}
                                 className="pr-10"
                             />
                             <button
@@ -207,7 +209,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                                 onClick={() => setShowPassword(!showPassword)}
                             >
                                 {showPassword ? <Eye className="size-4 text-gray-500" /> : <EyeOff className="size-4 text-gray-500" />}
-                                <span className="sr-only">{showPassword ? 'Sembunyikan' : 'Tampilkan'} password</span>
+                                <span className="sr-only">{showPassword ? t('login.hidePassword', 'Sembunyikan password') : t('login.showPassword', 'Tampilkan password')}</span>
                             </button>
                         </div>
                         <InputError message={errors.password_confirmation} />
@@ -219,7 +221,7 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
                             <div className="flex items-center gap-2">
                                 <div className="h-2 w-2 rounded-full bg-green-500"></div>
                                 <p className="text-sm text-green-700 dark:text-green-300">
-                                    Mendaftar melalui referral: <span className="font-mono font-medium">{data.affiliate_code}</span>
+                                    {t('register.referralApplied', 'Mendaftar melalui referral: ')}<span className="font-mono font-medium">{data.affiliate_code}</span>
                                 </p>
                             </div>
                         </div>
@@ -227,14 +229,14 @@ export default function Register({ affiliate_code }: { affiliate_code?: string }
 
                     <Button type="submit" className="mt-2 w-full" tabIndex={5} disabled={processing}>
                         {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Buat akun
+                        {t('register.submit', 'Buat akun')}
                     </Button>
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    Sudah memiliki akun?{' '}
+                    {t('register.hasAccount', 'Sudah memiliki akun?')}{' '}
                     <TextLink href={route('login')} tabIndex={6}>
-                        Masuk
+                        {t('register.login', 'Masuk')}
                     </TextLink>
                 </div>
             </form>

@@ -1,14 +1,16 @@
-import { SVGProps } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function AboutSection() {
+    const { t } = useTranslation('home');
+
     return (
         <section className="pt-16 md:pt-20 lg:pt-24 pb-24">
             <div className="relative mx-auto w-full max-w-7xl px-4">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-center font-bold">Unlock your Potential</h1>
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-center font-bold">{t('about.titlePart1', 'Unlock your Potential')}</h1>
                     <div className="w-fit mx-auto relative md:mt-2">
                         <span className="relative z-10 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center block">
-                            Grow your Skills, Grow your Career
+                            {t('about.titlePart2', 'Grow your Skills, Grow your Career')}
                         </span>
                         <span className="absolute left-2 md:left-4 right-2 md:right-4 -bottom-1 h-4 md:h-6 bg-primary z-0 rounded"></span>
                     </div>

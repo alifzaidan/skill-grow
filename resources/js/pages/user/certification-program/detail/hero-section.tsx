@@ -1,8 +1,9 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { enUS, id } from 'date-fns/locale';
 import { Calendar, ChartArea, Clock, GraduationCap, Hash, MapPin, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface CertificationProgram {
     title: string;
@@ -16,6 +17,7 @@ interface CertificationProgram {
 }
 
 export default function HeroSection({ program }: { program: CertificationProgram }) {
+    const { t, i18n } = useTranslation('user');
     const deadlineDate = program.registration_deadline ? new Date(program.registration_deadline) : null;
     
     // Calculate duration based on schedules
@@ -57,11 +59,11 @@ export default function HeroSection({ program }: { program: CertificationProgram
                                 )}
                                 <Badge className={`border-0 ${program.type === 'scholarship' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
                                     <GraduationCap size={14} className="mr-1" />
-                                    {program.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}
+                                    {program.type === 'scholarship' ? t('certificationProgram.detail.hero.badgeScholarship') : t('certificationProgram.detail.hero.badgeRegular')}
                                 </Badge>
                                 {program.batch && (
                                     <Badge variant="outline" className="border-gray-300">
-                                        Batch {program.batch}
+                                        {t('certificationProgram.detail.hero.batch', { batch: program.batch })}
                                     </Badge>
                                 )}
                             </div>
@@ -69,17 +71,16 @@ export default function HeroSection({ program }: { program: CertificationProgram
                             <h1 className="mb-4 text-4xl leading-tight font-bold italic sm:text-5xl">{program.title}</h1>
 
                             <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">
-                                {program.short_description ||
-                                    'Bergabunglah dengan program sertifikasi kami untuk meningkatkan keterampilan Anda.'}
+                                {program.short_description || t('certificationProgram.detail.hero.defaultDesc')}
                             </p>
 
                             <div className="mb-6 space-y-3 rounded-lg border border-gray-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
                                 <div className="flex items-center gap-3">
                                     <Calendar size={20} className="text-primary dark:text-secondary" />
                                     <div>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Batas Pendaftaran</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('certificationProgram.detail.hero.registrationDeadline')}</p>
                                         <p className="text-sm font-semibold">
-                                            {deadlineDate ? `${format(deadlineDate, 'dd MMMM yyyy, HH:mm', { locale: id })} WIB` : 'Tidak ada batas'}
+                                            {deadlineDate ? `${format(deadlineDate, 'dd MMMM yyyy, HH:mm', { locale: i18n.language === 'en' ? enUS : id })} WIB` : t('certificationProgram.detail.hero.noDeadline')}
                                         </p>
                                     </div>
                                 </div>
@@ -88,21 +89,21 @@ export default function HeroSection({ program }: { program: CertificationProgram
                                         <div className="flex items-start gap-3">
                                             <Clock size={20} className="text-primary dark:text-secondary mt-1" />
                                             <div className="flex-1">
-                                                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">Jadwal Pertemuan</p>
+                                                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">{t('certificationProgram.detail.hero.meetingSchedule')}</p>
                                                 <div className="space-y-1">
                                                     {program.schedules.slice(0, 3).map((schedule, idx) => {
                                                         const scheduleDate = schedule.schedule_date || schedule.start_date;
                                                         return (
                                                             <p key={idx} className="text-sm capitalize">
-                                                                {schedule.day || (scheduleDate ? format(new Date(scheduleDate), 'EEEE', { locale: id }) : '')},{' '}
-                                                                {scheduleDate ? format(new Date(scheduleDate), 'dd MMM yyyy', { locale: id }) : ''}
+                                                                {schedule.day || (scheduleDate ? format(new Date(scheduleDate), 'EEEE', { locale: i18n.language === 'en' ? enUS : id }) : '')},{' '}
+                                                                {scheduleDate ? format(new Date(scheduleDate), 'dd MMM yyyy', { locale: i18n.language === 'en' ? enUS : id }) : ''}
                                                                 {schedule.start_time && ` - ${schedule.start_time.slice(0, 5)} s/d ${schedule.end_time?.slice(0, 5)} WIB`}
                                                             </p>
                                                         );
                                                     })}
                                                     {program.schedules.length > 3 && (
                                                         <p className="text-sm italic text-gray-500 dark:text-gray-400">
-                                                            Dan {program.schedules.length - 3} pertemuan lainnya...
+                                                            {t('certificationProgram.detail.hero.andOtherSessions', { count: program.schedules.length - 3 })}
                                                         </p>
                                                     )}
                                                 </div>
@@ -114,10 +115,10 @@ export default function HeroSection({ program }: { program: CertificationProgram
 
                             <div className="flex flex-wrap gap-4">
                                 <a href="#register">
-                                    <Button size="lg">Daftar Sekarang</Button>
+                                    <Button size="lg">{t('certificationProgram.detail.hero.btnRegisterNow')}</Button>
                                 </a>
                                 <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
-                                    <Button variant="outline" size="lg">Hubungi Kami</Button>
+                                    <Button variant="outline" size="lg">{t('certificationProgram.detail.hero.btnContactUs')}</Button>
                                 </a>
                             </div>
                         </div>
@@ -135,30 +136,30 @@ export default function HeroSection({ program }: { program: CertificationProgram
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <MapPin size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Lokasi</p>
-                                    <p className="text-sm font-semibold">Online</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('certificationProgram.detail.hero.location')}</p>
+                                    <p className="text-sm font-semibold">{t('certificationProgram.detail.hero.online')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Hash size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Batch</p>
-                                    <p className="text-sm font-semibold">Batch {program.batch || '1'}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('certificationProgram.detail.hero.batchLabel')}</p>
+                                    <p className="text-sm font-semibold">{t('certificationProgram.detail.hero.batch', { batch: program.batch || '1' })}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Users size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Tipe</p>
-                                    <p className="text-sm font-semibold capitalize">{program.type === 'scholarship' ? 'Beasiswa' : 'Reguler'}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('certificationProgram.detail.hero.typeLabel')}</p>
+                                    <p className="text-sm font-semibold capitalize">{program.type === 'scholarship' ? t('certificationProgram.detail.hero.badgeScholarship') : t('certificationProgram.detail.hero.badgeRegular')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <ChartArea size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Durasi</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('certificationProgram.detail.hero.durationLabel')}</p>
                                     <p className="text-sm font-semibold">
-                                        {diffDays > 0 ? (diffDays < 7 ? `${diffDays} Hari` : `${totalWeeks} Minggu`) : '-'}
+                                        {diffDays > 0 ? (diffDays < 7 ? t('certificationProgram.detail.hero.daysCount', { count: diffDays }) : t('certificationProgram.detail.hero.weeksCount', { count: totalWeeks })) : '-'}
                                     </p>
                                 </div>
                             </div>
@@ -169,3 +170,4 @@ export default function HeroSection({ program }: { program: CertificationProgram
         </section>
     );
 }
+

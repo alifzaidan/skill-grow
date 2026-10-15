@@ -541,6 +541,7 @@ Route::middleware(['auth', 'verified', 'role:admin|mentor|affiliate|staff'])->pr
         Route::put('installment-terms/{id}', [InstallmentTermController::class, 'update'])->name('admin.installment-terms.update');
         Route::delete('installment-terms/{id}', [InstallmentTermController::class, 'destroy'])->name('admin.installment-terms.destroy');
         Route::post('installments/{id}/send-reminder', [InstallmentController::class, 'sendReminder'])->name('admin.installments.send-reminder');
+        Route::post('installments/{id}/update-due-date', [InstallmentController::class, 'updateDueDate'])->name('admin.installments.update-due-date');
     });
 });
 
@@ -548,6 +549,28 @@ Route::post('/api/discount-codes/validate', [DiscountCodeController::class, 'val
 
 Route::get('/doku/callback', [InvoiceController::class, 'dokuReturn'])->name('doku.callback.web');
 Route::get('/doku/cancel', [InvoiceController::class, 'dokuCancel'])->name('doku.callback.cancel');
+
+Route::post('/locale', function (Request $request) {
+    $validated = $request->validate([
+        'locale' => 'required|string|in:id,en',
+    ]);
+    $locale = $validated['locale'];
+
+    \Illuminate\Support\Facades\App::setLocale($locale);
+    session(['locale' => $locale]);
+
+    if (Auth::check()) {
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'preferred_locale')) {
+                Auth::user()->update(['preferred_locale' => $locale]);
+            }
+        } catch (\Throwable $e) {
+            // Ignore if column doesn't exist yet
+        }
+    }
+
+    return back()->withCookie(cookie('locale', $locale, 60 * 24 * 365, null, null, false, false));
+})->name('locale.switch');
 
 require __DIR__ . '/settings.php';
 require __DIR__ . '/auth.php';

@@ -204,10 +204,13 @@
                 <td class="invoice-info">
                     <div class="invoice-title">INVOICE</div>
                     <div class="invoice-code">#{{ $invoice->invoice_code }}</div>
+                    @php
+                        $paidDate = $invoice->paid_at ?? (in_array($invoice->status, ['paid', 'completed']) ? $invoice->updated_at : null);
+                    @endphp
                     <div style="font-size: 11px; color: #666;">
                         Tanggal: {{ \Carbon\Carbon::parse($invoice->created_at)->format('d M Y') }}<br>
-                        @if ($invoice->paid_at)
-                            Dibayar: {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y') }}
+                        @if ($paidDate)
+                            Dibayar: {{ \Carbon\Carbon::parse($paidDate)->format('d M Y') }}
                         @endif
                     </div>
                 </td>
@@ -408,12 +411,17 @@
     <div class="payment-info">
         <div class="payment-status">PEMBAYARAN BERHASIL</div>
         <div style="margin-top: 10px; font-size: 11px;">
-            <strong>Metode Pembayaran:</strong> {{ $invoice->payment_method ?? 'Tidak diketahui' }}<br>
-            @if ($invoice->payment_channel)
-                <strong>Channel:</strong> {{ $invoice->payment_channel }}<br>
+            <strong>Metode Pembayaran:</strong> {{ $invoice->payment_method ?? ($invoice->parentInvoice->payment_method ?? 'Tidak diketahui') }}<br>
+            @if ($invoice->payment_channel || ($invoice->parentInvoice && $invoice->parentInvoice->payment_channel))
+                <strong>Channel:</strong> {{ $invoice->payment_channel ?? $invoice->parentInvoice->payment_channel }}<br>
             @endif
-            <strong>Tanggal Pembayaran:</strong> {{ \Carbon\Carbon::parse($invoice->paid_at)->format('d M Y H:i') }}
-            WIB<br>
+            <strong>Tanggal Pembayaran:</strong>
+            @if ($paidDate)
+                {{ \Carbon\Carbon::parse($paidDate)->format('d M Y H:i') }} WIB
+            @else
+                -
+            @endif
+            <br>
             <strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">LUNAS</span>
         </div>
     </div>

@@ -1,15 +1,19 @@
+import { useTranslation } from 'react-i18next';
+
 interface Bootcamp {
     tools?: { name: string; description?: string | null; icon: string | null }[];
 }
 
 export default function ToolsSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { t } = useTranslation('user');
+
     if (!bootcamp.tools || bootcamp.tools.length === 0) {
         return null;
     }
 
     return (
         <section className="mx-auto mt-8 w-full max-w-7xl px-4" id="tools">
-            <div className="mb-4 text-lg font-semibold text-black">Alat yang Digunakan</div>
+            <div className="mb-4 text-lg font-semibold text-black dark:text-white">{t('bootcamp.detail.toolsUsed')}</div>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                 {bootcamp.tools.map((tool) => (
                     <div

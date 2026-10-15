@@ -25,8 +25,10 @@ function parseList(items?: string | null): string[] {
 }
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function AboutSection({ course }: { course: Course }) {
+    const { t } = useTranslation('user');
     const keyPoints = parseList(course.key_points);
     const [expanded, setExpanded] = useState<React.Key | null>('0');
     return (
@@ -34,9 +36,9 @@ export default function AboutSection({ course }: { course: Course }) {
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                 {/* Left: Deskripsi & Poin Utama */}
                 <div>
-                    <div className="mb-4 text-lg font-semibold text-black">Tentang Kelas</div>
+                    <div className="mb-4 text-lg font-semibold text-black dark:text-white">{t('course.detail.aboutCourse')}</div>
                     <p className="mb-6 text-justify text-gray-600 dark:text-gray-400">{course.description}</p>
-                    <div className="mb-4 text-lg font-semibold text-black">Poin Utama</div>
+                    <div className="mb-4 text-lg font-semibold text-black dark:text-white">{t('course.detail.keyPoints')}</div>
                     <ul className="grid grid-cols-1 gap-4 md:grid-cols-1">
                         {keyPoints.map((req, idx) => (
                             <li key={idx} className="flex items-center gap-2">
@@ -48,7 +50,7 @@ export default function AboutSection({ course }: { course: Course }) {
                 </div>
                 {/* Right: Modul Scrollable */}
                 <div>
-                    <div className="mb-4 text-lg font-semibold text-black">Daftar Isi</div>
+                    <div className="mb-4 text-lg font-semibold text-black dark:text-white">{t('course.detail.tableOfContents')}</div>
                     <div className="custom-scrollbar max-h-[420px] overflow-y-auto pr-2">
                         <Accordion
                             className="flex w-full flex-col gap-2 divide-y divide-zinc-200 dark:divide-zinc-700"
@@ -82,7 +84,7 @@ export default function AboutSection({ course }: { course: Course }) {
                                                     </li>
                                                 ))
                                             ) : (
-                                                <li className="ms-8 text-zinc-400">Belum ada materi</li>
+                                                <li className="ms-8 text-zinc-400">{t('course.detail.noLessonsYet')}</li>
                                             )}
                                         </ul>
                                     </AccordionContent>

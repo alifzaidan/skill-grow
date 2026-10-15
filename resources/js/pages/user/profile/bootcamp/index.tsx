@@ -7,6 +7,7 @@ import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { Award, Calendar, CheckCircle, Clock } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Bootcamp {
     id: string;
@@ -50,8 +51,10 @@ interface BootcampProps {
 }
 
 export default function MyBootcamps({ myBootcamps }: BootcampProps) {
+    const { t, i18n } = useTranslation();
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
 
     const allItems = myBootcamps.flatMap((invoice) =>
         invoice.bootcamp_items.map((item) => ({
@@ -88,17 +91,22 @@ export default function MyBootcamps({ myBootcamps }: BootcampProps) {
 
     return (
         <UserLayout>
-            <Head title="Bootcamp Saya" />
+            <Head title={t('profile.bootcamps.headTitle')} />
             <ProfileLayout>
-                <Heading title="Bootcamp Saya" description="Perbanyak portofolio Anda dengan bootcamp kami" />
+                <Heading title={t('profile.bootcamps.title')} description={t('profile.bootcamps.description')} />
                 <div className="mb-4 flex justify-between gap-2">
-                    <Input type="search" placeholder="Cari bootcamp saya..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input
+                        type="search"
+                        placeholder={t('profile.bootcamps.searchPlaceholder')}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
                 <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {visibleItems.length === 0 ? (
                         <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                            <img src="/assets/images/not-found.webp" alt="Bootcamp Belum Tersedia" className="w-48" />
-                            <div className="text-center text-gray-500">Belum ada bootcamp yang tersedia saat ini.</div>
+                            <img src="/assets/images/not-found.webp" alt="Not Found" className="w-48" />
+                            <div className="text-center text-gray-500">{t('profile.bootcamps.empty')}</div>
                         </div>
                     ) : (
                         visibleItems.map((item) => (
@@ -112,21 +120,21 @@ export default function MyBootcamps({ myBootcamps }: BootcampProps) {
                                     {isCompleted(item.bootcamp) && (
                                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                                             <Award className="h-3 w-3" />
-                                            Selesai
+                                            {t('profile.bootcamps.badgeFinished')}
                                         </div>
                                     )}
 
                                     {isOngoing(item.bootcamp) && (
                                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                                             <Clock className="h-3 w-3" />
-                                            Berlangsung
+                                            {t('profile.bootcamps.badgeOngoing')}
                                         </div>
                                     )}
 
                                     {isUpcoming(item.bootcamp) && (
                                         <div className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                                             <Calendar className="h-3 w-3" />
-                                            Akan Datang
+                                            {t('profile.bootcamps.badgeUpcoming')}
                                         </div>
                                     )}
 
@@ -142,21 +150,27 @@ export default function MyBootcamps({ myBootcamps }: BootcampProps) {
                                         {isCompleted(item.bootcamp) && (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">Bootcamp telah selesai</span>
+                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                                                    {t('profile.bootcamps.alertFinished')}
+                                                </span>
                                             </div>
                                         )}
 
                                         {isOngoing(item.bootcamp) && (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-blue-50 p-2 dark:bg-blue-900/20">
                                                 <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">Sedang berlangsung</span>
+                                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                                    {t('profile.bootcamps.alertOngoing')}
+                                                </span>
                                             </div>
                                         )}
 
                                         {isUpcoming(item.bootcamp) && (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-orange-50 p-2 dark:bg-orange-900/20">
                                                 <Calendar className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                                                <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Akan dimulai</span>
+                                                <span className="text-xs font-medium text-orange-700 dark:text-orange-300">
+                                                    {t('profile.bootcamps.alertUpcoming')}
+                                                </span>
                                             </div>
                                         )}
 
@@ -164,13 +178,13 @@ export default function MyBootcamps({ myBootcamps }: BootcampProps) {
                                             <div className="flex items-center gap-2">
                                                 <Calendar size="18" />
                                                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                                                    {new Date(item.bootcamp.start_date).toLocaleDateString('id-ID', {
+                                                    {new Date(item.bootcamp.start_date).toLocaleDateString(dateLocale, {
                                                         day: 'numeric',
                                                         month: 'long',
                                                         year: 'numeric',
                                                     })}{' '}
                                                     -{' '}
-                                                    {new Date(item.bootcamp.end_date).toLocaleDateString('id-ID', {
+                                                    {new Date(item.bootcamp.end_date).toLocaleDateString(dateLocale, {
                                                         day: 'numeric',
                                                         month: 'long',
                                                         year: 'numeric',
@@ -187,7 +201,7 @@ export default function MyBootcamps({ myBootcamps }: BootcampProps) {
                 {visibleCount < filteredItems.length && (
                     <div className="mb-8 flex justify-center">
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak
+                            {t('profile.bootcamps.btnLoadMore')}
                         </Button>
                     </div>
                 )}

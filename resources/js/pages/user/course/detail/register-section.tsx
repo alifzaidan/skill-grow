@@ -3,6 +3,7 @@ import { Separator } from '@/components/ui/separator';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { InfinityIcon, Presentation, Smartphone, TvMinimalPlay } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     title: string;
@@ -23,6 +24,7 @@ interface Course {
 }
 
 export default function RegisterSection({ course }: { course: Course }) {
+    const { t } = useTranslation('user');
     const { auth } = usePage<SharedData>().props;
     const totalLessons = course.modules?.reduce((total, module) => total + (module.lessons?.length || 0), 0) || 0;
 
@@ -35,24 +37,24 @@ export default function RegisterSection({ course }: { course: Course }) {
 
     if (!isLoggedIn) {
         registrationUrl = course.registration_url;
-        buttonText = 'Login untuk Mendaftar';
-        warningMessage = 'Anda harus login terlebih dahulu!';
+        buttonText = t('course.detail.loginToRegister');
+        warningMessage = t('course.detail.loginFirstWarning');
     } else if (!isProfileComplete) {
         registrationUrl = route('profile.edit', { redirect: window.location.href });
-        buttonText = 'Lengkapi Profil untuk Mendaftar';
-        warningMessage = 'Profil Anda belum lengkap!';
+        buttonText = t('course.detail.completeProfileToRegister');
+        warningMessage = t('course.detail.incompleteProfileWarning');
     } else {
         registrationUrl = course.registration_url;
-        buttonText = 'Gabung Sekarang';
+        buttonText = t('course.detail.joinNow');
         warningMessage = null;
     }
 
     return (
         <section className="mx-auto mt-8 w-full max-w-7xl px-4" id="register">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Daftar & Mulai Explore Wawasanmu!
+                {t('course.detail.registerHeading')}
             </h2>
-            <p className="text-center text-gray-600 dark:text-gray-400">Jangan sampai kelewatan ya!</p>
+            <p className="text-center text-gray-600 dark:text-gray-400">{t('course.detail.registerSubtitle')}</p>
             <div className="mt-4 flex flex-col items-stretch gap-6 md:flex-row">
                 <div className="flex h-full w-full flex-col items-center gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-md md:flex-row dark:border-zinc-700 dark:bg-zinc-800">
                     <img
@@ -62,8 +64,8 @@ export default function RegisterSection({ course }: { course: Course }) {
                     />
                     <div className="flex flex-1 flex-col justify-between">
                         <div>
-                            <h5 className="mb-4 text-base font-semibold text-black">
-                                Miliki kelas Premium secara permanen dan bangun sebuah projek nyata
+                            <h5 className="mb-4 text-base font-semibold text-black dark:text-white">
+                                {t('course.detail.premiumPitch')}
                             </h5>
                             <div className="mb-2 flex flex-col items-end">
                                 {course.strikethrough_price > 0 && (
@@ -76,26 +78,26 @@ export default function RegisterSection({ course }: { course: Course }) {
                                         Rp {course.price.toLocaleString('id-ID')}
                                     </span>
                                 ) : (
-                                    <span className="text-3xl font-bold text-gray-900 italic dark:text-gray-100">GRATIS</span>
+                                    <span className="text-3xl font-bold text-gray-900 italic dark:text-gray-100">{t('course.detail.freeBadge')}</span>
                                 )}
                             </div>
                             <Separator className="my-4" />
                             <ul className="mb-4 space-y-2">
                                 <li className="flex items-center gap-2 text-sm">
                                     <TvMinimalPlay size="16" className="text-primary dark:text-secondary" />
-                                    <p>{totalLessons} Materi</p>
+                                    <p>{t('course.detail.lessonsCount', { count: totalLessons })}</p>
                                 </li>
                                 <li className="flex items-center gap-2 text-sm">
                                     <Presentation size="16" className="text-primary dark:text-secondary" />
-                                    <p>Free Konsultasi</p>
+                                    <p>{t('course.detail.freeConsultation')}</p>
                                 </li>
                                 <li className="flex items-center gap-2 text-sm">
                                     <InfinityIcon size="16" className="text-primary dark:text-secondary" />
-                                    <p>Akses Selamanya</p>
+                                    <p>{t('course.detail.lifetimeAccess')}</p>
                                 </li>
                                 <li className="flex items-center gap-2 text-sm">
                                     <Smartphone size="16" className="text-primary dark:text-secondary" />
-                                    <p>Materi On Demand</p>
+                                    <p>{t('course.detail.onDemandMaterial')}</p>
                                 </li>
                             </ul>
                         </div>

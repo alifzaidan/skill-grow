@@ -1,4 +1,5 @@
 import { BookOpen, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bootcamp {
     curriculum?: string | null;
@@ -36,6 +37,7 @@ function parseCurriculum(curriculum?: string | null): string[] {
 }
 
 export default function TimelineSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { t, i18n } = useTranslation('user');
     const curriculumList = parseCurriculum(bootcamp.curriculum);
 
     if (curriculumList.length === 0) {
@@ -53,12 +55,12 @@ export default function TimelineSection({ bootcamp }: { bootcamp: Bootcamp }) {
             <div className="relative mx-auto my-8 w-full max-w-7xl px-4">
                 {/* Header */}
                 <div className="mb-12 text-center">
-                    <div className="mb-4 text-lg font-semibold text-white">Manfaat yang Didapatkan</div>
+                    <div className="mb-4 text-lg font-semibold text-white">{t('bootcamp.detail.curriculumBadge')}</div>
                     <h2 className="mb-4 bg-gradient-to-r from-[#fccd22] via-white to-[#200cf5] bg-clip-text text-3xl font-bold text-transparent italic sm:text-4xl">
-                        Materi yang akan kamu pelajari
+                        {t('bootcamp.detail.learningCurriculumTitle')}
                     </h2>
                     <p className="mx-auto max-w-2xl text-gray-300">
-                        Kurikulum terstruktur yang dirancang untuk membawa Anda dari pemula hingga mahir
+                        {t('bootcamp.detail.curriculumSubtitle')}
                     </p>
                 </div>
 
@@ -83,7 +85,9 @@ export default function TimelineSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 <div className="flex-1">
                                     <div className="mb-2 flex items-center gap-2">
                                         <BookOpen size={18} className="text-[#fccd22]" />
-                                        <span className="text-xs font-medium tracking-wide text-[#fccd22] uppercase">Modul {idx + 1}</span>
+                                        <span className="text-xs font-medium tracking-wide text-[#fccd22] uppercase">
+                                            {i18n.language === 'en' ? `Module ${idx + 1}` : `Modul ${idx + 1}`}
+                                        </span>
                                     </div>
                                     <h3 className="text-lg font-semibold text-white">{curriculum}</h3>
                                 </div>
@@ -100,7 +104,7 @@ export default function TimelineSection({ bootcamp }: { bootcamp: Bootcamp }) {
                     <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 backdrop-blur-sm">
                         <BookOpen size={20} className="text-[#fccd22]" />
                         <span className="text-white">
-                            <span className="font-semibold">{curriculumList.length} Modul</span> pembelajaran terstruktur
+                            {t('bootcamp.detail.modulesStructured', { count: curriculumList.length })}
                         </span>
                     </div>
                 </div>

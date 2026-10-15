@@ -5,6 +5,7 @@ import ProfileLayout from '@/layouts/profile/layout';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     id: string;
@@ -124,6 +125,7 @@ interface Props {
 }
 
 export default function Transactions({ myTransactions }: Props) {
+    const { t, i18n } = useTranslation();
     const [search, setSearch] = useState('');
 
     const getCertificationProgram = (item: EnrollmentCertificationProgram) => {
@@ -143,7 +145,6 @@ export default function Transactions({ myTransactions }: Props) {
             (item.is_installment && (item.paid_terms ?? 0) > 0);
 
         if (!hasAccess) {
-            // Jika belum berstatus paid/aktif, arahkan ke halaman publik produk agar tidak 404
             switch (type) {
                 case 'Course':
                     return route('course.detail', { course: slug });
@@ -160,7 +161,6 @@ export default function Transactions({ myTransactions }: Props) {
             }
         }
 
-        // Paid / Completed / Active installment -> Route ke user LMS / Profile area
         switch (type) {
             case 'Certification Program':
                 return route('profile.certification-program.detail', { program: slug });
@@ -177,7 +177,6 @@ export default function Transactions({ myTransactions }: Props) {
         }
     };
 
-    // Gabungkan semua items dari semua invoice menjadi satu array bertipe TransactionItem
     const allItems: TransactionItem[] = myTransactions.flatMap((invoice) => {
         const terms = invoice.installment_terms || invoice.installmentTerms || [];
         const paidTerms = [...terms]
@@ -265,71 +264,76 @@ export default function Transactions({ myTransactions }: Props) {
     const getStatusComponent = (item: TransactionItem) => {
         if (item.is_installment) {
             if (item.is_fully_paid || item.invoice_status === 'paid' || item.invoice_status === 'completed') {
-                return <span className="font-medium text-green-600 dark:text-green-400">Cicilan Lunas</span>;
+                return <span className="font-medium text-green-600 dark:text-green-400">{t('profile.transactions.statusInstallmentPaid')}</span>;
             }
             if (item.is_suspended) {
-                return <span className="font-medium text-red-600 dark:text-red-400">Akses Dibekukan (Jatuh Tempo)</span>;
+                return <span className="font-medium text-red-600 dark:text-red-400">{t('profile.transactions.statusSuspended')}</span>;
             }
             if ((item.paid_terms ?? 0) > 0) {
                 return (
                     <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                        Cicilan Aktif ({item.paid_terms}/{item.total_terms} Termin)
+                        {t('profile.transactions.statusActiveInstallment', { paid: item.paid_terms, total: item.total_terms })}
                     </span>
                 );
             }
-            return <span className="font-medium text-yellow-600 dark:text-yellow-400">Menunggu DP (Termin 1)</span>;
+            return <span className="font-medium text-yellow-600 dark:text-yellow-400">{t('profile.transactions.statusWaitingDp')}</span>;
         }
 
         if (item.invoice_status === 'paid' || item.invoice_status === 'completed') {
-            return <span className="font-medium text-green-600 dark:text-green-400">Sudah Dibayar</span>;
+            return <span className="font-medium text-green-600 dark:text-green-400">{t('profile.transactions.statusPaid')}</span>;
         }
         if (item.invoice_status === 'pending') {
-            return <span className="font-medium text-yellow-600 dark:text-yellow-400">Menunggu Pembayaran</span>;
+            return <span className="font-medium text-yellow-600 dark:text-yellow-400">{t('profile.transactions.statusPending')}</span>;
         }
-        return <span className="font-medium text-red-600 dark:text-red-400">Gagal/Kedaluwarsa</span>;
+        return <span className="font-medium text-red-600 dark:text-red-400">{t('profile.transactions.statusFailed')}</span>;
     };
 
     return (
         <UserLayout>
-            <Head title="Transaksi Saya" />
+            <Head title={t('profile.transactions.headTitle')} />
             <ProfileLayout>
-                <Heading title="Transaksi Saya" description="Lihat riwayat transaksi Anda di sini" />
+                <Heading title={t('profile.transactions.title')} description={t('profile.transactions.description')} />
                 <div className="mb-4 flex justify-between gap-2">
-                    <Input type="search" placeholder="Cari judul transaksi..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input
+                        type="search"
+                        placeholder={t('profile.transactions.searchPlaceholder')}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
                 <div className="overflow-x-auto rounded-lg border">
                     <table className="min-w-full text-sm">
                         <thead className="bg-gray-100 dark:bg-zinc-800">
                             <tr className="text-left">
-                                <th className="p-2 font-medium">Judul</th>
-                                <th className="p-2 font-medium">Tipe</th>
-                                <th className="p-2 font-medium">Status</th>
-                                <th className="p-2 font-medium">Metode Pembayaran</th>
-                                <th className="p-2 font-medium">Kode Invoice</th>
-                                <th className="p-2 font-medium">Dibayar Pada</th>
-                                <th className="p-2 font-medium">Aksi</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thTitle')}</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thType')}</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thStatus')}</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thMethod')}</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thInvoiceCode')}</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thPaidAt')}</th>
+                                <th className="p-2 font-medium">{t('profile.transactions.thAction')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredItems.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="py-8 text-center text-gray-500">
-                                        Belum ada transaksi.
+                                        {t('profile.transactions.empty')}
                                     </td>
                                 </tr>
                             ) : (
                                 filteredItems.map((item, idx) => (
                                     <tr key={idx} className="border-t dark:border-zinc-800">
                                         <td className="p-2">
-                                            <Link href={getItemHref(item.type, item.slug, item)} className="text-primary hover:underline font-medium">
+                                            <Link href={getItemHref(item.type, item.slug, item)} className="font-medium text-primary hover:underline">
                                                 {item.title}
                                             </Link>
                                         </td>
                                         <td className="p-2">
                                             {item.type === 'Course'
-                                                ? 'Kelas Online'
+                                                ? t('profile.dashboard.typeCourse')
                                                 : item.type === 'Certification Program'
-                                                  ? 'Sertifikasi Program'
+                                                  ? t('profile.dashboard.typeCertification')
                                                   : item.type === 'Bundle'
                                                     ? 'Paket Bundling'
                                                     : item.type}
@@ -337,7 +341,7 @@ export default function Transactions({ myTransactions }: Props) {
                                         <td className="p-2">{getStatusComponent(item)}</td>
                                         <td className="p-2">
                                             {item.price === 0 ? (
-                                                <span className="font-semibold text-green-600">GRATIS</span>
+                                                <span className="font-semibold text-green-600">{t('profile.transactions.free')}</span>
                                             ) : (
                                                 item.payment_channel || item.payment_method || '-'
                                             )}
@@ -347,22 +351,22 @@ export default function Transactions({ myTransactions }: Props) {
                                             {item.is_installment ? (
                                                 item.latest_paid_at ? (
                                                     <div>
-                                                        <div>{new Date(item.latest_paid_at).toLocaleString('id-ID')}</div>
-                                                        <div className="text-xs text-muted-foreground">Termin {item.paid_terms} terbayar</div>
+                                                        <div>{new Date(item.latest_paid_at).toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}</div>
+                                                        <div className="text-xs text-muted-foreground">{t('profile.transactions.termPaidSummary', { paid: item.paid_terms })}</div>
                                                     </div>
                                                 ) : (
-                                                    <Button asChild size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50 font-medium">
-                                                        <Link href={route('profile.installments')}>Bayar DP</Link>
+                                                    <Button asChild size="sm" variant="outline" className="border-orange-200 font-medium text-orange-600 hover:bg-orange-50">
+                                                        <Link href={route('profile.installments')}>{t('profile.transactions.btnPayDp')}</Link>
                                                     </Button>
                                                 )
                                             ) : item.invoice_status === 'pending' && item.invoice_url ? (
-                                                <Button asChild size="sm" variant="outline" className="text-orange-600 border-orange-200 hover:bg-orange-50 font-medium">
+                                                <Button asChild size="sm" variant="outline" className="border-orange-200 font-medium text-orange-600 hover:bg-orange-50">
                                                     <a href={item.invoice_url} target="_blank" rel="noopener noreferrer">
-                                                        Lanjutkan Bayar
+                                                        {t('profile.transactions.btnContinuePayment')}
                                                     </a>
                                                 </Button>
                                             ) : item.paid_at ? (
-                                                new Date(item.paid_at).toLocaleString('id-ID')
+                                                new Date(item.paid_at).toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')
                                             ) : (
                                                 '-'
                                             )}
@@ -370,11 +374,11 @@ export default function Transactions({ myTransactions }: Props) {
                                         <td className="p-2">
                                             <div className="flex items-center gap-1.5">
                                                 <Button asChild size="sm" variant="outline">
-                                                    <Link href={route('profile.transaction.detail', { invoice: item.invoice_id })}>Detail</Link>
+                                                    <Link href={route('profile.transaction.detail', { invoice: item.invoice_id })}>{t('profile.transactions.btnDetail')}</Link>
                                                 </Button>
                                                 {item.is_installment && !item.is_fully_paid && (
                                                     <Button asChild size="sm" variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/30">
-                                                        <Link href={route('profile.installments')}>Cicilan</Link>
+                                                        <Link href={route('profile.installments')}>{t('profile.transactions.btnInstallment')}</Link>
                                                     </Button>
                                                 )}
                                             </div>

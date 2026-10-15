@@ -10,6 +10,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import ProfileInstallmentAction from '@/components/profile-installment-action';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
     id: string;
@@ -148,6 +149,7 @@ const StarRating = ({
 };
 
 export default function DetailMyWebinar({ webinar, certificate, certificateParticipant, active_installment }: DetailWebinarProps) {
+    const { t, i18n } = useTranslation();
     const webinarItem = webinar.webinar_items?.[0];
     const webinarData = webinarItem?.webinar;
     const webinarInvoiceStatus = webinar.status;
@@ -187,14 +189,14 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
         try {
             const res = await axios.post(`/installment/${webinar.id}/pay`);
             if (res.data?.success && res.data?.payment_url) {
-                toast.success('Mengarahkan ke pembayaran...');
+                toast.success(t('profile.webinarDetail.toastRedirecting'));
                 window.location.href = res.data.payment_url;
             } else {
-                toast.error(res.data?.message || 'Gagal memproses pembayaran cicilan');
+                toast.error(res.data?.message || t('profile.webinarDetail.toastFailInstallment'));
                 setIsPayingCert(false);
             }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Terjadi kesalahan saat memproses pembayaran');
+            toast.error(err.response?.data?.message || t('profile.webinarDetail.toastErrorGeneral'));
             setIsPayingCert(false);
         }
     };
@@ -208,12 +210,12 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
         if (file) {
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
             if (!validTypes.includes(file.type)) {
-                alert('Format file harus berupa gambar (JPG, PNG, WEBP)');
+                alert(t('profile.webinarDetail.alertFileType'));
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                alert('Ukuran file maksimal 5MB');
+                alert(t('profile.webinarDetail.alertFileSize'));
                 return;
             }
 
@@ -223,7 +225,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
 
     const handleSubmitForm = async () => {
         if (!selectedFile || !reviewText.trim() || rating === 0 || !webinarItem) {
-            alert('Mohon lengkapi semua field: upload bukti kehadiran, review, dan rating');
+            alert(t('profile.webinarDetail.alertIncomplete'));
             return;
         }
 
@@ -244,7 +246,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
             },
             onError: (errors) => {
                 console.error('Submit errors:', errors);
-                alert('Gagal mengirim data');
+                alert(t('profile.webinarDetail.alertSubmitFailed'));
             },
             onFinish: () => {
                 setSubmittingForm(false);
@@ -261,9 +263,9 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     if (!webinarData || !webinarItem) {
         return (
             <UserLayout>
-                <Head title="Webinar Tidak Ditemukan" />
+                <Head title={t('profile.webinarDetail.headTitleNotFound')} />
                 <div className="flex h-screen items-center justify-center">
-                    <p>Detail webinar tidak dapat ditemukan.</p>
+                    <p>{t('profile.webinarDetail.notFoundDesc')}</p>
                 </div>
             </UserLayout>
         );
@@ -276,7 +278,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
     const isAttendanceVerified = webinarItem.attendance_verified;
     const hasReview = webinarItem.review && webinarItem.rating;
 
-        const offersCertificate = webinarData.has_certificate ?? true;
+    const offersCertificate = webinarData.has_certificate ?? true;
     const requiresReview = webinarData.requires_review ?? true;
 
     const hasCertificate =
@@ -297,28 +299,29 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                 <div className="relative mx-auto max-w-7xl px-4 text-center">
                     <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
                         <Link href="/profile/my-webinars">
-                            <ArrowLeft /> Kembali Ke Webinar Saya
+                            <ArrowLeft /> {t('profile.webinarDetail.btnBackToWebinars')}
                         </Link>
                     </Button>
                     <div className="col-span-2">
                         <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                                📌 Enrolled in{' '}
-                                {new Date(webinarItem.created_at).toLocaleDateString('id-ID', {
-                                    month: 'long',
-                                    year: 'numeric',
+                                {t('profile.webinarDetail.enrolledIn', {
+                                    date: new Date(webinarItem.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
+                                        month: 'long',
+                                        year: 'numeric',
+                                    }),
                                 })}
                             </span>
                             {hasCertificate ? (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
-                                    Sertifikat Tersedia
+                                    {t('profile.webinarDetail.certBadgeAvailable')}
                                 </span>
                             ) : null}
                             {hasRecording ? (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-red-800 bg-red-100 px-4 py-1 text-sm font-medium text-red-800 shadow-xs">
                                     <Youtube size={16} />
-                                    Recording Tersedia
+                                    {t('profile.webinarDetail.recordingBadgeAvailable')}
                                 </span>
                             ) : null}
                         </div>
@@ -331,21 +334,21 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                             {isSuspended ? (
                                 <div className="text-center">
                                     <span className="block font-semibold text-red-600">
-                                        ⚠️ Akses webinar dibekukan karena ada tagihan cicilan yang melewati jatuh tempo.
+                                        {t('profile.webinarDetail.accessSuspendedAlert')}
                                     </span>
                                     <span className="block text-sm text-red-600/90">
-                                        Silakan lakukan pelunasan di menu Transaksi.
+                                        {t('profile.webinarDetail.accessSuspendedDesc')}
                                     </span>
                                 </div>
                             ) : !hasActiveAccess ? (
                                 <div className="text-center">
                                     <span className="block font-semibold text-red-600">
-                                        ⚠️ Status Pembayaran: {webinarInvoiceStatus.toUpperCase()}
+                                        {t('profile.webinarDetail.paymentStatusAlert', { status: webinarInvoiceStatus.toUpperCase() })}
                                     </span>
                                     <span className="block text-sm text-gray-600 dark:text-gray-400">
                                         {webinarInvoiceStatus === 'failed'
-                                            ? 'Pembayaran gagal atau dibatalkan. Silakan lakukan pembelian ulang.'
-                                            : 'Selesaikan pembayaran untuk mengakses webinar.'}
+                                            ? t('profile.webinarDetail.paymentFailedDesc')
+                                            : t('profile.webinarDetail.paymentPendingDesc')}
                                     </span>
                                 </div>
                             ) : isInstallment && !isFullyPaid ? (
@@ -375,21 +378,21 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                 <div className="rounded-xl border border-green-200 bg-gradient-to-r from-green-50 to-blue-50 p-6 dark:border-green-800 dark:from-green-900/20 dark:to-blue-900/20">
                                     <div className="mb-4 flex items-center gap-3">
                                         <Award className="text-green-600" size={24} />
-                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">Terima Kasih Telah Berpartisipasi!</h2>
+                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">{t('profile.webinarDetail.thanksParticipatingTitle')}</h2>
                                     </div>
                                     <p className="mb-4 text-green-700 dark:text-green-300">
-                                        Semoga ilmu yang didapat bermanfaat untuk pengembangan karir dan skill Anda. Jangan lupa terapkan ilmu yang
-                                        telah dipelajari!
+                                        {t('profile.webinarDetail.thanksParticipatingDesc')}
                                     </p>
                                     {isCompleted && (
                                         <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
                                             <CheckCircle size={16} />
                                             <span>
-                                                Selesai pada:{' '}
-                                                {new Date(webinarData.end_time!).toLocaleDateString('id-ID', {
-                                                    day: 'numeric',
-                                                    month: 'long',
-                                                    year: 'numeric',
+                                                {t('profile.webinarDetail.completedOn', {
+                                                    date: new Date(webinarData.end_time!).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
+                                                        day: 'numeric',
+                                                        month: 'long',
+                                                        year: 'numeric',
+                                                    }),
                                                 })}
                                             </span>
                                         </div>
@@ -403,8 +406,8 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <Youtube className="text-red-600 dark:text-red-400" size={20} />
                                             </div>
                                             <div>
-                                                <h2 className="text-xl font-bold text-red-800 dark:text-red-200">🎥 Recording Webinar Tersedia</h2>
-                                                <p className="text-sm text-red-600 dark:text-red-400">Tonton kembali materi webinar kapan saja</p>
+                                                <h2 className="text-xl font-bold text-red-800 dark:text-red-200">{t('profile.webinarDetail.recordingAvailableTitle')}</h2>
+                                                <p className="text-sm text-red-600 dark:text-red-400">{t('profile.webinarDetail.recordingAvailableSubtitle')}</p>
                                             </div>
                                         </div>
 
@@ -413,14 +416,14 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <iframe
                                                     className="h-full w-full"
                                                     src={getYoutubeEmbedUrl(webinarData.recording_url!)!}
-                                                    title="Rekaman Webinar"
+                                                    title={t('profile.webinarDetail.recordingIframeTitle')}
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                     allowFullScreen
                                                 />
                                             </div>
                                         </div>
 
-                                        <p className="mt-4 text-sm text-red-700 dark:text-red-300">✨ Akses selamanya untuk materi webinar ini</p>
+                                        <p className="mt-4 text-sm text-red-700 dark:text-red-300">{t('profile.webinarDetail.lifetimeAccess')}</p>
                                     </div>
                                 ) : (
                                     <div className="rounded-xl border border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50 p-6 dark:border-yellow-800 dark:from-yellow-900/20 dark:to-orange-900/20">
@@ -430,17 +433,16 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             </div>
                                             <div>
                                                 <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-200">
-                                                    ⏳ Recording Sedang Diproses
+                                                    {t('profile.webinarDetail.recordingProcessingTitle')}
                                                 </h2>
                                                 <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                                                    Mohon tunggu, recording akan tersedia dalam 1-2 hari
+                                                    {t('profile.webinarDetail.recordingProcessingSubtitle')}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="rounded-lg bg-yellow-100 p-4 dark:bg-yellow-800/50">
                                             <p className="text-center text-yellow-800 dark:text-yellow-200">
-                                                📹 Tim kami sedang memproses recording webinar. Anda akan mendapat notifikasi ketika sudah siap
-                                                ditonton.
+                                                {t('profile.webinarDetail.recordingProcessingDesc')}
                                             </p>
                                         </div>
                                     </div>
@@ -449,14 +451,14 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-3">
                                         <Calendar className="text-blue-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Detail Webinar</h3>
+                                        <h3 className="text-lg font-semibold">{t('profile.webinarDetail.webinarDetailTitle')}</h3>
                                     </div>
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                                             <Calendar size={16} className="text-blue-600" />
                                             <div>
                                                 <p className="font-medium text-blue-900 dark:text-blue-100">
-                                                    {new Date(webinarData.start_time).toLocaleDateString('id-ID', {
+                                                    {new Date(webinarData.start_time).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         weekday: 'long',
                                                         day: 'numeric',
                                                         month: 'long',
@@ -464,12 +466,12 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     })}
                                                 </p>
                                                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                                                    {new Date(webinarData.start_time).toLocaleTimeString('id-ID', {
+                                                    {new Date(webinarData.start_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}{' '}
                                                     -{' '}
-                                                    {new Date(webinarData.end_time).toLocaleTimeString('id-ID', {
+                                                    {new Date(webinarData.end_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         hour: '2-digit',
                                                         minute: '2-digit',
                                                     })}{' '}
@@ -486,14 +488,14 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-700">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles className="h-5 w-5 text-amber-500" />
-                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Langkah Pelatihan Selanjutnya</h3>
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('profile.webinarDetail.nextStepTitle')}</h3>
                                             </div>
                                             <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
                                                 {webinarData.next_step_product.type_label}
                                             </span>
                                         </div>
                                         <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                                            Tingkatkan skill Anda ke level berikutnya dengan program lanjutan yang kami rekomendasikan
+                                            {t('profile.webinarDetail.nextStepSubtitle')}
                                         </p>
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div className="flex flex-1 items-start gap-4">
@@ -514,16 +516,16 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     </h4>
                                                     <div className="flex items-baseline gap-2">
                                                         {webinarData.next_step_product.price === 0 ? (
-                                                            <span className="text-base font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                            <span className="text-base font-bold text-green-600 dark:text-green-400">{t('profile.webinarDetail.free')}</span>
                                                         ) : (
                                                             <>
                                                                 <span className="text-base font-bold text-gray-900 dark:text-white">
-                                                                    Rp {webinarData.next_step_product.price.toLocaleString('id-ID')}
+                                                                    Rp {webinarData.next_step_product.price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                                 </span>
                                                                 {webinarData.next_step_product.strikethrough_price != null &&
                                                                 webinarData.next_step_product.strikethrough_price > webinarData.next_step_product.price ? (
                                                                     <span className="text-xs text-gray-400 line-through">
-                                                                        Rp {webinarData.next_step_product.strikethrough_price.toLocaleString('id-ID')}
+                                                                        Rp {webinarData.next_step_product.strikethrough_price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                                     </span>
                                                                 ) : null}
                                                             </>
@@ -534,7 +536,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             <div className="sm:shrink-0">
                                                 <Button asChild className="w-full sm:w-auto">
                                                     <a href={webinarData.next_step_product.url} target="_blank" rel="noopener noreferrer">
-                                                        Daftar Sekarang
+                                                        {t('profile.webinarDetail.btnRegisterNow')}
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </a>
                                                 </Button>
@@ -551,7 +553,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-3">
                                         <Calendar className="text-blue-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Jadwal Webinar</h3>
+                                        <h3 className="text-lg font-semibold">{t('profile.webinarDetail.webinarScheduleTitle')}</h3>
                                     </div>
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
@@ -560,7 +562,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             </div>
                                             <div>
                                                 <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                                                    {new Date(webinarData.start_time).toLocaleDateString('id-ID', {
+                                                    {new Date(webinarData.start_time).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                         weekday: 'long',
                                                         day: 'numeric',
                                                         month: 'long',
@@ -570,12 +572,12 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <div className="mt-1 flex items-center gap-2">
                                                     <Clock size={14} className="text-blue-600" />
                                                     <p className="font-medium text-blue-700 dark:text-blue-300">
-                                                        {new Date(webinarData.start_time).toLocaleTimeString('id-ID', {
+                                                        {new Date(webinarData.start_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
                                                         })}{' '}
                                                         -{' '}
-                                                        {new Date(webinarData.end_time).toLocaleTimeString('id-ID', {
+                                                        {new Date(webinarData.end_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
                                                         })}{' '}
@@ -591,7 +593,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-3">
                                         <BadgeCheck className="text-green-600" size={20} />
-                                        <h3 className="text-lg font-semibold">Fasilitas yang Tersedia</h3>
+                                        <h3 className="text-lg font-semibold">{t('profile.webinarDetail.facilitiesTitle')}</h3>
                                     </div>
                                     <div className="space-y-3">
                                         {benefitList.map((benefit, idx) => (
@@ -609,14 +611,14 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-700">
                                             <div className="flex items-center gap-2">
                                                 <Sparkles className="h-5 w-5 text-amber-500" />
-                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Langkah Pelatihan Selanjutnya</h3>
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{t('profile.webinarDetail.nextStepTitle')}</h3>
                                             </div>
                                             <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
                                                 {webinarData.next_step_product.type_label}
                                             </span>
                                         </div>
                                         <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                                            Tingkatkan skill Anda ke level berikutnya dengan program lanjutan yang kami rekomendasikan
+                                            {t('profile.webinarDetail.nextStepSubtitle')}
                                         </p>
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                             <div className="flex flex-1 items-start gap-4">
@@ -637,16 +639,16 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     </h4>
                                                     <div className="flex items-baseline gap-2">
                                                         {webinarData.next_step_product.price === 0 ? (
-                                                            <span className="text-base font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                            <span className="text-base font-bold text-green-600 dark:text-green-400">{t('profile.webinarDetail.free')}</span>
                                                         ) : (
                                                             <>
                                                                 <span className="text-base font-bold text-gray-900 dark:text-white">
-                                                                    Rp {webinarData.next_step_product.price.toLocaleString('id-ID')}
+                                                                    Rp {webinarData.next_step_product.price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                                 </span>
                                                                 {webinarData.next_step_product.strikethrough_price != null &&
                                                                 webinarData.next_step_product.strikethrough_price > webinarData.next_step_product.price ? (
                                                                     <span className="text-xs text-gray-400 line-through">
-                                                                        Rp {webinarData.next_step_product.strikethrough_price.toLocaleString('id-ID')}
+                                                                        Rp {webinarData.next_step_product.strikethrough_price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                                     </span>
                                                                 ) : null}
                                                             </>
@@ -657,7 +659,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             <div className="sm:shrink-0">
                                                 <Button asChild className="w-full sm:w-auto">
                                                     <a href={webinarData.next_step_product.url} target="_blank" rel="noopener noreferrer">
-                                                        Daftar Sekarang
+                                                        {t('profile.webinarDetail.btnRegisterNow')}
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </a>
                                                 </Button>
@@ -678,27 +680,27 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         <MessageSquare className="text-purple-600 dark:text-purple-400" size={20} />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-purple-800 dark:text-purple-200">Lengkapi Data untuk Sertifikat</h2>
-                                        <p className="text-sm text-purple-600 dark:text-purple-400">Upload bukti kehadiran dan berikan review</p>
+                                        <h2 className="text-xl font-bold text-purple-800 dark:text-purple-200">{t('profile.webinarDetail.completeDataCertTitle')}</h2>
+                                        <p className="text-sm text-purple-600 dark:text-purple-400">{t('profile.webinarDetail.completeDataCertSubtitle')}</p>
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div className="rounded-lg bg-purple-100 p-4 dark:bg-purple-800/50">
                                         <p className="text-center text-purple-800 dark:text-purple-200">
-                                            🎯 Untuk mendapatkan sertifikat, silakan upload bukti kehadiran dan berikan review untuk webinar ini.
+                                            {t('profile.webinarDetail.completeDataCertNotice')}
                                         </p>
                                     </div>
 
                                     {!showCombinedForm ? (
                                         <Button onClick={() => setShowCombinedForm(true)} className="w-full bg-purple-600 hover:bg-purple-700">
                                             <Upload size={16} className="mr-2" />
-                                            Lengkapi Data Sertifikat
+                                            {t('profile.webinarDetail.btnCompleteDataCert')}
                                         </Button>
                                     ) : (
                                         <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="font-medium">Formulir Sertifikat</h4>
+                                                <h4 className="font-medium">{t('profile.webinarDetail.formCertTitle')}</h4>
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -714,7 +716,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             {/* File Upload */}
                                             <div className="space-y-2">
                                                 <Label htmlFor="attendance_proof">
-                                                    Screenshot Kehadiran <span className="text-red-500">*</span>
+                                                    {t('profile.webinarDetail.labelAttendanceProof')} <span className="text-red-500">*</span>
                                                 </Label>
                                                 <Input
                                                     id="attendance_proof"
@@ -723,7 +725,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     onChange={handleFileSelect}
                                                     className="file:mr-4 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-sm file:text-gray-700 hover:file:bg-gray-200"
                                                 />
-                                                <p className="text-xs text-gray-500">Format: JPG, PNG, WEBP. Maksimal 5MB.</p>
+                                                <p className="text-xs text-gray-500">{t('profile.webinarDetail.formatProofHint')}</p>
                                             </div>
 
                                             {selectedFile && (
@@ -740,27 +742,27 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                             {/* Rating */}
                                             <div className="space-y-2">
                                                 <Label>
-                                                    Rating <span className="text-red-500">*</span>
+                                                    {t('profile.webinarDetail.labelRating')} <span className="text-red-500">*</span>
                                                 </Label>
                                                 <StarRating rating={rating} onRatingChange={setRating} />
-                                                <p className="text-xs text-gray-500">Berikan rating 1-5 bintang untuk webinar ini</p>
+                                                <p className="text-xs text-gray-500">{t('profile.webinarDetail.ratingHint')}</p>
                                             </div>
 
                                             {/* Review */}
                                             <div className="space-y-2">
                                                 <Label htmlFor="review">
-                                                    Review <span className="text-red-500">*</span>
+                                                    {t('profile.webinarDetail.labelReview')} <span className="text-red-500">*</span>
                                                 </Label>
                                                 <textarea
                                                     id="review"
                                                     value={reviewText}
                                                     onChange={(e) => setReviewText(e.target.value)}
-                                                    placeholder="Bagikan pengalaman Anda mengikuti webinar ini..."
+                                                    placeholder={t('profile.webinarDetail.reviewPlaceholder')}
                                                     className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                     rows={4}
                                                     maxLength={500}
                                                 />
-                                                <p className="text-xs text-gray-500">Maksimal 500 karakter ({reviewText.length}/500)</p>
+                                                <p className="text-xs text-gray-500">{t('profile.webinarDetail.charLimit', { count: reviewText.length })}</p>
                                             </div>
 
                                             <div className="flex gap-2">
@@ -772,14 +774,14 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     }}
                                                     className="flex-1"
                                                 >
-                                                    Batal
+                                                    {t('profile.webinarDetail.btnCancel')}
                                                 </Button>
                                                 <Button
                                                     onClick={handleSubmitForm}
                                                     disabled={!selectedFile || !reviewText.trim() || rating === 0 || submittingForm}
                                                     className="flex-1 bg-purple-600 hover:bg-purple-700"
                                                 >
-                                                    {submittingForm ? 'Mengirim...' : 'Kirim Data'}
+                                                    {submittingForm ? t('profile.webinarDetail.btnSubmitting') : t('profile.webinarDetail.btnSubmitData')}
                                                 </Button>
                                             </div>
                                         </div>
@@ -795,8 +797,8 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         <CheckCircle className="text-green-600 dark:text-green-400" size={20} />
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">✅ Data Telah Lengkap</h2>
-                                        <p className="text-sm text-green-600 dark:text-green-400">Terima kasih atas review Anda!</p>
+                                        <h2 className="text-xl font-bold text-green-800 dark:text-green-200">{t('profile.webinarDetail.dataCompleteTitle')}</h2>
+                                        <p className="text-sm text-green-600 dark:text-green-400">{t('profile.webinarDetail.dataCompleteSubtitle')}</p>
                                     </div>
                                 </div>
 
@@ -826,7 +828,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-2">
                                         <Award className="text-yellow-500" size={20} />
-                                        <h3 className="font-semibold">Sertifikat Partisipasi</h3>
+                                        <h3 className="font-semibold">{t('profile.webinarDetail.certParticipationTitle')}</h3>
                                     </div>
 
                                     {isLoading && hasCertificate ? (
@@ -849,9 +851,9 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <Award className="h-7 w-7 text-gray-400" />
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 dark:text-white">Tanpa Sertifikat</h4>
+                                                <h4 className="font-semibold text-gray-900 dark:text-white">{t('profile.webinarDetail.noCertTitle')}</h4>
                                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                                    Webinar ini tidak menyediakan sertifikat kelulusan. Anda dapat langsung menikmati seluruh materi dan rekaman yang tersedia.
+                                                    {t('profile.webinarDetail.noCertDesc')}
                                                 </p>
                                             </div>
                                         </div>
@@ -863,7 +865,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <iframe
                                                     src={`${route('profile.webinar.certificate.preview', { webinar: webinarData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                                                     className="h-[238px] w-full rounded-lg border shadow-lg dark:border-zinc-700"
-                                                    title="Preview Sertifikat"
+                                                    title={t('profile.webinarDetail.btnPreviewCert')}
                                                     onLoad={handleIframeLoad}
                                                 />
                                                 <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -883,13 +885,15 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                     {hasCertificate ? (
                                         <div className={`${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                                             <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                                                Unduh sertifikat sebagai bukti keikutsertaan dalam webinar ini.
+                                                {t('profile.webinarDetail.downloadCertDesc')}
                                             </p>
                                             {certificateParticipant && (
                                                 <div className="mt-2 text-center">
                                                     <p className="text-xs text-blue-600 dark:text-blue-400">
-                                                        No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                                        {certificate?.certificate_number}
+                                                        {t('profile.webinarDetail.certNumber', {
+                                                            number: String(certificateParticipant.certificate_number).padStart(4, '0'),
+                                                            certNumber: certificate?.certificate_number,
+                                                        })}
                                                     </p>
                                                     <Link
                                                         href={route('certificate.participant.detail', {
@@ -897,7 +901,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                         })}
                                                         className="text-xs text-green-600 underline hover:text-green-800"
                                                     >
-                                                        Lihat Detail Sertifikat
+                                                        {t('profile.webinarDetail.viewCertDetail')}
                                                     </Link>
                                                 </div>
                                             )}
@@ -905,7 +909,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                 <Button className="w-full" asChild>
                                                     <a href={route('profile.webinar.certificate', { webinar: webinarData.slug })} target="_blank">
                                                         <Download size={16} className="mr-2" />
-                                                        Unduh Sertifikat
+                                                        {t('profile.webinarDetail.btnDownloadCert')}
                                                     </a>
                                                 </Button>
 
@@ -915,7 +919,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                         target="_blank"
                                                     >
                                                         <Eye size={16} className="mr-2" />
-                                                        Lihat Preview
+                                                        {t('profile.webinarDetail.btnPreviewCert')}
                                                     </a>
                                                 </Button>
                                             </div>
@@ -924,12 +928,12 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         <>
                                             <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                                                 {!certificate
-                                                    ? 'Sertifikat belum dibuat untuk webinar ini.'
+                                                    ? t('profile.webinarDetail.certNotCreated')
                                                     : !isFullyPaid
-                                                      ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk mendapatkan sertifikat.')
+                                                      ? (isInstallment ? t('profile.webinarDetail.certPayInstallmentPrompt') : t('profile.webinarDetail.certPayFullPrompt'))
                                                       : requiresReview && !hasReview
-                                                        ? 'Lengkapi bukti kehadiran dan review untuk mendapatkan sertifikat.'
-                                                        : 'Sertifikat akan tersedia setelah webinar selesai.'}
+                                                        ? t('profile.webinarDetail.certReviewPrompt')
+                                                        : t('profile.webinarDetail.certAvailableAfterWebinar')}
                                             </p>
                                             {isInstallment && !isFullyPaid ? (
                                                 <Button
@@ -939,18 +943,18 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                                     id="btn-lunasi-sertifikat-webinar"
                                                 >
                                                     <CreditCard size={16} />
-                                                    {isPayingCert ? 'Mengarahkan...' : 'Lunasi Cicilan Sekarang'}
+                                                    {isPayingCert ? t('profile.webinarDetail.btnRedirecting') : t('profile.webinarDetail.btnPayCertInstallment')}
                                                 </Button>
                                             ) : (
                                                 <Button variant="outline" className="mt-3 w-full" disabled>
                                                     <Download size={16} className="mr-2" />
                                                     {!certificate
-                                                        ? 'Sertifikat Belum Tersedia'
+                                                        ? t('profile.webinarDetail.btnCertNotAvailable')
                                                         : !isFullyPaid
-                                                          ? 'Selesaikan Pembayaran'
+                                                          ? t('profile.webinarDetail.btnSettlePayment')
                                                           : requiresReview && !hasReview
-                                                            ? 'Lengkapi Data Diperlukan'
-                                                            : 'Menunggu Webinar Selesai'}
+                                                            ? t('profile.webinarDetail.btnCompleteRequiredData')
+                                                            : t('profile.webinarDetail.btnWaitingWebinarEnd')}
                                                 </Button>
                                             )}
                                         </>
@@ -994,7 +998,7 @@ export default function DetailMyWebinar({ webinar, certificate, certificateParti
                                         }}
                                     >
                                         <Users size={16} className="mr-2" />
-                                        Gabung Grup WA
+                                        {t('profile.webinarDetail.btnJoinWaGroup')}
                                     </Button>
                                 </div>
                             </div>

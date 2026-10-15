@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { rupiahFormatter } from '@/lib/utils';
 import { BookText, ExternalLink, MonitorPlay, Presentation, Package, TrendingDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Product {
     id: string;
@@ -37,6 +38,10 @@ interface BundleItemsSectionProps {
 }
 
 export default function BundleItemsSection({ bundle, groupedItems, totalOriginalPrice }: BundleItemsSectionProps) {
+    const { t, i18n } = useTranslation('user');
+
+    const formatRupiah = (val: number) => `Rp ${val.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}`;
+
     const getProductUrl = (type: string, slug: string) => {
         switch (type) {
             case 'course':
@@ -59,28 +64,31 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
         const config = {
             course: {
                 icon: BookText,
-                label: 'KELAS ONLINE',
+                label: t('bundling.detail.items.courseLabel').toUpperCase(),
                 badgeClass: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400',
+                badgeText: t('bundling.detail.items.courseBadge'),
                 iconColor: 'text-blue-600 dark:text-blue-400',
                 cardBorder: 'border-blue-200 dark:border-blue-800',
             },
             bootcamp: {
                 icon: Presentation,
-                label: 'BOOTCAMP',
+                label: t('bundling.detail.items.bootcampLabel').toUpperCase(),
                 badgeClass: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400',
+                badgeText: t('bundling.detail.items.bootcampBadge'),
                 iconColor: 'text-purple-600 dark:text-purple-400',
                 cardBorder: 'border-purple-200 dark:border-purple-800',
             },
             webinar: {
                 icon: MonitorPlay,
-                label: 'WEBINAR',
+                label: t('bundling.detail.items.webinarLabel').toUpperCase(),
                 badgeClass: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400',
+                badgeText: t('bundling.detail.items.webinarBadge'),
                 iconColor: 'text-green-600 dark:text-green-400',
                 cardBorder: 'border-green-200 dark:border-green-800',
             },
         };
 
-        const { icon: Icon, label, badgeClass, iconColor, cardBorder } = config[type];
+        const { icon: Icon, label, badgeClass, badgeText, iconColor, cardBorder } = config[type];
 
         return (
             <div className="mb-6 md:mb-8">
@@ -94,7 +102,7 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-gray-900 md:text-xl dark:text-white">{label}</h3>
-                        <p className="text-xs text-gray-500 md:text-sm dark:text-gray-400">{items.length} Program tersedia</p>
+                        <p className="text-xs text-gray-500 md:text-sm dark:text-gray-400">{t('bundling.detail.items.programsAvailable', { count: items.length })}</p>
                     </div>
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -120,7 +128,7 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
                                     {/* Badge */}
                                     <div className="absolute top-2 left-2 md:top-3 md:left-3">
                                         <Badge className={`${badgeClass} border-none shadow-lg`}>
-                                            {type === 'course' ? 'Course' : type.charAt(0).toUpperCase() + type.slice(1)}
+                                            {badgeText}
                                         </Badge>
                                     </div>
 
@@ -143,10 +151,10 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
 
                                     <div className="mt-auto">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Nilai Program</span>
+                                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('bundling.detail.items.programValue')}</span>
                                         </div>
                                         <p className="mt-1 text-lg font-bold text-gray-900 md:text-xl dark:text-white">
-                                            {rupiahFormatter.format(item.price)}
+                                            {formatRupiah(item.price)}
                                         </p>
                                     </div>
                                 </div>
@@ -167,13 +175,13 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
             <div className="mb-8 text-center md:mb-12">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-secondary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-secondary md:px-5 md:py-2 md:text-sm dark:border-primary/50 dark:bg-primary/20">
                     <Package size={14} className="md:h-4 md:w-4" />
-                    Isi Paket Bundling
+                    {t('bundling.detail.items.badge')}
                 </div>
                 <h2 className="mb-3 text-2xl font-bold text-gray-900 italic sm:text-3xl md:mb-4 md:text-4xl lg:text-5xl dark:text-white">
-                    {bundle.bundle_items_count} Program Pembelajaran Lengkap
+                    {t('bundling.detail.items.titleComplete', { count: bundle.bundle_items_count })}
                 </h2>
                 <p className="mx-auto max-w-2xl text-sm text-gray-600 sm:text-base md:text-lg dark:text-gray-400">
-                    Akses semua program pembelajaran berkualitas ini dalam satu paket dengan harga spesial
+                    {t('bundling.detail.items.subtitleComplete')}
                 </p>
             </div>
 
@@ -196,22 +204,22 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
                         <div className="mb-6 text-center md:mb-8">
                             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary md:mb-3 md:px-4 md:py-2 md:text-sm dark:bg-primary/20">
                                 <TrendingDown size={14} className="md:h-4 md:w-4" />
-                                Hemat hingga {discountPercentage}%
+                                {t('bundling.detail.items.saveUpTo', { percentage: discountPercentage })}
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 md:text-2xl dark:text-white">Ringkasan Harga</h3>
-                            <p className="mt-1 text-xs text-gray-600 md:text-sm dark:text-gray-400">Bandingkan dan lihat penghematanmu</p>
+                            <h3 className="text-xl font-bold text-gray-900 md:text-2xl dark:text-white">{t('bundling.detail.items.summaryTitle')}</h3>
+                            <p className="mt-1 text-xs text-gray-600 md:text-sm dark:text-gray-400">{t('bundling.detail.items.summaryCompare')}</p>
                         </div>
 
                         <div className="space-y-4">
                             {/* Original Price */}
                             <div className="flex flex-col gap-2 rounded-xl bg-white/60 p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between md:rounded-2xl md:p-6 dark:bg-gray-800/60">
                                 <div>
-                                    <p className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">Harga Normal</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-500">Jika dibeli terpisah ({bundle.bundle_items_count} program)</p>
+                                    <p className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">{t('bundling.detail.items.normalPrice')}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-500">{t('bundling.detail.items.ifBoughtSeparately', { count: bundle.bundle_items_count })}</p>
                                 </div>
                                 <div className="text-left sm:text-right">
                                     <p className="text-xl font-bold text-gray-400 line-through md:text-2xl dark:text-gray-500">
-                                        {rupiahFormatter.format(totalOriginalPrice)}
+                                        {formatRupiah(totalOriginalPrice)}
                                     </p>
                                 </div>
                             </div>
@@ -223,12 +231,12 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
                                         <TrendingDown size={18} className="text-white md:h-5 md:w-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-green-700 md:text-base dark:text-green-400">Total Penghematan</p>
-                                        <p className="text-xs text-green-600 dark:text-green-500">Hemat {discountPercentage}% dari harga normal</p>
+                                        <p className="text-sm font-bold text-green-700 md:text-base dark:text-green-400">{t('bundling.detail.items.totalSavings')}</p>
+                                        <p className="text-xs text-green-600 dark:text-green-500">{t('bundling.detail.items.saveFromNormal', { percent: discountPercentage })}</p>
                                     </div>
                                 </div>
                                 <p className="text-xl font-bold text-green-600 md:text-2xl dark:text-green-400">
-                                    {rupiahFormatter.format(savingsAmount)}
+                                    {formatRupiah(savingsAmount)}
                                 </p>
                             </div>
 
@@ -239,7 +247,7 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
                                 </div>
                                 <div className="relative flex justify-center">
                                     <span className="bg-gradient-to-br from-white via-primary/5 to-primary/10 px-4 text-sm font-medium text-gray-500 dark:from-gray-900 dark:via-primary/10 dark:to-primary/5 dark:text-gray-400">
-                                        Harga Final
+                                        {t('bundling.detail.items.finalPrice')}
                                     </span>
                                 </div>
                             </div>
@@ -248,17 +256,17 @@ export default function BundleItemsSection({ bundle, groupedItems, totalOriginal
                             <div className="rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 p-4 md:rounded-2xl md:p-6">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <p className="mb-1 text-base font-bold text-gray-900 md:text-lg dark:text-white">Harga Paket Bundling</p>
-                                        <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">Bayar sekali, akses selamanya</p>
+                                        <p className="mb-1 text-base font-bold text-gray-900 md:text-lg dark:text-white">{t('bundling.detail.items.bundlePriceTitle')}</p>
+                                        <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">{t('bundling.detail.items.payOnceLifetime')}</p>
                                     </div>
                                     <div className="text-left sm:text-right">
                                         <p className="text-2xl font-bold text-primary md:text-3xl lg:text-4xl">
-                                            {rupiahFormatter.format(bundle.price)}
+                                            {formatRupiah(bundle.price)}
                                         </p>
                                         <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 md:px-3 md:py-1 dark:bg-green-900/40">
                                             <TrendingDown size={12} className="text-green-600 dark:text-green-400" />
                                             <span className="text-xs font-semibold text-green-600 dark:text-green-400">
-                                                Hemat {discountPercentage}%
+                                                {t('bundling.detail.items.saveFromNormal', { percent: discountPercentage })}
                                             </span>
                                         </div>
                                     </div>

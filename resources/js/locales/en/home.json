@@ -1,0 +1,127 @@
+{
+  "about": {
+    "titlePart1": "Unlock your Potential",
+    "titlePart2": "Grow your Skills, Grow your Career"
+  },
+  "program": {
+    "title": "Why Choose Skill Grow?",
+    "desc": "Skill Grow is a platform designed to help you develop skills and reach your career goals. Unlock your potential and improve your skills with experienced instructors supporting your future career development!!",
+    "totalStudents": "Total Students",
+    "partners": "Partners"
+  },
+  "tools": {
+    "badge": "Tools & Frameworks",
+    "title": "Up-to-date tools & frameworks used"
+  },
+  "latest": {
+    "badge": "Latest Products",
+    "recentTraining": "Latest Training",
+    "title": "Latest Courses, Bootcamps, Webinars, Private & Bundles from Skill Grow",
+    "popularTitle": "Most Popular Classes",
+    "popularDesc": "Upgrade your knowledge and skills here",
+    "empty": "No products are currently available.",
+    "allOwned": "You already have access to all our latest products! 😁🙏",
+    "thankYou": "Thank you for being part of Skill Grow!",
+    "save": "Save {{discount}}%",
+    "free": "Free",
+    "lifetimeAccess": "Lifetime Access",
+    "registerBefore": "Register within {{days}} days",
+    "registrationClosed": "Registration closed",
+    "registerUntil": "Register until {{date}}",
+    "viewMore": "View More...",
+    "registeredMentors": "{{count}} registered mentors",
+    "noBio": "No bio available",
+    "startsPrefix": "Starts: ",
+    "registrationDeadlinePrefix": "Registration Deadline: ",
+    "badges": {
+      "course": "Online Course",
+      "bootcamp": "Bootcamp",
+      "webinar": "Webinar",
+      "bundle": "Bundle",
+      "certification": "Certification Program",
+      "private": "Private",
+      "scholarship": "Scholarship",
+      "regular": "Regular"
+    },
+    "levels": {
+      "beginner": "Beginner Level",
+      "intermediate": "Intermediate Level",
+      "advanced": "Advanced Level"
+    }
+  },
+  "mentor": {
+    "title": "Meet Our Mentor",
+    "badge": "MENTOR",
+    "roleTax": "Tax Mentor"
+  },
+  "carousel": {
+    "slide": "Slide {{number}}"
+  },
+  "testimony": {
+    "title": "What They Say About Skill Grow"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "description": "Learning tax, brevet, or accounting can be confusing, especially with so much technical material! Have questions about webinars, online classes, or tax and accounting certification?",
+    "q1": "What is Skill Grow?",
+    "a1": "Skill Grow is a professional training institution focused on developing competencies in accounting, taxation, auditing, and accounting software, etc. with a practical and applicable approach.",
+    "q2": "What are the features and programs at Skill Grow?",
+    "a2": "Skill Grow provides various learning programs such as Online Classes, Bootcamps, and Webinar-based training. Each program is designed interactively and applicably to help participants develop optimal skills ready for the professional workforce.",
+    "q3": "What is the learning process at Skill Grow?",
+    "a3": "Registration can be completed through the official Skill Grow website or by contacting our admin via WhatsApp available on the website or DM on IG @brevetpajak_skillgrow.",
+    "q4": "Where can I get information for partnerships or if I encounter issues?",
+    "a4_part1": "For more information regarding Skill Grow, please contact our admin via WhatsApp at ",
+    "a4_phone": "+6285606391730",
+    "a4_part2": ". We are also active across social media, so make sure to follow Skill Grow on Instagram, TikTok, and LinkedIn for latest updates and tips on accounting and taxation."
+  },
+  "cta": {
+    "title": "Interested in Joining Our Classes?",
+    "desc": "Join now and begin your skill development journey with Skill Grow!",
+    "btn": "View Classes"
+  },
+  "notification": {
+    "justPurchased": "Just purchased {{type}}: "
+  },
+  "promotion": {
+    "alt": "Skill Grow Promotion",
+    "clickForDetail": "Click for details",
+    "clickToClose": "Click to close"
+  },
+  "galery": {
+    "title": "Skill Grow Gallery"
+  },
+  "grow": {
+    "titlePart1": "Grow Your Skills,",
+    "titlePart2": "Shape Your Future!",
+    "description": "Proudly contributing to the career development journey of thousands of participants from various industries"
+  },
+  "popularClass": {
+    "title": "Popular Classes For You",
+    "viewClass": "View Classes",
+    "c1Title": "Digital Marketing",
+    "c1Desc": "Learn the fundamentals of email marketing, PPC advertising, SEO, social media strategies and management to launch your stellar digital marketing career.",
+    "c2Title": "Business & Management",
+    "c2Desc": "Build a solid foundation in business planning, financial management strategies, and organizational behavior for a successful business career.",
+    "c3Title": "Information & Technology",
+    "c3Desc": "Learn computer science fundamentals, software development, networking, and cybersecurity to establish a solid grasp of the IT landscape."
+  },
+  "studyFlow": {
+    "titlePart1": "Find a Learning Path",
+    "titlePart2": "That Fits Your Needs.",
+    "onlineClass": "Online Course",
+    "onlineClassDesc": "Learn anytime and anywhere using devices such as computers or smartphones.",
+    "advantages": "Key Advantages",
+    "onlineAdv1": "Learning via video lessons",
+    "onlineAdv2": "Full access to learning materials",
+    "onlineAdv3": "Flexible learning schedule",
+    "onlineAdv4": "24/7 access",
+    "onlineAdv5": "Verified e-certificate",
+    "zoomClass": "Zoom Meeting Class",
+    "zoomClassDesc": "Allows participants and instructors to interact directly via video conference.",
+    "zoomAdv1": "Interactive learning experience",
+    "zoomAdv2": "Real-time learning delivery",
+    "zoomAdv3": "Free access to class recordings and materials",
+    "zoomAdv4": "Interactive participant discussion groups",
+    "zoomAdv5": "Verified e-certificate"
+  }
+}

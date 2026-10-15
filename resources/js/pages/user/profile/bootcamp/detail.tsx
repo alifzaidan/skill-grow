@@ -25,6 +25,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import ProfileInstallmentAction from '@/components/profile-installment-action';
+import { useTranslation } from 'react-i18next';
 
 interface Category {
     id: string;
@@ -183,6 +184,7 @@ const StarRating = ({
 };
 
 export default function DetailMyBootcamp({ bootcamp, certificate, certificateParticipant, active_installment }: DetailBootcampProps) {
+    const { t, i18n } = useTranslation();
     const bootcampItem = bootcamp.bootcamp_items?.[0];
     const bootcampData = bootcampItem?.bootcamp;
     const bootcampInvoiceStatus = bootcamp.status;
@@ -231,14 +233,14 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
         try {
             const res = await axios.post(`/installment/${bootcamp.id}/pay`);
             if (res.data?.success && res.data?.payment_url) {
-                toast.success('Mengarahkan ke pembayaran...');
+                toast.success(t('profile.bootcampDetail.toastRedirecting'));
                 window.location.href = res.data.payment_url;
             } else {
-                toast.error(res.data?.message || 'Gagal memproses pembayaran cicilan');
+                toast.error(res.data?.message || t('profile.bootcampDetail.toastFailInstallment'));
                 setIsPayingCert(false);
             }
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Terjadi kesalahan saat memproses pembayaran');
+            toast.error(err.response?.data?.message || t('profile.bootcampDetail.toastErrorGeneral'));
             setIsPayingCert(false);
         }
     };
@@ -252,12 +254,12 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
         if (file) {
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
             if (!validTypes.includes(file.type)) {
-                alert('Format file harus berupa gambar (JPG, PNG, WEBP)');
+                alert(t('profile.bootcampDetail.alertFileType'));
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                alert('Ukuran file maksimal 5MB');
+                alert(t('profile.bootcampDetail.alertFileSize'));
                 return;
             }
 
@@ -287,7 +289,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
             },
             onError: (errors) => {
                 console.error('Upload errors:', errors);
-                alert('Gagal mengupload bukti kehadiran');
+                alert(t('profile.bootcampDetail.alertUploadFail'));
             },
             onFinish: () => {
                 setUploading((prev) => ({ ...prev, [scheduleId]: false }));
@@ -301,7 +303,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
     const handleSubmitSubmission = () => {
         if (!submissionUrl.trim() || !bootcampItem) {
-            alert('Mohon isi link submission');
+            alert(t('profile.bootcampDetail.alertSubmissionEmpty'));
             return;
         }
 
@@ -321,7 +323,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                 },
                 onError: (errors) => {
                     console.error('Submit errors:', errors);
-                    alert('Gagal mengirim submission');
+                    alert(t('profile.bootcampDetail.alertSubmissionFail'));
                 },
                 onFinish: () => {
                     setSubmittingSubmission(false);
@@ -332,7 +334,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
     const handleSubmitReview = () => {
         if (!reviewText.trim() || rating === 0 || !bootcampItem) {
-            alert('Mohon lengkapi rating dan review');
+            alert(t('profile.bootcampDetail.alertReviewIncomplete'));
             return;
         }
 
@@ -353,7 +355,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                 },
                 onError: (errors) => {
                     console.error('Submit errors:', errors);
-                    alert('Gagal mengirim review');
+                    alert(t('profile.bootcampDetail.alertReviewFail'));
                 },
                 onFinish: () => {
                     setSubmittingReview(false);
@@ -365,9 +367,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
     if (!bootcampData || !bootcampItem) {
         return (
             <UserLayout>
-                <Head title="Bootcamp Tidak Ditemukan" />
+                <Head title={t('profile.bootcampDetail.headTitleNotFound')} />
                 <div className="flex h-screen items-center justify-center">
-                    <p>Detail bootcamp tidak dapat ditemukan.</p>
+                    <p>{t('profile.bootcampDetail.notFoundDesc')}</p>
                 </div>
             </UserLayout>
         );
@@ -401,7 +403,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
         <UserLayout>
             <Head title={bootcampData.title} />
 
-            {/* Hero Section - No changes */}
+            {/* Hero Section */}
             <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white">
                 <div className="pointer-events-none absolute top-1/2 left-1/2 z-0 flex -translate-x-1/2 -translate-y-1/2 animate-spin items-center gap-8 duration-[10s]">
                     <div className="bg-primary h-[300px] w-[300px] rounded-full blur-[200px]" />
@@ -410,28 +412,29 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                 <div className="relative mx-auto max-w-7xl px-4 text-center">
                     <Button className="top-0 left-4 mb-4 rounded-full md:absolute md:mb-0" variant="secondary" asChild>
                         <Link href="/profile/my-bootcamps">
-                            <ArrowLeft /> Kembali Ke Bootcamp Saya
+                            <ArrowLeft /> {t('profile.bootcampDetail.btnBackToBootcamps')}
                         </Link>
                     </Button>
                     <div className="col-span-2">
                         <div className="flex flex-col items-center justify-center md:flex-row md:gap-4">
                             <span className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                                📌 Enrolled in{' '}
-                                {new Date(bootcampItem.created_at).toLocaleDateString('id-ID', {
-                                    month: 'long',
-                                    year: 'numeric',
+                                {t('profile.bootcampDetail.enrolledIn', {
+                                    date: new Date(bootcampItem.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
+                                        month: 'long',
+                                        year: 'numeric',
+                                    }),
                                 })}
                             </span>
                             {hasCertificate && (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-green-800 bg-green-100 px-4 py-1 text-sm font-medium text-green-800 shadow-xs">
                                     <Award size={16} />
-                                    Sertifikat Tersedia
+                                    {t('profile.bootcampDetail.certBadgeAvailable')}
                                 </span>
                             )}
                             {allAttendanceVerified && (
                                 <span className="mb-4 flex w-fit items-center gap-2 rounded-full border border-blue-800 bg-blue-100 px-4 py-1 text-sm font-medium text-blue-800 shadow-xs">
                                     <CheckCircle size={16} />
-                                    Kehadiran Lengkap
+                                    {t('profile.bootcampDetail.attendanceCompleteBadge')}
                                 </span>
                             )}
                         </div>
@@ -443,11 +446,11 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                         <div className="flex flex-col items-center justify-center gap-4 w-full">
                             {isSuspended ? (
                                 <span className="font-semibold text-red-600">
-                                    ⚠️ Akses bootcamp dibekukan karena ada tagihan cicilan yang melewati jatuh tempo. Silakan lakukan pelunasan di menu Transaksi.
+                                    {t('profile.bootcampDetail.accessSuspendedAlert')}
                                 </span>
                             ) : !hasActiveAccess ? (
                                 <span className="font-semibold text-red-600">
-                                    Selesaikan Pembayaran Untuk Bergabung Bootcamp!!
+                                    {t('profile.bootcampDetail.paymentPendingAlert')}
                                 </span>
                             ) : isInstallment && !isFullyPaid ? (
                                 <div className="w-full">
@@ -479,20 +482,17 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                         <div className="mb-4 flex">
                                             <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-green-400 to-blue-500 px-6 py-2 text-white shadow-lg">
                                                 <Award size={24} />
-                                                <span className="font-bold">🎉 Selamat! 🎉</span>
+                                                <span className="font-bold">{t('profile.bootcampDetail.congratsBadge')}</span>
                                             </div>
                                         </div>
 
                                         <h2 className="mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-2xl font-bold text-transparent">
-                                            Terima Kasih Telah Menyelesaikan Bootcamp!
+                                            {t('profile.bootcampDetail.thanksCompletingTitle')}
                                         </h2>
 
                                         <div className="mx-auto max-w-3xl space-y-3 text-gray-700 dark:text-gray-300">
                                             <p className="leading-relaxed">
-                                                🙏 Terima kasih telah berpartisipasi aktif dalam bootcamp "{bootcampData.title}". Dedikasi dan
-                                                konsistensi Anda dalam mengikuti seluruh sesi pembelajaran sungguh luar biasa! Kami berharap ilmu dan
-                                                pengalaman yang telah Anda dapatkan dapat bermanfaat untuk pengembangan karir dan skill Anda ke
-                                                depannya.
+                                                {t('profile.bootcampDetail.thanksCompletingDesc', { title: bootcampData.title })}
                                             </p>
                                         </div>
                                     </div>
@@ -506,11 +506,18 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 <div className="mb-4 flex items-center gap-3">
                                     <Upload className="text-purple-600" size={24} />
                                     <div>
-                                        <h2 className="text-xl font-bold text-purple-800 dark:text-purple-200">{requiresReview ? "📸 Bukti Kehadiran & Rekaman" : "🎥 Rekaman Pertemuan"}</h2>
+                                        <h2 className="text-xl font-bold text-purple-800 dark:text-purple-200">
+                                            {requiresReview
+                                                ? t('profile.bootcampDetail.attendanceAndRecordingTitle')
+                                                : t('profile.bootcampDetail.sessionRecordingsTitle')}
+                                        </h2>
                                         <p className="text-sm text-purple-600 dark:text-purple-400">
                                             {requiresReview
-                                                ? `Upload bukti kehadiran dan akses rekaman per pertemuan (${verifiedAttendances}/${totalSchedules} terverifikasi)`
-                                                : "Akses rekaman materi per pertemuan bootcamp"}
+                                                ? t('profile.bootcampDetail.attendanceSubtitleReview', {
+                                                      verified: verifiedAttendances,
+                                                      total: totalSchedules,
+                                                  })
+                                                : t('profile.bootcampDetail.attendanceSubtitleNoReview')}
                                         </p>
                                     </div>
                                 </div>
@@ -543,16 +550,21 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex items-center gap-2">
                                                                 <Calendar size={16} className="text-purple-600" />
-                                                                <span className="font-medium">Pertemuan {idx + 1}</span>
+                                                                <span className="font-medium">
+                                                                    {t('profile.bootcampDetail.sessionMeeting', { index: idx + 1 })}
+                                                                </span>
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 <Clock size={14} className="text-gray-500" />
                                                                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                                                                    {scheduleDate.toLocaleDateString('id-ID', {
-                                                                        day: '2-digit',
-                                                                        month: 'short',
-                                                                        year: 'numeric',
-                                                                    })}{' '}
+                                                                    {scheduleDate.toLocaleDateString(
+                                                                        i18n.language === 'en' ? 'en-US' : 'id-ID',
+                                                                        {
+                                                                            day: '2-digit',
+                                                                            month: 'short',
+                                                                            year: 'numeric',
+                                                                        },
+                                                                    )}{' '}
                                                                     | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
                                                                 </span>
                                                             </div>
@@ -562,12 +574,12 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                 {attendance.verified ? (
                                                                     <span className="flex items-center gap-1 text-sm text-green-600">
                                                                         <CheckCircle size={14} />
-                                                                        Terverifikasi
+                                                                        {t('profile.bootcampDetail.statusVerified')}
                                                                     </span>
                                                                 ) : (
                                                                     <span className="flex items-center gap-1 text-sm text-yellow-600">
                                                                         <Clock size={14} />
-                                                                        Menunggu Verifikasi
+                                                                        {t('profile.bootcampDetail.statusWaitingVerification')}
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -579,7 +591,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                             {attendance?.verified ? (
                                                                 <Button size="sm" variant="outline" disabled>
                                                                     <CheckCircle size={14} className="mr-1" />
-                                                                    Verified
+                                                                    {t('profile.bootcampDetail.btnVerified')}
                                                                 </Button>
                                                             ) : attendance ? (
                                                                 <Button
@@ -593,7 +605,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                     }
                                                                 >
                                                                     <Upload size={14} className="mr-1" />
-                                                                    Edit Bukti
+                                                                    {t('profile.bootcampDetail.btnEditProof')}
                                                                 </Button>
                                                             ) : (
                                                                 <Button
@@ -607,7 +619,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                     }
                                                                 >
                                                                     <Upload size={14} className="mr-1" />
-                                                                    {isPast ? 'Upload Bukti' : 'Belum Dimulai'}
+                                                                    {isPast
+                                                                        ? t('profile.bootcampDetail.btnUploadProof')
+                                                                        : t('profile.bootcampDetail.btnNotStarted')}
                                                                 </Button>
                                                             )}
                                                         </div>
@@ -619,13 +633,13 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                     <div className="mt-4 space-y-2">
                                                         <div className="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-200">
                                                             <ExternalLink size={14} />
-                                                            <span>Rekaman Pertemuan</span>
+                                                            <span>{t('profile.bootcampDetail.meetingRecordingTitle')}</span>
                                                         </div>
                                                         <div className="w-full">
                                                             <iframe
                                                                 className="aspect-video w-full rounded-lg border"
                                                                 src={embedUrl}
-                                                                title={`Recording Pertemuan ${idx + 1}`}
+                                                                title={`${t('profile.bootcampDetail.meetingRecordingTitle')} ${idx + 1}`}
                                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                                 allowFullScreen
                                                             />
@@ -637,7 +651,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                             className="flex items-center gap-1 text-sm text-blue-600 hover:underline"
                                                         >
                                                             <ExternalLink size={12} />
-                                                            Buka di YouTube
+                                                            {t('profile.bootcampDetail.openInYoutube')}
                                                         </a>
                                                     </div>
                                                 )}
@@ -646,7 +660,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 {requiresReview && showForm && (
                                                     <div className="mt-4 space-y-3 rounded border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
                                                         <div className="flex items-center justify-between">
-                                                            <h5 className="font-medium">Upload Bukti Kehadiran</h5>
+                                                            <h5 className="font-medium">
+                                                                {t('profile.bootcampDetail.formUploadAttendance')}
+                                                            </h5>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
@@ -663,7 +679,8 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
                                                         <div className="space-y-2">
                                                             <Label htmlFor={`file_${schedule.id}`}>
-                                                                Screenshot/Foto Kehadiran <span className="text-red-500">*</span>
+                                                                {t('profile.bootcampDetail.labelAttendanceProof')}{' '}
+                                                                <span className="text-red-500">*</span>
                                                             </Label>
                                                             <Input
                                                                 id={`file_${schedule.id}`}
@@ -672,7 +689,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                 onChange={(e) => handleFileSelect(schedule.id, e)}
                                                                 className="file:mr-4 file:rounded file:border-0 file:bg-gray-100 file:px-2 file:py-1 file:text-sm file:text-gray-700 hover:file:bg-gray-200"
                                                             />
-                                                            <p className="text-xs text-gray-500">Format: JPG, PNG, WEBP. Maksimal 5MB.</p>
+                                                            <p className="text-xs text-gray-500">
+                                                                {t('profile.bootcampDetail.formatProofHint')}
+                                                            </p>
                                                         </div>
 
                                                         {selectedFiles[schedule.id] && (
@@ -682,23 +701,31 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                     alt="Preview"
                                                                     className="mx-auto max-h-32 rounded-lg border shadow-sm"
                                                                 />
-                                                                <p className="mt-2 text-sm text-gray-600">{selectedFiles[schedule.id]?.name}</p>
+                                                                <p className="mt-2 text-sm text-gray-600">
+                                                                    {selectedFiles[schedule.id]?.name}
+                                                                </p>
                                                             </div>
                                                         )}
 
                                                         <div className="space-y-2">
-                                                            <Label htmlFor={`notes_${schedule.id}`}>Catatan (Opsional)</Label>
+                                                            <Label htmlFor={`notes_${schedule.id}`}>
+                                                                {t('profile.bootcampDetail.labelNotesOptional')}
+                                                            </Label>
                                                             <textarea
                                                                 id={`notes_${schedule.id}`}
                                                                 value={notes[schedule.id] || ''}
-                                                                onChange={(e) => setNotes((prev) => ({ ...prev, [schedule.id]: e.target.value }))}
-                                                                placeholder="Tambahkan catatan jika diperlukan..."
+                                                                onChange={(e) =>
+                                                                    setNotes((prev) => ({ ...prev, [schedule.id]: e.target.value }))
+                                                                }
+                                                                placeholder={t('profile.bootcampDetail.notesPlaceholder')}
                                                                 className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                                 rows={2}
                                                                 maxLength={500}
                                                             />
                                                             <p className="text-xs text-gray-500">
-                                                                Maksimal 500 karakter ({(notes[schedule.id] || '').length}/500)
+                                                                {t('profile.bootcampDetail.notesCharLimit', {
+                                                                    count: (notes[schedule.id] || '').length,
+                                                                })}
                                                             </p>
                                                         </div>
 
@@ -713,14 +740,16 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                                 }
                                                                 className="flex-1"
                                                             >
-                                                                Batal
+                                                                {t('profile.bootcampDetail.btnCancel')}
                                                             </Button>
                                                             <Button
                                                                 onClick={() => handleUploadAttendance(schedule.id)}
                                                                 disabled={!selectedFiles[schedule.id] || isUploading}
                                                                 className="flex-1 bg-purple-600 hover:bg-purple-700"
                                                             >
-                                                                {isUploading ? 'Mengupload...' : 'Upload Bukti'}
+                                                                {isUploading
+                                                                    ? t('profile.bootcampDetail.btnUploading')
+                                                                    : t('profile.bootcampDetail.btnUploadProofSubmit')}
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -731,12 +760,14 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                     <div className="mt-3">
                                                         <img
                                                             src={`/storage/${attendance.attendance_proof}`}
-                                                            alt="Bukti Kehadiran"
+                                                            alt={t('profile.bootcampDetail.labelAttendanceProof')}
                                                             className="mx-auto max-h-24 rounded border shadow-sm"
                                                         />
                                                         {attendance.notes && (
                                                             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                                                Catatan: {attendance.notes}
+                                                                {t('profile.bootcampDetail.proofNotesPrefix', {
+                                                                    notes: attendance.notes,
+                                                                })}
                                                             </p>
                                                         )}
                                                     </div>
@@ -750,7 +781,10 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                     <div className="mt-4 rounded-lg bg-purple-100 p-3 dark:bg-purple-800/50">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
-                                                Progress Kehadiran: {verifiedAttendances}/{totalSchedules}
+                                                {t('profile.bootcampDetail.attendanceProgress', {
+                                                    verified: verifiedAttendances,
+                                                    total: totalSchedules,
+                                                })}
                                             </span>
                                             <div className="flex items-center gap-2">
                                                 <div className="h-2 w-32 rounded-full bg-purple-200 dark:bg-purple-700">
@@ -775,8 +809,12 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 <div className="mb-4 flex items-center gap-3">
                                     <LinkIcon className="text-blue-600" size={24} />
                                     <div>
-                                        <h2 className="text-xl font-bold text-blue-800 dark:text-blue-200">🔗 Submission Project</h2>
-                                        <p className="text-sm text-blue-600 dark:text-blue-400">Upload link project akhir Bootcamp.</p>
+                                        <h2 className="text-xl font-bold text-blue-800 dark:text-blue-200">
+                                            {t('profile.bootcampDetail.projectSubmissionTitle')}
+                                        </h2>
+                                        <p className="text-sm text-blue-600 dark:text-blue-400">
+                                            {t('profile.bootcampDetail.projectSubmissionSubtitle')}
+                                        </p>
                                     </div>
                                 </div>
 
@@ -785,7 +823,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                         <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
                                             <div className="mb-2 flex items-center gap-2">
                                                 <CheckCircle size={20} className="text-green-600" />
-                                                <span className="font-medium text-green-800 dark:text-green-200">✅ Submission Terverifikasi</span>
+                                                <span className="font-medium text-green-800 dark:text-green-200">
+                                                    {t('profile.bootcampDetail.submissionVerified')}
+                                                </span>
                                             </div>
                                             <a
                                                 href={bootcampItem.submission!}
@@ -801,19 +841,19 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                     <div className="space-y-4">
                                         <div className="rounded-lg bg-blue-100 p-4 dark:bg-blue-800/50">
                                             <p className="text-center text-blue-800 dark:text-blue-200">
-                                                📦 Upload link project akhir Bootcamp Anda untuk melanjutkan.
+                                                {t('profile.bootcampDetail.submissionPrompt')}
                                             </p>
                                         </div>
 
                                         {!showSubmissionForm ? (
                                             <Button onClick={() => setShowSubmissionForm(true)} className="w-full bg-blue-600 hover:bg-blue-700">
                                                 <Upload size={16} className="mr-2" />
-                                                Upload Link Project Akhir
+                                                {t('profile.bootcampDetail.btnUploadProjectLink')}
                                             </Button>
                                         ) : (
                                             <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
                                                 <div className="flex items-center justify-between">
-                                                    <h4 className="font-medium">Formulir Submission</h4>
+                                                    <h4 className="font-medium">{t('profile.bootcampDetail.submissionFormTitle')}</h4>
                                                     <Button variant="ghost" size="sm" onClick={() => setShowSubmissionForm(false)}>
                                                         <X size={16} />
                                                     </Button>
@@ -821,29 +861,34 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
                                                 <div className="space-y-2">
                                                     <Label htmlFor="submission_url">
-                                                        Link Project Akhir <span className="text-red-500">*</span>
+                                                        {t('profile.bootcampDetail.labelProjectLink')}{' '}
+                                                        <span className="text-red-500">*</span>
                                                     </Label>
                                                     <Input
                                                         id="submission_url"
                                                         type="url"
                                                         value={submissionUrl}
                                                         onChange={(e) => setSubmissionUrl(e.target.value)}
-                                                        placeholder="https://link-project-anda"
+                                                        placeholder={t('profile.bootcampDetail.projectLinkPlaceholder')}
                                                         className="w-full"
                                                     />
-                                                    <p className="text-xs text-gray-500">Pastikan link dapat diakses secara publik</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {t('profile.bootcampDetail.publicAccessHint')}
+                                                    </p>
                                                 </div>
 
                                                 <div className="flex gap-2">
                                                     <Button variant="outline" onClick={() => setShowSubmissionForm(false)} className="flex-1">
-                                                        Batal
+                                                        {t('profile.bootcampDetail.btnCancel')}
                                                     </Button>
                                                     <Button
                                                         onClick={handleSubmitSubmission}
                                                         disabled={!submissionUrl.trim() || submittingSubmission}
                                                         className="flex-1 bg-blue-600 hover:bg-blue-700"
                                                     >
-                                                        {submittingSubmission ? 'Mengirim...' : 'Kirim Submission'}
+                                                        {submittingSubmission
+                                                            ? t('profile.bootcampDetail.btnSending')
+                                                            : t('profile.bootcampDetail.btnSendSubmission')}
                                                     </Button>
                                                 </div>
                                             </div>
@@ -857,42 +902,59 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                             <div className="mb-4 flex items-center gap-3">
                                 <Calendar className="text-blue-600" size={20} />
-                                <h3 className="text-lg font-semibold">{isCompleted ? 'Periode Bootcamp' : 'Jadwal Bootcamp'}</h3>
+                                <h3 className="text-lg font-semibold">
+                                    {isCompleted
+                                        ? t('profile.bootcampDetail.bootcampPeriodTitle')
+                                        : t('profile.bootcampDetail.bootcampScheduleTitle')}
+                                </h3>
                             </div>
                             <div className="space-y-3">
                                 <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
                                     <Calendar size={16} className="text-blue-600" />
                                     <div>
                                         <p className="font-medium text-blue-900 dark:text-blue-100">
-                                            {new Date(bootcampData.start_date).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}{' '}
+                                            {new Date(bootcampData.start_date).toLocaleDateString(
+                                                i18n.language === 'en' ? 'en-US' : 'id-ID',
+                                                {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                },
+                                            )}{' '}
                                             -{' '}
-                                            {new Date(bootcampData.end_date).toLocaleDateString('id-ID', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}
+                                            {new Date(bootcampData.end_date).toLocaleDateString(
+                                                i18n.language === 'en' ? 'en-US' : 'id-ID',
+                                                {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric',
+                                                },
+                                            )}
                                         </p>
-                                        <p className="text-sm text-blue-700 dark:text-blue-300">Durasi Program</p>
+                                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                                            {t('profile.bootcampDetail.programDuration')}
+                                        </p>
                                     </div>
                                 </div>
 
                                 {bootcampData.schedules && bootcampData.schedules.length > 0 && (
                                     <div className="space-y-2">
-                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Jadwal Sesi:</p>
+                                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            {t('profile.bootcampDetail.sessionSchedules')}
+                                        </p>
                                         {bootcampData.schedules.map((schedule, idx) => (
                                             <div key={idx} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-zinc-700">
                                                 <Clock size={16} className="text-green-600" />
                                                 <span className="font-medium text-gray-900 capitalize dark:text-white">{schedule.day},</span>
                                                 <span className="text-gray-600 dark:text-gray-400">
-                                                    {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                    })}{' '}
+                                                    {new Date(schedule.schedule_date).toLocaleDateString(
+                                                        i18n.language === 'en' ? 'en-US' : 'id-ID',
+                                                        {
+                                                            day: 'numeric',
+                                                            month: 'long',
+                                                            year: 'numeric',
+                                                        },
+                                                    )}{' '}
                                                     | {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)} WIB
                                                 </span>
                                             </div>
@@ -906,7 +968,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                             <div className="mb-4 flex items-center gap-3">
                                 <BadgeCheck className="text-green-600" size={20} />
-                                <h3 className="text-lg font-semibold">Fasilitas yang Tersedia</h3>
+                                <h3 className="text-lg font-semibold">{t('profile.bootcampDetail.facilitiesTitle')}</h3>
                             </div>
                             <div className="space-y-3">
                                 {benefitList.map((benefit, idx) => (
@@ -922,7 +984,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                             <div className="mb-4 flex items-center gap-3">
                                 <Users className="text-purple-600" size={20} />
-                                <h3 className="text-lg font-semibold">Kurikulum</h3>
+                                <h3 className="text-lg font-semibold">{t('profile.bootcampDetail.curriculumTitle')}</h3>
                             </div>
                             <div className="space-y-3">
                                 {curriculumList.map((item, idx) => (
@@ -941,14 +1003,16 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 <div className="mb-4 flex items-center justify-between border-b border-gray-100 pb-3 dark:border-zinc-700">
                                     <div className="flex items-center gap-2">
                                         <Sparkles className="h-5 w-5 text-amber-500" />
-                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Langkah Pelatihan Selanjutnya</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                            {t('profile.bootcampDetail.nextStepTitle')}
+                                        </h3>
                                     </div>
                                     <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-semibold text-primary">
                                         {bootcampData.next_step_product.type_label}
                                     </span>
                                 </div>
                                 <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                                    Tingkatkan skill Anda ke level berikutnya dengan program lanjutan yang kami rekomendasikan
+                                    {t('profile.bootcampDetail.nextStepSubtitle')}
                                 </p>
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div className="flex flex-1 items-start gap-4">
@@ -969,7 +1033,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                             </h4>
                                             <div className="flex items-baseline gap-2">
                                                 {bootcampData.next_step_product.price === 0 ? (
-                                                    <span className="text-base font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                    <span className="text-base font-bold text-green-600 dark:text-green-400">
+                                                        {t('profile.bootcampDetail.free')}
+                                                    </span>
                                                 ) : (
                                                     <>
                                                         <span className="text-base font-bold text-gray-900 dark:text-white">
@@ -989,7 +1055,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                     <div className="sm:shrink-0">
                                         <Button asChild className="w-full sm:w-auto">
                                             <a href={bootcampData.next_step_product.url} target="_blank" rel="noopener noreferrer">
-                                                Daftar Sekarang
+                                                {t('profile.bootcampDetail.btnRegisterNow')}
                                                 <ArrowRight className="ml-2 h-4 w-4" />
                                             </a>
                                         </Button>
@@ -1007,7 +1073,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-2">
                                         <Award className="text-yellow-500" size={20} />
-                                        <h3 className="font-semibold">Sertifikat Kelulusan</h3>
+                                        <h3 className="font-semibold">{t('profile.bootcampDetail.certGraduationTitle')}</h3>
                                     </div>
 
                                     {isLoading && hasCertificate && (
@@ -1030,9 +1096,11 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 <Award className="h-7 w-7 text-gray-400" />
                                             </div>
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 dark:text-white">Tanpa Sertifikat</h4>
+                                                <h4 className="font-semibold text-gray-900 dark:text-white">
+                                                    {t('profile.bootcampDetail.noCertTitle')}
+                                                </h4>
                                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                                    Bootcamp ini tidak menyediakan sertifikat kelulusan. Anda dapat langsung menikmati seluruh materi dan rekaman yang tersedia.
+                                                    {t('profile.bootcampDetail.noCertDesc')}
                                                 </p>
                                             </div>
                                         </div>
@@ -1044,7 +1112,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 <iframe
                                                     src={`${route('profile.bootcamp.certificate.preview', { bootcamp: bootcampData.slug })}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
                                                     className="h-[238px] w-full rounded-lg border shadow-lg dark:border-zinc-700"
-                                                    title="Preview Sertifikat"
+                                                    title={t('profile.bootcampDetail.btnPreviewCert')}
                                                     onLoad={handleIframeLoad}
                                                 />
                                                 <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -1053,7 +1121,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                             <div className="group relative">
                                                 <img
                                                     src={'/assets/images/placeholder.png'}
-                                                    alt="Sertifikat"
+                                                    alt={t('profile.bootcampDetail.certGraduationTitle')}
                                                     className="aspect-video rounded-lg border object-cover shadow-lg transition-transform group-hover:scale-105 dark:border-zinc-700"
                                                 />
                                                 <div className="absolute inset-0 rounded-lg bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
@@ -1064,13 +1132,15 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                     {hasCertificate ? (
                                         <div className={`${isLoading ? 'opacity-0' : 'opacity-100'}`}>
                                             <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-                                                Unduh sertifikat sebagai bukti kelulusan dari bootcamp ini.
+                                                {t('profile.bootcampDetail.downloadCertDesc')}
                                             </p>
                                             {certificateParticipant && (
                                                 <div className="mt-2 text-center">
                                                     <p className="text-xs text-blue-600 dark:text-blue-400">
-                                                        No. Sertifikat: {String(certificateParticipant.certificate_number).padStart(4, '0')}/
-                                                        {certificate?.certificate_number}
+                                                        {t('profile.bootcampDetail.certNumber', {
+                                                            number: String(certificateParticipant.certificate_number).padStart(4, '0'),
+                                                            certNumber: certificate?.certificate_number,
+                                                        })}
                                                     </p>
                                                     <Link
                                                         href={route('certificate.participant.detail', {
@@ -1078,7 +1148,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                         })}
                                                         className="text-xs text-green-600 underline hover:text-green-800"
                                                     >
-                                                        Lihat Detail Sertifikat
+                                                        {t('profile.bootcampDetail.viewCertDetail')}
                                                     </Link>
                                                 </div>
                                             )}
@@ -1086,7 +1156,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                 <Button className="w-full" asChild>
                                                     <a href={route('profile.bootcamp.certificate', { bootcamp: bootcampData.slug })} target="_blank">
                                                         <Download size={16} className="mr-2" />
-                                                        Unduh Sertifikat
+                                                        {t('profile.bootcampDetail.btnDownloadCert')}
                                                     </a>
                                                 </Button>
 
@@ -1096,7 +1166,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                         target="_blank"
                                                     >
                                                         <Eye size={16} className="mr-2" />
-                                                        Lihat Preview
+                                                        {t('profile.bootcampDetail.btnPreviewCert')}
                                                     </a>
                                                 </Button>
                                             </div>
@@ -1105,13 +1175,21 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                         <>
                                             <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
                                                 {!certificate
-                                                    ? 'Sertifikat belum dibuat untuk bootcamp ini.'
+                                                    ? t('profile.bootcampDetail.certNotCreated')
                                                     : !isFullyPaid
-                                                      ? (isInstallment ? 'Lunasi seluruh cicilan untuk membuka sertifikat.' : 'Selesaikan pembayaran untuk mendapatkan sertifikat.')
-                                                      : requiresReview && !allAttendanceVerified ? `Lengkapi bukti kehadiran (${verifiedAttendances}/${totalSchedules} terverifikasi).`
-                                                        : requiresReview && needsSubmission && !hasSubmission ? 'Upload link submission project terlebih dahulu.'
-                                                          : requiresReview && !hasReview ? 'Berikan rating dan review untuk mendapatkan sertifikat.'
-                                                            : 'Sertifikat akan tersedia setelah bootcamp selesai.'}
+                                                      ? (isInstallment
+                                                            ? t('profile.bootcampDetail.certPayInstallmentPrompt')
+                                                            : t('profile.bootcampDetail.certPayFullPrompt'))
+                                                      : requiresReview && !allAttendanceVerified
+                                                        ? t('profile.bootcampDetail.certAttendancePrompt', {
+                                                              verified: verifiedAttendances,
+                                                              total: totalSchedules,
+                                                          })
+                                                        : requiresReview && needsSubmission && !hasSubmission
+                                                          ? t('profile.bootcampDetail.certSubmissionPrompt')
+                                                          : requiresReview && !hasReview
+                                                            ? t('profile.bootcampDetail.certReviewPrompt')
+                                                            : t('profile.bootcampDetail.certAvailableAfterBootcamp')}
                                             </p>
                                             {isInstallment && !isFullyPaid ? (
                                                 <Button
@@ -1121,22 +1199,24 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                     id="btn-lunasi-sertifikat-bootcamp"
                                                 >
                                                     <CreditCard size={16} />
-                                                    {isPayingCert ? 'Mengarahkan...' : 'Lunasi Cicilan Sekarang'}
+                                                    {isPayingCert
+                                                        ? t('profile.bootcampDetail.btnRedirecting')
+                                                        : t('profile.bootcampDetail.btnPayCertInstallment')}
                                                 </Button>
                                             ) : (
                                                 <Button className="mt-3 w-full" disabled>
                                                     <Download size={16} className="mr-2" />
                                                     {!certificate
-                                                        ? 'Sertifikat Belum Tersedia'
+                                                        ? t('profile.bootcampDetail.btnCertNotAvailable')
                                                         : !isFullyPaid
-                                                          ? 'Selesaikan Pembayaran'
+                                                          ? t('profile.bootcampDetail.btnSettlePayment')
                                                           : !allAttendanceVerified
-                                                            ? 'Lengkapi Kehadiran'
+                                                            ? t('profile.bootcampDetail.btnCompleteAttendance')
                                                             : needsSubmission && !hasSubmission
-                                                              ? 'Upload Submission'
+                                                              ? t('profile.bootcampDetail.btnUploadSubmission')
                                                               : !hasReview
-                                                                ? 'Berikan Review'
-                                                                : 'Menunggu Bootcamp Selesai'}
+                                                                ? t('profile.bootcampDetail.btnGiveReview')
+                                                                : t('profile.bootcampDetail.btnWaitingBootcampEnd')}
                                                 </Button>
                                             )}
                                         </>
@@ -1179,7 +1259,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                         }}
                                     >
                                         <Users size={16} className="mr-2" />
-                                        Gabung Grup WA
+                                        {t('profile.bootcampDetail.btnJoinWaGroup')}
                                     </Button>
                                 </div>
                             </div>
@@ -1190,7 +1270,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                 <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
                                     <div className="mb-4 flex items-center gap-2">
                                         <MessageSquare className="text-amber-500" size={20} />
-                                        <h3 className="font-semibold">Rating & Review</h3>
+                                        <h3 className="font-semibold">{t('profile.bootcampDetail.ratingAndReviewTitle')}</h3>
                                     </div>
 
                                     {hasReview ? (
@@ -1198,7 +1278,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                             <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
                                                 <div className="mb-2 flex items-center gap-2">
                                                     <CheckCircle size={16} className="text-green-600" />
-                                                    <span className="text-sm font-medium text-green-800 dark:text-green-200">Review Terkirim</span>
+                                                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                                                        {t('profile.bootcampDetail.reviewSubmitted')}
+                                                    </span>
                                                 </div>
                                                 <div className="mb-2">
                                                     <StarRating rating={bootcampItem.rating || 0} readonly />
@@ -1210,19 +1292,19 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                         <div className="space-y-4">
                                             <div className="rounded-lg bg-amber-50 p-4 dark:bg-amber-900/20">
                                                 <p className="text-center text-sm text-amber-800 dark:text-amber-200">
-                                                    🎯 Berikan rating dan review untuk mendapatkan sertifikat!
+                                                    {t('profile.bootcampDetail.reviewPrompt')}
                                                 </p>
                                             </div>
 
                                             {!showReviewForm ? (
                                                 <Button onClick={() => setShowReviewForm(true)} className="w-full bg-amber-600 hover:bg-amber-700">
                                                     <MessageSquare size={16} className="mr-2" />
-                                                    Beri Rating & Review
+                                                    {t('profile.bootcampDetail.btnGiveRatingAndReview')}
                                                 </Button>
                                             ) : (
                                                 <div className="space-y-4">
                                                     <div className="flex items-center justify-between">
-                                                        <h4 className="text-sm font-medium">Formulir Review</h4>
+                                                        <h4 className="text-sm font-medium">{t('profile.bootcampDetail.reviewFormTitle')}</h4>
                                                         <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>
                                                             <X size={16} />
                                                         </Button>
@@ -1230,26 +1312,30 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
 
                                                     <div className="space-y-2">
                                                         <Label className="text-sm">
-                                                            Rating <span className="text-red-500">*</span>
+                                                            {t('profile.bootcampDetail.labelRating')}{' '}
+                                                            <span className="text-red-500">*</span>
                                                         </Label>
                                                         <StarRating rating={rating} onRatingChange={setRating} />
-                                                        <p className="text-xs text-gray-500">Berikan rating 1-5 bintang</p>
+                                                        <p className="text-xs text-gray-500">{t('profile.bootcampDetail.ratingHint')}</p>
                                                     </div>
 
                                                     <div className="space-y-2">
                                                         <Label htmlFor="review" className="text-sm">
-                                                            Review <span className="text-red-500">*</span>
+                                                            {t('profile.bootcampDetail.labelReview')}{' '}
+                                                            <span className="text-red-500">*</span>
                                                         </Label>
                                                         <textarea
                                                             id="review"
                                                             value={reviewText}
                                                             onChange={(e) => setReviewText(e.target.value)}
-                                                            placeholder="Bagikan pengalaman Anda..."
+                                                            placeholder={t('profile.bootcampDetail.reviewPlaceholder')}
                                                             className="w-full rounded-lg border border-gray-300 p-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                             rows={3}
                                                             maxLength={500}
                                                         />
-                                                        <p className="text-xs text-gray-500">Maksimal 500 karakter ({reviewText.length}/500)</p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {t('profile.bootcampDetail.reviewCharLimit', { count: reviewText.length })}
+                                                        </p>
                                                     </div>
 
                                                     <div className="flex gap-2">
@@ -1259,7 +1345,7 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                             size="sm"
                                                             className="flex-1"
                                                         >
-                                                            Batal
+                                                            {t('profile.bootcampDetail.btnCancel')}
                                                         </Button>
                                                         <Button
                                                             onClick={handleSubmitReview}
@@ -1267,7 +1353,9 @@ export default function DetailMyBootcamp({ bootcamp, certificate, certificatePar
                                                             size="sm"
                                                             className="flex-1 bg-amber-600 hover:bg-amber-700"
                                                         >
-                                                            {submittingReview ? 'Mengirim...' : 'Kirim'}
+                                                            {submittingReview
+                                                                ? t('profile.bootcampDetail.btnSending')
+                                                                : t('profile.bootcampDetail.btnSubmit')}
                                                         </Button>
                                                     </div>
                                                 </div>

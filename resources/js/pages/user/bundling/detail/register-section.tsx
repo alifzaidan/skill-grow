@@ -2,12 +2,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { rupiahFormatter } from '@/lib/utils';
 import { SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { enUS, id } from 'date-fns/locale';
 import { AlertTriangle, Calendar, Check, Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bundle {
     id: string;
@@ -44,12 +44,12 @@ export default function RegisterSection({
     hasOwnedItems,
     ownedItems,
 }: RegisterSectionProps) {
+    const { t, i18n } = useTranslation('user');
     const { auth } = usePage<SharedData>().props;
 
-    const deadline = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
+    const formatRupiah = (val: number) => `Rp ${val.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}`;
 
-    const isLoggedIn = !!auth.user;
-    const isProfileComplete = isLoggedIn && auth.user?.phone_number;
+    const deadline = bundle.registration_deadline ? new Date(bundle.registration_deadline) : null;
 
     let registrationUrl: string;
     let buttonText: string;
@@ -58,22 +58,22 @@ export default function RegisterSection({
 
     if (hasOwnedItems) {
         registrationUrl = '#';
-        buttonText = 'Tidak Dapat Mendaftar';
-        warningMessage = 'Anda sudah memiliki beberapa produk dalam bundle ini!';
+        buttonText = t('bundling.detail.register.btnCannotRegister');
+        warningMessage = t('bundling.detail.register.warningOwnedItems');
         isDisabled = true;
     } else {
         registrationUrl = bundle.registration_url;
-        buttonText = 'Daftar Sekarang';
+        buttonText = t('bundling.detail.register.btnRegisterNow');
         warningMessage = null;
     }
 
     return (
         <section className="mx-auto my-8 w-full max-w-7xl px-4 md:my-10 lg:my-12" id="register">
             <h2 className="dark:text-primary-foreground mb-3 text-center text-2xl font-bold text-gray-900 italic sm:text-3xl md:mb-4 md:text-4xl">
-                Informasi Pendaftaran
+                {t('bundling.detail.register.title')}
             </h2>
             <p className="mb-6 text-center text-sm text-gray-600 md:mb-8 md:text-base dark:text-gray-400">
-                Daftar sekarang dan dapatkan akses ke semua program pembelajaran dalam paket bundling ini.
+                {t('bundling.detail.register.subtitle')}
             </p>
 
             {/* ✅ Warning if user already owns items */}
@@ -81,7 +81,7 @@ export default function RegisterSection({
                 <Alert variant="destructive" className="mb-6">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
-                        <p className="mb-2 font-semibold">Anda sudah memiliki produk berikut dalam bundle ini:</p>
+                        <p className="mb-2 font-semibold">{t('bundling.detail.register.ownedWarningTitle')}</p>
                         <ul className="ml-4 list-disc space-y-1">
                             {ownedItems.map((item) => (
                                 <li key={item.id}>
@@ -89,7 +89,7 @@ export default function RegisterSection({
                                 </li>
                             ))}
                         </ul>
-                        <p className="mt-2 text-sm">Untuk menghindari duplikasi, Anda tidak dapat membeli bundle ini.</p>
+                        <p className="mt-2 text-sm">{t('bundling.detail.register.ownedWarningDesc')}</p>
                     </AlertDescription>
                 </Alert>
             )}
@@ -106,22 +106,22 @@ export default function RegisterSection({
                 <div className="flex flex-1 flex-col justify-between">
                     <div>
                         <h5 className="mb-3 text-sm font-semibold text-black md:mb-4 md:text-base dark:text-white">
-                            Daftar Paket Bundling Skill Grow dan dapatkan akses ke semua program pembelajaran
+                            {t('bundling.detail.register.pitchText')}
                         </h5>
 
                         {/* Price Section */}
                         <div className="mb-2 flex flex-col items-end">
                             {totalOriginalPrice > bundle.price && (
                                 <span className="mb-1 text-xs text-red-500 line-through sm:text-sm">
-                                    {rupiahFormatter.format(totalOriginalPrice)}
+                                    {formatRupiah(totalOriginalPrice)}
                                 </span>
                             )}
                             {bundle.price > 0 ? (
                                 <span className="text-2xl font-bold text-gray-900 italic sm:text-3xl dark:text-gray-100">
-                                    {rupiahFormatter.format(bundle.price)}
+                                    {formatRupiah(bundle.price)}
                                 </span>
                             ) : (
-                                <span className="text-2xl font-bold text-gray-900 italic sm:text-3xl dark:text-gray-100">GRATIS</span>
+                                <span className="text-2xl font-bold text-gray-900 italic sm:text-3xl dark:text-gray-100">{t('bundling.detail.register.free')}</span>
                             )}
                         </div>
 
@@ -133,29 +133,29 @@ export default function RegisterSection({
                                 <li className="flex items-center gap-2 text-xs md:text-sm">
                                     <Calendar size="14" className="flex-shrink-0 text-primary md:h-4 md:w-4 dark:text-secondary" />
                                     <p>
-                                        Batch: <span className="font-semibold">{bundle.batch.toLowerCase().includes('batch') ? bundle.batch : `Batch ${bundle.batch}`}</span>
+                                        Batch: <span className="font-semibold">{bundle.batch.toLowerCase().includes('batch') ? bundle.batch : t('bundling.detail.register.batch', { batch: bundle.batch })}</span>
                                     </p>
                                 </li>
                             )}
                             <li className="flex items-center gap-2 text-xs md:text-sm">
                                 <Package size="14" className="flex-shrink-0 text-primary md:h-4 md:w-4 dark:text-secondary" />
-                                <p>Total {bundle.bundle_items_count} Program Pembelajaran</p>
+                                <p>{t('bundling.detail.register.totalPrograms', { count: bundle.bundle_items_count })}</p>
                             </li>
                             <li className="flex items-start gap-2 text-xs md:text-sm">
                                 <Check size="14" className="mt-0.5 flex-shrink-0 text-green-600 md:h-4 md:w-4" />
-                                <p>Hemat {rupiahFormatter.format(discountAmount)} dari harga normal</p>
+                                <p>{t('bundling.detail.register.saveAmountFromNormal', { amount: formatRupiah(discountAmount) })}</p>
                             </li>
                             <li className="flex items-start gap-2 text-xs md:text-sm">
                                 <Check size="14" className="mt-0.5 flex-shrink-0 text-green-600 md:h-4 md:w-4" />
-                                <p>Sertifikat untuk semua program yang diselesaikan</p>
+                                <p>{t('bundling.detail.register.certificateBenefit')}</p>
                             </li>
                             {deadline && (
                                 <li className="flex items-start gap-2 text-xs md:text-sm">
                                     <Calendar size="14" className="text-primary dark:text-secondary mt-0.5 flex-shrink-0 md:h-4 md:w-4" />
                                     <div>
-                                        <p className="font-medium">Batas Pendaftaran:</p>
+                                        <p className="font-medium">{t('bundling.detail.register.deadlineLabel')}</p>
                                         <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                                            {format(deadline, "EEEE, dd MMMM yyyy 'pukul' HH:mm", { locale: id })} WIB
+                                            {format(deadline, i18n.language === 'en' ? "EEEE, MMMM dd, yyyy 'at' HH:mm" : "EEEE, dd MMMM yyyy 'pukul' HH:mm", { locale: i18n.language === 'en' ? enUS : id })} WIB
                                         </p>
                                     </div>
                                 </li>

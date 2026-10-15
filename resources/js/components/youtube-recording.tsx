@@ -1,4 +1,5 @@
 import { Clock, Youtube } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface YouTubeRecordingProps {
     recordingUrl: string | null;
@@ -15,6 +16,7 @@ function getYoutubeEmbedUrl(url: string): string | null {
 }
 
 export default function YouTubeRecording({ recordingUrl, title, className = '' }: YouTubeRecordingProps) {
+    const { t } = useTranslation();
     const embedUrl = recordingUrl ? getYoutubeEmbedUrl(recordingUrl) : null;
 
     if (!recordingUrl || !embedUrl) {
@@ -27,13 +29,13 @@ export default function YouTubeRecording({ recordingUrl, title, className = '' }
                         <Clock className="text-yellow-600 dark:text-yellow-400" size={20} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-200">⏳ Recording Sedang Diproses</h2>
-                        <p className="text-sm text-yellow-600 dark:text-yellow-400">Mohon tunggu, recording akan tersedia dalam 1-2 hari</p>
+                        <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-200">{t('profile.youtubeRecording.processingTitle')}</h2>
+                        <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('profile.youtubeRecording.processingSubtitle')}</p>
                     </div>
                 </div>
                 <div className="rounded-lg bg-yellow-100 p-4 dark:bg-yellow-800/50">
                     <p className="text-center text-yellow-800 dark:text-yellow-200">
-                        📹 Tim kami sedang memproses recording {title.toLowerCase()}. Anda akan mendapat notifikasi ketika sudah siap ditonton.
+                        {t('profile.youtubeRecording.processingDesc', { title: title.toLowerCase() })}
                     </p>
                 </div>
             </div>
@@ -49,8 +51,8 @@ export default function YouTubeRecording({ recordingUrl, title, className = '' }
                     <Youtube className="text-red-600 dark:text-red-400" size={20} />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-red-800 dark:text-red-200">🎥 Recording {title} Tersedia</h2>
-                    <p className="text-sm text-red-600 dark:text-red-400">Tonton kembali materi kapan saja</p>
+                    <h2 className="text-xl font-bold text-red-800 dark:text-red-200">{t('profile.youtubeRecording.availableTitle', { title })}</h2>
+                    <p className="text-sm text-red-600 dark:text-red-400">{t('profile.youtubeRecording.availableSubtitle')}</p>
                 </div>
             </div>
 
@@ -68,7 +70,7 @@ export default function YouTubeRecording({ recordingUrl, title, className = '' }
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-                <p className="text-sm text-red-700 dark:text-red-300">✨ Akses selamanya untuk materi {title.toLowerCase()} ini</p>
+                <p className="text-sm text-red-700 dark:text-red-300">{t('profile.youtubeRecording.lifetimeAccess', { title: title.toLowerCase() })}</p>
                 <a
                     href={recordingUrl}
                     target="_blank"
@@ -76,7 +78,7 @@ export default function YouTubeRecording({ recordingUrl, title, className = '' }
                     className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
                 >
                     <Youtube size={16} />
-                    Buka di YouTube
+                    {t('profile.youtubeRecording.openInYoutube')}
                 </a>
             </div>
         </div>

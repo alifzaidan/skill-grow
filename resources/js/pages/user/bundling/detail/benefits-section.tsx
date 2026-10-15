@@ -1,4 +1,5 @@
 import { Award, Gift, Sparkles, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bundle {
     description?: string | null;
@@ -10,6 +11,8 @@ interface BenefitsSectionProps {
 }
 
 export default function BenefitsSection({ bundle }: BenefitsSectionProps) {
+    const { t } = useTranslation('user');
+
     if (!bundle.description && !bundle.benefits) {
         return null;
     }
@@ -36,7 +39,7 @@ export default function BenefitsSection({ bundle }: BenefitsSectionProps) {
                             <div className="mb-4 md:mb-6">
                                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-secondary md:mb-4 md:px-4 md:py-2 md:text-sm dark:bg-primary/20">
                                     <Sparkles size={14} className="md:h-4 md:w-4" />
-                                    Tentang Paket Bundling
+                                    {t('bundling.detail.about.badge')}
                                 </div>
                                 <div className="flex items-start gap-3 md:gap-4">
                                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 md:h-14 md:w-14 md:rounded-2xl">
@@ -44,10 +47,10 @@ export default function BenefitsSection({ bundle }: BenefitsSectionProps) {
                                     </div>
                                     <div>
                                         <h3 className="mb-1 text-lg font-bold text-gray-900 md:mb-2 md:text-xl lg:text-2xl dark:text-white">
-                                            Deskripsi Paket
+                                            {t('bundling.detail.about.aboutTitle')}
                                         </h3>
                                         <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                                            Kenali lebih dalam tentang paket ini
+                                            {t('bundling.detail.about.aboutDesc')}
                                         </p>
                                     </div>
                                 </div>
@@ -77,7 +80,7 @@ export default function BenefitsSection({ bundle }: BenefitsSectionProps) {
                             <div className="mb-4 md:mb-6">
                                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-green-600 md:mb-4 md:px-4 md:py-2 md:text-sm dark:from-green-500/20 dark:to-emerald-500/20 dark:text-green-400">
                                     <Gift size={14} className="md:h-4 md:w-4" />
-                                    Keuntungan Spesial
+                                    {t('bundling.detail.about.benefitsBadge')}
                                 </div>
                                 <div className="flex items-start gap-3 md:gap-4">
                                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 md:h-14 md:w-14 md:rounded-2xl">
@@ -85,10 +88,10 @@ export default function BenefitsSection({ bundle }: BenefitsSectionProps) {
                                     </div>
                                     <div>
                                         <h3 className="mb-1 text-lg font-bold text-gray-900 md:mb-2 md:text-xl lg:text-2xl dark:text-white">
-                                            Keuntungan yang Anda Dapatkan
+                                            {t('bundling.detail.about.benefitsTitle')}
                                         </h3>
                                         <p className="text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                                            Benefit eksklusif untuk Anda
+                                            {t('bundling.detail.about.benefitsDesc')}
                                         </p>
                                     </div>
                                 </div>
@@ -112,7 +115,7 @@ export default function BenefitsSection({ bundle }: BenefitsSectionProps) {
                 <div className="mt-8 text-center md:mt-10 lg:mt-12">
                     <div className="inline-flex flex-col items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-medium text-gray-700 sm:flex-row md:px-6 md:py-3 md:text-sm dark:border-primary/30 dark:bg-primary/10 dark:text-gray-300">
                         <Sparkles size={14} className="text-primary md:h-4 md:w-4" />
-                        <span className="text-center">Dapatkan semua keuntungan ini dalam satu paket bundling</span>
+                        <span className="text-center">{t('bundling.detail.about.bottomTagline')}</span>
                         <Sparkles size={14} className="text-primary md:h-4 md:w-4" />
                     </div>
                 </div>

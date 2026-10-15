@@ -1,8 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function TestimonySection() {
+    const { t } = useTranslation('home');
+
     const testimonials = [
         {
             text: "Pelatihannya sangat informatif dan terstruktur dengan baik. Instruktur menjelaskan materi dengan jelas dan memberikan banyak contoh praktis. Saya merasa jauh lebih percaya diri setelah mengikuti pelatihan ini.",
@@ -139,16 +141,18 @@ export default function TestimonySection() {
     return (
         <section ref={sectionRef} className="mx-auto mt-10 mb-10 w-full px-2 sm:px-4 max-w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
             <div className="relative mx-auto mb-8 sm:mb-12 w-full sm:w-fit">
-                <span className="relative z-10 block text-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">Apa Kata Mereka Tentang Skill Grow</span>
+                <span className="relative z-10 block text-center text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold">
+                    {t('testimony.title', 'Apa Kata Mereka Tentang Skill Grow')}
+                </span>
                 <span className="bg-primary absolute right-2 -bottom-1 left-2 z-0 h-3 sm:h-4 rounded"></span>
             </div>
 
-            <Carousel opts={{ align: 'start' }} className="w-full" ref={carouselRef}>
-                <CarouselContent data-carousel-content>
+            <div className="w-full overflow-hidden" ref={carouselRef}>
+                <div data-carousel-content className="flex overflow-x-auto scroll-smooth no-scrollbar">
                     {testimonials.map((testimonial, idx) => (
-                        <CarouselItem
+                        <div
                             key={idx}
-                            className="basis-full sm:basis-1/1 md:basis-1/2 lg:basis-1/3 px-1 sm:px-2"
+                            className="basis-full sm:basis-1/1 md:basis-1/2 lg:basis-1/3 shrink-0 px-1 sm:px-2"
                             data-carousel-item
                         >
                             <div className="h-full px-2">
@@ -166,10 +170,10 @@ export default function TestimonySection() {
                                     </CardContent>
                                 </Card>
                             </div>
-                        </CarouselItem>
+                        </div>
                     ))}
-                </CarouselContent>
-            </Carousel>
+                </div>
+            </div>
         </section>
     );
 }

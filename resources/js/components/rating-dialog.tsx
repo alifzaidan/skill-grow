@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from '@inertiajs/react';
 import { Star } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Course {
     id: string;
@@ -19,6 +20,7 @@ interface RatingDialogProps {
 }
 
 export default function RatingDialog({ isOpen, onClose, course }: RatingDialogProps) {
+    const { t } = useTranslation();
     const [hoveredStar, setHoveredStar] = useState<number>(0);
     const { data, setData, post, processing, errors, reset } = useForm({
         rating: 0,
@@ -61,8 +63,8 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
         <Dialog open={isOpen} onOpenChange={handleClose}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle className="text-xl font-bold">Berikan Rating & Review</DialogTitle>
-                    <DialogDescription>Bagikan pengalaman Anda mengikuti kelas ini</DialogDescription>
+                    <DialogTitle className="text-xl font-bold">{t('profile.ratingDialog.title')}</DialogTitle>
+                    <DialogDescription>{t('profile.ratingDialog.description')}</DialogDescription>
                 </DialogHeader>
 
                 <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -82,7 +84,7 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="mb-2 block text-sm font-medium">
-                            Rating <span className="text-red-500">*</span>
+                            {t('profile.ratingDialog.ratingLabel')} <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center gap-1">
                             {[1, 2, 3, 4, 5].map((star) => (
@@ -102,14 +104,14 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
                                     <>
                                         {data.rating}/5 -{' '}
                                         {data.rating === 1
-                                            ? 'Sangat Buruk'
+                                            ? t('profile.ratingDialog.veryBad')
                                             : data.rating === 2
-                                              ? 'Buruk'
+                                              ? t('profile.ratingDialog.bad')
                                               : data.rating === 3
-                                                ? 'Cukup'
+                                                ? t('profile.ratingDialog.fair')
                                                 : data.rating === 4
-                                                  ? 'Baik'
-                                                  : 'Sangat Baik'}
+                                                  ? t('profile.ratingDialog.good')
+                                                  : t('profile.ratingDialog.veryGood')}
                                     </>
                                 )}
                             </span>
@@ -119,12 +121,12 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
 
                     <div>
                         <label className="mb-2 block text-sm font-medium">
-                            Review <span className="text-red-500">*</span>
+                            {t('profile.ratingDialog.reviewLabel')} <span className="text-red-500">*</span>
                         </label>
                         <Textarea
                             value={data.review}
                             onChange={(e) => setData('review', e.target.value)}
-                            placeholder="Ceritakan pengalaman Anda mengikuti kelas ini. Apa yang Anda sukai? Apa yang bisa diperbaiki?"
+                            placeholder={t('profile.ratingDialog.reviewPlaceholder')}
                             rows={4}
                             className="resize-none"
                         />
@@ -136,17 +138,16 @@ export default function RatingDialog({ isOpen, onClose, course }: RatingDialogPr
 
                     <div className="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20">
                         <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>Catatan:</strong> Setelah Anda mengirim rating dan review, sertifikat kelulusan akan langsung tersedia untuk
-                            diunduh.
+                            <strong>{t('profile.ratingDialog.noteTitle')}</strong> {t('profile.ratingDialog.note')}
                         </p>
                     </div>
 
                     <div className="flex gap-3 pt-4">
                         <Button type="button" variant="outline" className="flex-1" onClick={handleClose} disabled={processing}>
-                            Batal
+                            {t('profile.ratingDialog.cancel')}
                         </Button>
                         <Button type="submit" className="flex-1" disabled={processing || data.rating === 0 || data.review.length < 1}>
-                            {processing ? 'Mengirim...' : 'Kirim Rating'}
+                            {processing ? t('profile.ratingDialog.submitting') : t('profile.ratingDialog.submit')}
                         </Button>
                     </div>
                 </form>

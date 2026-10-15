@@ -1,0 +1,127 @@
+{
+  "about": {
+    "titlePart1": "Unlock your Potential",
+    "titlePart2": "Grow your Skills, Grow your Career"
+  },
+  "program": {
+    "title": "Mengapa Memilih Skill Grow?",
+    "desc": "Skill Grow adalah platform yang dirancang untuk membantu Anda mengembangkan keterampilan dan mencapai tujuan karir Anda. Buka potensi dan kembangkan keterampilan diri bersama para instruktur berkompeten yang mendukung pengembangan karir masa depan!!",
+    "totalStudents": "Total Students",
+    "partners": "Partner Kerjasama"
+  },
+  "tools": {
+    "badge": "Tools & Framework",
+    "title": "Tools up-to-date yang digunakan"
+  },
+  "latest": {
+    "badge": "Produk Terbaru",
+    "recentTraining": "Pelatihan Terbaru",
+    "title": "Kelas, Bootcamp, Webinar, Private & Bundling Terbaru dari Skill Grow",
+    "popularTitle": "Kelas Terpopuler",
+    "popularDesc": "Tingkatkan pengetahuan dan keterampilan kamu disini",
+    "empty": "Belum ada produk yang tersedia saat ini.",
+    "allOwned": "Anda sudah memiliki akses semua produk terbaru kami. 😁🙏",
+    "thankYou": "Terima kasih telah menjadi bagian dari Skill Grow!",
+    "save": "Hemat {{discount}}%",
+    "free": "Gratis",
+    "lifetimeAccess": "Akses Selamanya",
+    "registerBefore": "Daftar sebelum {{days}} hari lagi",
+    "registrationClosed": "Pendaftaran ditutup",
+    "registerUntil": "Daftar s/d {{date}}",
+    "viewMore": "Lihat Selengkapnya...",
+    "registeredMentors": "{{count}} mentor terdaftar",
+    "noBio": "Tidak ada bio",
+    "startsPrefix": "Mulai: ",
+    "registrationDeadlinePrefix": "Batas Pendaftaran: ",
+    "badges": {
+      "course": "Kelas Online",
+      "bootcamp": "Bootcamp",
+      "webinar": "Webinar",
+      "bundle": "Bundle",
+      "certification": "Program Sertifikasi",
+      "private": "Private",
+      "scholarship": "Beasiswa",
+      "regular": "Reguler"
+    },
+    "levels": {
+      "beginner": "Level Beginner",
+      "intermediate": "Level Intermediate",
+      "advanced": "Level Advanced"
+    }
+  },
+  "mentor": {
+    "title": "Meet Our Mentor",
+    "badge": "MENTOR",
+    "roleTax": "Mentor Perpajakan"
+  },
+  "carousel": {
+    "slide": "Slide {{number}}"
+  },
+  "testimony": {
+    "title": "Apa Kata Mereka Tentang Skill Grow"
+  },
+  "faq": {
+    "title": "Pertanyaan yang sering ditanyakan",
+    "description": "Belajar pajak, brevet, atau akuntansi kadang bikin bingung sendiri, apalagi kalau materinya banyak dan teknis banget! Punya pertanyaan seputar webinar, kelas online, atau sertifikasi pajak dan akuntansi?",
+    "q1": "Apa itu Skill Grow ? ",
+    "a1": "Skill Grow adalah lembaga pelatihan profesional yang fokus pada pengembangan kompetensi di bidang akuntansi, perpajakan, audit, dan software akuntansi, dll dengan pendekatan praktis dan aplikatif",
+    "q2": "Apa Saja Fitur dan di Skill Grow ?",
+    "a2": "Skill Grow menyediakan berbagai program pembelajaran seperti Kelas Online, Bootcamp, serta pelatihan berbasis Webinar. Setiap program dirancang secara interaktif dan aplikatif untuk membantu peserta mengembangkan keterampilan secara optimal dan siap diterapkan di dunia kerja.",
+    "q3": "Bagaimana alur belajar di Skill Grow?",
+    "a3": "Pendaftaran dapat dilakukan melalui website resmi Skill Grow atau dengan menghubungi admin melalui WhatsApp yang tersedia di website atau DM di IG @brevetpajak_skillgrow.",
+    "q4": "Kemana Saya bisa mendapatkan informasi untuk bekerjasama atau jika terdapat kendala ?",
+    "a4_part1": "Untuk informasi lebih lanjut mengenai Skill Grow, silakan menghubungi admin kami melalui WhatsApp ",
+    "a4_phone": "+6285606391730",
+    "a4_part2": ". Kami juga aktif di berbagai media sosial, jadi pastikan untuk mengikuti Skill Grow di Instagram, TikTok, dan LinkedIn untuk mendapatkan update terbaru serta tips seputar akuntansi dan perpajakan."
+  },
+  "cta": {
+    "title": "Tertarik Mengikuti Kelas Kami?",
+    "desc": "Gabung sekarang dan mulai perjalanan pengembangan skill bersama Skill Grow!",
+    "btn": "Lihat Kelas"
+  },
+  "notification": {
+    "justPurchased": "Baru saja membeli {{type}}: "
+  },
+  "promotion": {
+    "alt": "Promosi Skill Grow",
+    "clickForDetail": "Klik untuk detail",
+    "clickToClose": "Klik untuk tutup"
+  },
+  "galery": {
+    "title": "Galeri Skill Grow"
+  },
+  "grow": {
+    "titlePart1": "Grow Your Skills,",
+    "titlePart2": "Shape Your Future!",
+    "description": "Bangga berkontribusi dalam perjalanan pengembangan karir ribuan peserta yang berasal dari berbagai bidang perusahaan"
+  },
+  "popularClass": {
+    "title": "Kelas Populer Untuk Anda",
+    "viewClass": "Lihat Kelas",
+    "c1Title": "Digital Marketing",
+    "c1Desc": "Pelajari dasar-dasar email marketing, periklanan PPC, SEO, strategi dan manajemen media sosial untuk mulai karir digital marketing anda yang gemilang.",
+    "c2Title": "Business & Management",
+    "c2Desc": "Bangun pondasi kuat untuk perencanaan bisnis, strategi manajemen keuangan, dan perilaku organisasi untuk membangun karir sukses dalam bisnis.",
+    "c3Title": "Information & Technology",
+    "c3Desc": "Pelajari dasar-dasar ilmu komputer, pengembangan perangkat lunak, jaringan, dan keamanan siber untuk membangun pemahaman kuat tentang lanskap TI."
+  },
+  "studyFlow": {
+    "titlePart1": "Cari Alur Belajar",
+    "titlePart2": "Yang Sesuai Dengan Kebutuhan Anda.",
+    "onlineClass": "Kelas Online",
+    "onlineClassDesc": "Belajar kapanpun dan dimanapun dengan menggunakan perangkat seperti komputer atau smartphone.",
+    "advantages": "Keunggulan",
+    "onlineAdv1": "Pembelajaran by video learning",
+    "onlineAdv2": "Full akses materi pembelajaran",
+    "onlineAdv3": "Pembelajaran fleksibel",
+    "onlineAdv4": "Akses 24/7",
+    "onlineAdv5": "E-sertifikat terverifikasi",
+    "zoomClass": "Kelas Zoom Meeting",
+    "zoomClassDesc": "Memungkinkan peserta dan instruktur untuk berinteraksi secara langsung melalui video conference.",
+    "zoomAdv1": "Pengalaman belajar interaktif",
+    "zoomAdv2": "Pembelajaran disampaikan secara realtime",
+    "zoomAdv3": "Free akses recording kelas dan materi pembelajaran",
+    "zoomAdv4": "Grup diskusi interaktif antar peserta",
+    "zoomAdv5": "E-sertifikat terverifikasi"
+  }
+}

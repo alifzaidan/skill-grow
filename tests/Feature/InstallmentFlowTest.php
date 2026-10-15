@@ -2512,4 +2512,61 @@ class InstallmentFlowTest extends TestCase
         $response->assertStatus(200);
         $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
     }
+
+    /**
+     * Test 36: Accessing parent invoice PDF resolves to term invoice (per termin, not whole amount)
+     * and shows the actual paid_at date rather than open/download time
+     */
+    public function test_download_pdf_for_installment_parent_resolves_to_term_and_uses_actual_paid_at()
+    {
+        $pastDate = Carbon::parse('2026-05-15 10:30:00');
+
+        $parent = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PARENT-036',
+            'amount' => 3015000,
+            'nett_amount' => 3000000,
+            'status' => 'installment_pending',
+            'is_installment' => true,
+            'paid_at' => null,
+        ]);
+
+        $term1 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PARENT-036-T1',
+            'amount' => 1005000,
+            'nett_amount' => 1000000,
+            'status' => 'paid',
+            'paid_at' => $pastDate,
+            'payment_method' => 'Bank Transfer',
+            'payment_channel' => 'BCA Virtual Account',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 1,
+        ]);
+
+        $term2 = Invoice::create([
+            'user_id' => $this->buyer->id,
+            'invoice_code' => 'AKS-PARENT-036-T2',
+            'amount' => 1005000,
+            'nett_amount' => 1000000,
+            'status' => 'pending',
+            'is_installment' => false,
+            'parent_invoice_id' => $parent->id,
+            'installment_number' => 2,
+        ]);
+
+        // 1. Accessing parent invoice PDF should resolve to paid Term 1 and return 200
+        $response = $this->actingAs($this->buyer)
+            ->get("/invoice/{$parent->id}/pdf");
+
+        $response->assertStatus(200);
+        $this->assertEquals('application/pdf', $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('AKS-PARENT-036-T1.pdf', $response->headers->get('Content-Disposition') ?? '');
+
+        // 2. Querying unpaid Term 2 should return 403
+        $responseTerm2 = $this->actingAs($this->buyer)
+            ->get("/invoice/{$parent->id}/pdf?term=2");
+        $responseTerm2->assertStatus(403);
+    }
 }

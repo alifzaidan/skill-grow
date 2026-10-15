@@ -56,10 +56,14 @@ interface HomeProps {
     }>;
 }
 
+import { useTranslation } from 'react-i18next';
+
 export default function Home({ allProducts }: HomeProps) {
+    const { t } = useTranslation('user');
+
     return (
         <UserLayout>
-            <Head title="Beranda" />
+            <Head title={t('aboutPage.headTitle', 'Tentang Kami')} />
             <HeroSection />
             <CategoriesSection />
             <DigmarSection />

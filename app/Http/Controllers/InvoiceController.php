@@ -2255,10 +2255,13 @@ class InvoiceController extends Controller
             'bootcampItems.bootcamp',
             'webinarItems.webinar',
             'certificationProgramItems.certificationProgram',
+            'bundleEnrollments.bundle',
+            'installmentTerms',
             'parentInvoice.courseItems.course',
             'parentInvoice.bootcampItems.bootcamp',
             'parentInvoice.webinarItems.webinar',
             'parentInvoice.certificationProgramItems.certificationProgram',
+            'parentInvoice.bundleEnrollments.bundle',
         ])
             ->where(function ($q) use ($id) {
                 $q->where('id', $id)->orWhere('invoice_code', $id);
@@ -2270,16 +2273,36 @@ class InvoiceController extends Controller
             abort(403, 'Anda tidak memiliki akses ke invoice ini');
         }
 
+        // Jika invoice adalah invoice induk cicilan, alihkan ke termin yang sesuai (cicilan wajib per termin)
+        if ($invoice->isInstallmentParent()) {
+            $termParam = request()->query('term');
+            $termIdParam = request()->query('term_id');
+
+            $childInvoice = null;
+            if ($termIdParam) {
+                $childInvoice = $invoice->installmentTerms->where('id', $termIdParam)->first();
+            } elseif ($termParam) {
+                $childInvoice = $invoice->installmentTerms->where('installment_number', (int) $termParam)->first();
+            } else {
+                // Default: termin terakhir yang sudah dibayar, atau termin 1 jika belum ada yang dibayar
+                $childInvoice = $invoice->installmentTerms->where('status', 'paid')->sortByDesc('installment_number')->first()
+                    ?? $invoice->installmentTerms->sortBy('installment_number')->first();
+            }
+
+            if ($childInvoice) {
+                $childInvoice->setRelation('parentInvoice', $invoice);
+                $childInvoice->setRelation('user', $invoice->user);
+                $invoice = $childInvoice;
+            }
+        }
+
         // Izinkan download jika:
-        // 1. Invoice reguler yang sudah paid
-        // 2. Invoice parent cicilan yang sudah lunas (status=paid)
-        // 3. Invoice anak cicilan (termin) yang statusnya paid
+        // 1. Invoice reguler yang sudah paid/completed
+        // 2. Invoice anak cicilan (termin) yang statusnya paid
         $isAllowed = false;
         if (in_array($invoice->status, ['paid', 'completed'])) {
             $isAllowed = true;
-        } elseif ($invoice->is_installment) {
-            $isAllowed = $invoice->installmentTerms()->where('status', 'paid')->exists();
-        } elseif ($invoice->isInstallmentChild() && $invoice->status === 'paid') {
+        } elseif ($invoice->isInstallmentChild() && in_array($invoice->status, ['paid', 'completed'])) {
             $isAllowed = true;
         }
 
@@ -2292,11 +2315,29 @@ class InvoiceController extends Controller
         if ($invoice->isInstallmentChild() && $invoice->parentInvoice) {
             $parent = $invoice->parentInvoice;
             // Salin relasi produk dari parent ke invoice anak untuk view
-            $invoice->setRelation('courseItems', $parent->courseItems);
-            $invoice->setRelation('bootcampItems', $parent->bootcampItems);
-            $invoice->setRelation('webinarItems', $parent->webinarItems);
-            $invoice->setRelation('certificationProgramItems', $parent->certificationProgramItems);
+            if ($parent->relationLoaded('courseItems')) $invoice->setRelation('courseItems', $parent->courseItems);
+            if ($parent->relationLoaded('bootcampItems')) $invoice->setRelation('bootcampItems', $parent->bootcampItems);
+            if ($parent->relationLoaded('webinarItems')) $invoice->setRelation('webinarItems', $parent->webinarItems);
+            if ($parent->relationLoaded('privateItems')) $invoice->setRelation('privateItems', $parent->privateItems);
+            if ($parent->relationLoaded('certificationProgramItems')) $invoice->setRelation('certificationProgramItems', $parent->certificationProgramItems);
+            if ($parent->relationLoaded('bundleEnrollments')) $invoice->setRelation('bundleEnrollments', $parent->bundleEnrollments);
+
+            // Inherit payment method & channel if not set on child
+            if (!$invoice->payment_method && $parent->payment_method) {
+                $invoice->payment_method = $parent->payment_method;
+            }
+            if (!$invoice->payment_channel && $parent->payment_channel) {
+                $invoice->payment_channel = $parent->payment_channel;
+            }
+            if (!$invoice->paid_at && $parent->paid_at) {
+                $invoice->paid_at = $parent->paid_at;
+            }
+
             $invoiceForView = $invoice;
+        }
+
+        if (!$invoiceForView->paid_at && in_array($invoiceForView->status, ['paid', 'completed'])) {
+            $invoiceForView->paid_at = $invoiceForView->updated_at;
         }
 
         $data = [

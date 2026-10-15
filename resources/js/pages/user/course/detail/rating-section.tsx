@@ -1,5 +1,6 @@
 import { Star, User } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ratings = [
     {
@@ -56,15 +57,16 @@ interface Course {
 }
 
 export default function RatingSection({ course }: { course: Course }) {
+    const { t } = useTranslation('user');
     const [selectedRating, setSelectedRating] = useState<number | null>(null);
 
     const filteredRatings = selectedRating ? ratings.filter((r) => r.rating === selectedRating) : ratings;
     return (
         <section className="mx-auto mt-8 w-full max-w-7xl px-4" id="reviews">
             <h2 className="dark:text-primary-foreground mb-4 text-center text-3xl font-bold text-gray-900 italic md:text-4xl">
-                Terima Kasih Para Peserta
+                {t('course.detail.thankYouParticipants')}
             </h2>
-            <p className="text-center text-gray-600 dark:text-gray-400">Review setelah bergabung di kelas {course.title}</p>
+            <p className="text-center text-gray-600 dark:text-gray-400">{t('course.detail.reviewsSubtitle', { title: course.title })}</p>
             <div className="mt-4 flex w-max flex-nowrap gap-2">
                 <button
                     type="button"
@@ -75,7 +77,7 @@ export default function RatingSection({ course }: { course: Course }) {
                             : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                     } `}
                 >
-                    Semua Rating
+                    {t('course.detail.allRatings')}
                 </button>
                 {[5, 4, 3, 2, 1].map((rate) => (
                     <button

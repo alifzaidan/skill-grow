@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "@inertiajs/react";
+import { useTranslation } from "react-i18next";
 
 export default function HeroSection() {
+    const { t } = useTranslation('user');
+
     return (
         <section className="pt-8 w-full mx-auto max-w-7xl px-4">
             <div className="container mx-auto px-4 md:px-8 lg:px-20">
@@ -9,18 +12,18 @@ export default function HeroSection() {
                     <div className="order-2 lg:order-1">
                         <div className="w-fit relative mb-6">
                             <span className="relative z-10 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold block">
-                                Why Skill Grow ???
+                                {t('aboutPage.hero.title', 'Why Skill Grow ???')}
                             </span>
                             <span className="absolute left-0 right-0 -bottom-1 h-4 md:h-6 bg-primary z-0 rounded"></span>
                         </div>
                         <div className="text-gray-600 text-sm sm:text-sm md:text-md lg:text-lg leading-relaxed space-y-4 pb-4">
                             <p>
-                                Kami berdedikasi untuk membantu para profesional dan pencari kerja dalam meningkatkan kompetensi mereka melalui pelatihan berkualitas tinggi yang dirancang oleh para ahli industri.
+                                {t('aboutPage.hero.desc')}
                             </p>
                         </div>
                         <Link href="/course">
                         <Button>
-                            <span>Kembangkan Karirmu</span>
+                            <span>{t('aboutPage.hero.btn', 'Kembangkan Karirmu')}</span>
                             <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                             </svg>

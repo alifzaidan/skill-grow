@@ -13,6 +13,7 @@ import { Magnetic } from '@/components/ui/magnetic';
 import { Link } from '@inertiajs/react';
 import { GalleryVerticalEnd, Star } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Category = {
     id: string;
@@ -39,6 +40,7 @@ interface BootcampProps {
 }
 
 export default function BootcampSection({ categories, bootcamps, myBootcampIds }: BootcampProps) {
+    const { t, i18n } = useTranslation('user');
     const [level, setLevel] = useState('all');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
@@ -81,28 +83,27 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
         <section className="mx-auto w-full max-w-7xl px-4" id="bootcamp">
             <div className="bg-primary my-10 rounded-lg p-8 shadow-lg">
                 <h2 className="mx-auto mb-4 max-w-4xl text-center text-xl font-bold sm:text-2xl md:text-3xl lg:text-4xl">
-                    Pilih Bootcamp yang Tepat untuk Kamu
+                    {t('bootcamp.catalog.bannerTitle')}
                 </h2>
                 <p className="mx-auto max-w-4xl text-center text-sm text-gray-600 md:text-base">
-                    Di Skill Grow, kamu bisa pilih bootcamp yang paling cocok buat kamu. Belajar jadi lebih seru karena sesuai dengan apa yang kamu
-                    suka!
+                    {t('bootcamp.catalog.bannerSubtitle')}
                 </p>
             </div>
 
             <div className="mb-4 flex justify-between gap-2">
-                <Input type="search" placeholder="Cari kelas..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input type="search" placeholder={t('bootcamp.catalog.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline">Filter Tingkat Kesulitan</Button>
+                        <Button variant="outline">{t('bootcamp.catalog.filterDifficulty')}</Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
-                        <DropdownMenuLabel>Pilih Tingkat Kesulitan</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t('bootcamp.catalog.selectDifficulty')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuRadioGroup value={level} onValueChange={setLevel}>
-                            <DropdownMenuRadioItem value="all">Semua</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="beginner">Beginner</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="intermediate">Intermediate</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="advanced">Advanced</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="all">{t('bootcamp.catalog.allLevels')}</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="beginner">{t('bootcamp.catalog.levelBeginner')}</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="intermediate">{t('bootcamp.catalog.levelIntermediate')}</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="advanced">{t('bootcamp.catalog.levelAdvanced')}</DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -126,7 +127,7 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
                                 : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                         } `}
                     >
-                        Semua Kategori
+                        {t('bootcamp.catalog.allCategories')}
                     </button>
                     {categories.map((category) => (
                         <button
@@ -147,8 +148,8 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
             <div className="mb-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleBootcamps.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                        <img src="/assets/images/not-found.webp" alt="Kelas Belum Tersedia" className="w-48" />
-                        <div className="text-center text-gray-500">Belum ada kelas yang tersedia saat ini.</div>
+                        <img src="/assets/images/not-found.webp" alt={t('bootcamp.catalog.empty')} className="w-48" />
+                        <div className="text-center text-gray-500">{t('bootcamp.catalog.empty')}</div>
                     </div>
                 ) : (
                     visibleBootcamps.map((bootcamp) => {
@@ -166,24 +167,13 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
                                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                     />
                                     <div className="absolute top-3 left-3 flex gap-2">
-                                        {/* <span
-                                            className={`rounded-full px-3 py-1 text-xs font-semibold shadow ${
-                                                webinar.level === 'beginner'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : webinar.level === 'intermediate'
-                                                      ? 'bg-yellow-100 text-yellow-700'
-                                                      : 'bg-red-100 text-red-700'
-                                            }`}
-                                        >
-                                            {webinar.level.charAt(0).toUpperCase() + webinar.level.slice(1)}
-                                        </span> */}
                                         <span className="bg-primary rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
                                             {bootcamp.category.name}
                                         </span>
                                     </div>
                                     {hasAccess && (
                                         <span className="bg-primary absolute top-3 right-3 rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
-                                            Sudah Diambil
+                                            {t('bootcamp.catalog.alreadyTaken')}
                                         </span>
                                     )}
                                 </div>
@@ -195,18 +185,18 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
                                     <div className="mt-auto flex items-center justify-between">
                                         <div>
                                             {hasAccess ? (
-                                                <span className="text-primary text-sm font-semibold">Akses Dimiliki</span>
+                                                <span className="text-primary text-sm font-semibold">{t('bootcamp.catalog.hasAccess')}</span>
                                             ) : bootcamp.price === 0 ? (
-                                                <span className="font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                <span className="font-bold text-green-600 dark:text-green-400">{t('bootcamp.catalog.free')}</span>
                                             ) : (
                                                 <div>
                                                     {bootcamp.strikethrough_price > 0 && (
                                                         <span className="mr-1 text-xs text-red-400 line-through">
-                                                            Rp {bootcamp.strikethrough_price.toLocaleString('id-ID')}
+                                                            Rp {bootcamp.strikethrough_price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                         </span>
                                                     )}
                                                     <span className="text-base font-bold text-gray-800 dark:text-gray-200">
-                                                        Rp {bootcamp.price.toLocaleString('id-ID')}
+                                                        Rp {bootcamp.price.toLocaleString(i18n.language === 'en' ? 'en-US' : 'id-ID')}
                                                     </span>
                                                 </div>
                                             )}
@@ -227,7 +217,7 @@ export default function BootcampSection({ categories, bootcamps, myBootcampIds }
                 <div className="mb-8 flex justify-center">
                     <Magnetic>
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak <GalleryVerticalEnd />
+                            {t('bootcamp.catalog.loadMore')} <GalleryVerticalEnd />
                         </Button>
                     </Magnetic>
                 </div>

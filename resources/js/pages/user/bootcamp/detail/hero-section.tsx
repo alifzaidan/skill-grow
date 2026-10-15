@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Calendar, ChartArea, Clock, Hash, MapPin, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Bootcamp {
     title: string;
@@ -19,6 +20,7 @@ interface Bootcamp {
 }
 
 export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
+    const { t, i18n } = useTranslation('user');
     const start = new Date(bootcamp.start_date);
     const end = new Date(bootcamp.end_date);
     const diffMs = end.getTime() - start.getTime();
@@ -42,8 +44,7 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                             <h1 className="mb-4 text-4xl leading-tight font-bold italic sm:text-5xl">{bootcamp.title}</h1>
 
                             <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">
-                                {bootcamp.description ||
-                                    'Bergabunglah dengan bootcamp kami untuk meningkatkan keterampilan Anda dalam bidang teknologi. Pelajari dari para ahli dan tingkatkan karir Anda dengan pengetahuan praktis yang relevan.'}
+                                {bootcamp.description || t('bootcamp.detail.heroDefaultDesc')}
                             </p>
 
                             {/* Date & Schedule Info */}
@@ -51,15 +52,15 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                 <div className="flex items-center gap-3">
                                     <Calendar size={20} className="text-primary dark:text-secondary" />
                                     <div>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Periode Bootcamp</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('bootcamp.detail.programPeriod')}</p>
                                         <p className="text-sm font-semibold">
-                                            {new Date(bootcamp.start_date).toLocaleDateString('id-ID', {
+                                            {new Date(bootcamp.start_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                 day: 'numeric',
                                                 month: 'long',
                                                 year: 'numeric',
                                             })}{' '}
                                             -{' '}
-                                            {new Date(bootcamp.end_date).toLocaleDateString('id-ID', {
+                                            {new Date(bootcamp.end_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                 day: 'numeric',
                                                 month: 'long',
                                                 year: 'numeric',
@@ -72,12 +73,12 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                                         <div className="flex items-start gap-3">
                                             <Clock size={20} className="text-primary dark:text-secondary mt-1" />
                                             <div className="flex-1">
-                                                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">Jadwal Pertemuan</p>
+                                                <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">{t('bootcamp.detail.bootcampSchedule')}</p>
                                                 <div className="space-y-1">
                                                     {bootcamp.schedules.map((schedule, idx) => (
                                                         <p key={idx} className="text-sm capitalize">
                                                             {schedule.day},{' '}
-                                                            {new Date(schedule.schedule_date).toLocaleDateString('id-ID', {
+                                                            {new Date(schedule.schedule_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                                                 day: 'numeric',
                                                                 month: 'short',
                                                             })}{' '}
@@ -93,11 +94,11 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
 
                             <div className="flex flex-wrap gap-4">
                                 <a href="#register">
-                                    <Button size="lg">Daftar Sekarang</Button>
+                                    <Button size="lg">{t('bootcamp.detail.btnRegisterNow')}</Button>
                                 </a>
                                 <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
                                     <Button variant="outline" size="lg">
-                                        Hubungi Kami
+                                        {t('bootcamp.detail.btnContactUs')}
                                     </Button>
                                 </a>
                             </div>
@@ -116,29 +117,29 @@ export default function HeroSection({ bootcamp }: { bootcamp: Bootcamp }) {
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <MapPin size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Lokasi</p>
-                                    <p className="text-sm font-semibold">Online</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('bootcamp.detail.location')}</p>
+                                    <p className="text-sm font-semibold">{t('bootcamp.detail.online')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Hash size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Batch</p>
-                                    <p className="text-sm font-semibold">Batch {bootcamp.batch || '1'}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('bootcamp.detail.batch', { batch: '' }).replace(/{{batch}}|\s+$/g, '')}</p>
+                                    <p className="text-sm font-semibold">{t('bootcamp.detail.batch', { batch: bootcamp.batch || '1' })}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Users size={20} className="text-primary dark:text-secondary" />
                                 <div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Level</p>
-                                    <p className="text-sm font-semibold">Pemula</p>
+                                    <p className="text-sm font-semibold">{t('course.catalog.levelBeginner')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <ChartArea size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Durasi</p>
-                                    <p className="text-sm font-semibold">{diffDays < 7 ? `${diffDays} Hari` : `${totalWeeks} Minggu`}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('bootcamp.detail.duration')}</p>
+                                    <p className="text-sm font-semibold">{diffDays < 7 ? t('bootcamp.detail.daysCount', { count: diffDays }) : t('bootcamp.detail.weeksCount', { count: totalWeeks })}</p>
                                 </div>
                             </div>
                         </div>

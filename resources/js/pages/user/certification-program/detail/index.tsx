@@ -5,6 +5,7 @@ import KeyPointsSection from './key-points-section';
 import RegisterSection from './register-section';
 import RelatedPrograms from './related-programs';
 import ScheduleInfoSection from './schedule-info-section';
+import { useTranslation } from 'react-i18next';
 
 interface Mentor {
     id: string;
@@ -71,11 +72,12 @@ interface DetailProps {
 }
 
 export default function Detail({ program, relatedPrograms, myProgramIds, scholarshipApplication, approvedScholarshipProgramIds = [] }: DetailProps) {
+    const { t } = useTranslation('user');
     const isEnrolled = myProgramIds.includes(program.id);
 
     return (
         <UserLayout>
-            <Head title={`${program.title} - Program Sertifikasi`} />
+            <Head title={t('certificationProgram.detail.headTitle', { title: program.title })} />
 
             <HeroSection program={program} />
             <KeyPointsSection program={program} />

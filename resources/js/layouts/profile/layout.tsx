@@ -5,60 +5,62 @@ import { cn } from '@/lib/utils';
 import { SharedData, type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Banknote, BookText, BriefcaseBusiness, CalendarClock, LayoutDashboard, MonitorPlay, Presentation, Settings, Gift } from 'lucide-react';
-import { type PropsWithChildren } from 'react';
-
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/profile/dashboard',
-        icon: LayoutDashboard,
-    },
-    {
-        title: 'Kelas Online',
-        href: '/profile/my-courses',
-        icon: BookText,
-    },
-    {
-        title: 'Bootcamp',
-        href: '/profile/my-bootcamps',
-        icon: Presentation,
-    },
-    {
-        title: 'Webinar',
-        href: '/profile/my-webinars',
-        icon: MonitorPlay,
-    },
-    {
-        title: 'Sertifikasi',
-        href: '/profile/my-certification-programs',
-        icon: BriefcaseBusiness,
-    },
-    {
-        title: 'Transaksi',
-        href: '/profile/transactions',
-        icon: Banknote,
-    },
-    {
-        title: 'Cicilan Saya',
-        href: '/profile/installments',
-        icon: CalendarClock,
-    },
-    {
-        title: 'Referral & Poin',
-        href: '/profile/referral',
-        icon: Gift,
-    },
-    {
-        title: 'Pengaturan Akun',
-        href: '/settings/profile',
-        icon: Settings,
-    },
-];
+import { type PropsWithChildren, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function ProfileLayout({ children }: PropsWithChildren) {
+    const { t } = useTranslation();
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
+
+    const sidebarNavItems: NavItem[] = useMemo(() => [
+        {
+            title: t('profile.sidebar.dashboard'),
+            href: '/profile/dashboard',
+            icon: LayoutDashboard,
+        },
+        {
+            title: t('profile.sidebar.courses'),
+            href: '/profile/my-courses',
+            icon: BookText,
+        },
+        {
+            title: t('profile.sidebar.bootcamps'),
+            href: '/profile/my-bootcamps',
+            icon: Presentation,
+        },
+        {
+            title: t('profile.sidebar.webinars'),
+            href: '/profile/my-webinars',
+            icon: MonitorPlay,
+        },
+        {
+            title: t('profile.sidebar.certifications'),
+            href: '/profile/my-certification-programs',
+            icon: BriefcaseBusiness,
+        },
+        {
+            title: t('profile.sidebar.transactions'),
+            href: '/profile/transactions',
+            icon: Banknote,
+        },
+        {
+            title: t('profile.sidebar.installments'),
+            href: '/profile/installments',
+            icon: CalendarClock,
+        },
+        {
+            title: t('profile.sidebar.referral'),
+            href: '/profile/referral',
+            icon: Gift,
+        },
+        {
+            title: t('profile.sidebar.settings'),
+            href: '/settings/profile',
+            icon: Settings,
+        },
+    ], [t]);
 
     if (typeof window === 'undefined') {
         return null;
@@ -79,7 +81,7 @@ export default function ProfileLayout({ children }: PropsWithChildren) {
                                 </AvatarFallback>
                             </Avatar>
                             <h1 className="text-xl font-bold italic">{auth.user.name}</h1>
-                            <p className="text-muted-foreground mt-1 text-xs">"Keep learning, keep growing"</p>
+                            <p className="text-muted-foreground mt-1 text-xs">{t('profile.sidebar.slogan')}</p>
                         </div>
                         <nav className="flex flex-col space-y-1 space-x-0">
                             {sidebarNavItems.map((item, index) => (

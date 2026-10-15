@@ -12,76 +12,9 @@ import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { Badge, BookText, Home, Menu, MonitorPlay, Presentation, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { LanguageSwitcher } from './language-switcher';
 import { SearchCommand } from './search-command';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Beranda',
-        href: '/',
-    },
-    {
-        title: 'Tentang',
-        href: '/about',
-    },
-    {
-        title: 'Kelas Online',
-        href: '/course',
-    },
-    {
-        title: 'Webinar',
-        href: '/webinar',
-    },
-    {
-        title: 'Bootcamp',
-        href: '/bootcamp',
-    },
-    {
-        title: 'Bundling',
-        href: '/bundle',
-    },
-    {
-        title: 'Sertifikasi',
-        href: '/certification-programs',
-    },
-    {
-        title: 'Cek Sertifikat',
-        href: '/check-certificate',
-    },
-
-];
-
-const mobileNavItems = [
-    {
-        title: 'Beranda',
-        href: '/',
-        icon: Home,
-    },
-    {
-        title: 'Kelas',
-        href: '/course',
-        icon: BookText,
-    },
-    {
-        title: 'Webinar',
-        href: '/webinar',
-        icon: MonitorPlay,
-    },
-    {
-        title: 'Bootcamp',
-        href: '/bootcamp',
-        icon: Presentation,
-    },
-    {
-        title: 'Bundling',
-        href: '/bundle',
-        icon: Presentation,
-    },
-    {
-        title: 'Cek Sertifikat',
-        href: '/check-certificate',
-        icon: Badge,
-    },
-];
+import { useTranslation } from 'react-i18next';
 
 const activeItemStyles = ' bg-primary dark:text-white dark:bg-black';
 
@@ -90,10 +23,79 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
+    const { t } = useTranslation('common');
     const page = usePage<SharedData>();
     const { auth } = page.props;
     const getInitials = useInitials();
     const [searchOpen, setSearchOpen] = useState(false);
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: t('nav.home', 'Beranda'),
+            href: '/',
+        },
+        {
+            title: t('nav.about', 'Tentang'),
+            href: '/about',
+        },
+        {
+            title: t('nav.course', 'Kelas Online'),
+            href: '/course',
+        },
+        {
+            title: t('nav.webinar', 'Webinar'),
+            href: '/webinar',
+        },
+        {
+            title: t('nav.bootcamp', 'Bootcamp'),
+            href: '/bootcamp',
+        },
+        {
+            title: t('nav.bundling', 'Bundling'),
+            href: '/bundle',
+        },
+        {
+            title: t('nav.certification', 'Sertifikasi'),
+            href: '/certification-programs',
+        },
+        {
+            title: t('nav.checkCertificate', 'Cek Sertifikat'),
+            href: '/check-certificate',
+        },
+    ];
+
+    const mobileNavItems = [
+        {
+            title: t('nav.home', 'Beranda'),
+            href: '/',
+            icon: Home,
+        },
+        {
+            title: t('nav.course', 'Kelas'),
+            href: '/course',
+            icon: BookText,
+        },
+        {
+            title: t('nav.webinar', 'Webinar'),
+            href: '/webinar',
+            icon: MonitorPlay,
+        },
+        {
+            title: t('nav.bootcamp', 'Bootcamp'),
+            href: '/bootcamp',
+            icon: Presentation,
+        },
+        {
+            title: t('nav.bundling', 'Bundling'),
+            href: '/bundle',
+            icon: Presentation,
+        },
+        {
+            title: t('nav.checkCertificate', 'Cek Sertifikat'),
+            href: '/check-certificate',
+            icon: Badge,
+        },
+    ];
 
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
@@ -175,7 +177,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                                 'hover:bg-primary/80 dark:hover:bg-primary/40 h-9 cursor-pointer px-3',
                                             )}
                                         >
-                                            Profil Saya
+                                            {t('nav.myProfile', 'Profil Saya')}
                                         </Link>
                                     </NavigationMenuItem>
                                 )}
@@ -184,6 +186,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                     </div>
 
                     <div className="ml-auto flex items-center space-x-2">
+                        <LanguageSwitcher variant="dropdown" />
                         {auth.user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -203,10 +206,10 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                         ) : (
                             <>
                                 <Button variant="outline" asChild>
-                                    <Link href={route('login')}>Masuk</Link>
+                                    <Link href={route('login')}>{t('nav.login', 'Masuk')}</Link>
                                 </Button>
                                 <Button variant="default" asChild className="hidden lg:inline-flex">
-                                    <Link href={route('register')}>Daftar</Link>
+                                    <Link href={route('register')}>{t('nav.register', 'Daftar')}</Link>
                                 </Button>
                             </>
                         )}
@@ -247,7 +250,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                         )}
                                     >
                                         <User className="mb-1 h-5 w-6" />
-                                        <span className="text-center text-xs leading-none font-medium">Profil</span>
+                                        <span className="text-center text-xs leading-none font-medium">{t('nav.profile', 'Profil')}</span>
                                     </Link>
                                 );
                             })()}

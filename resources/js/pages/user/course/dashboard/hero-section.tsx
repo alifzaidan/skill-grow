@@ -1,4 +1,8 @@
+import { useTranslation } from 'react-i18next';
+
 export default function HeroSection() {
+    const { t } = useTranslation('user');
+
     return (
         <section className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-gray-900">
             <img
@@ -8,16 +12,16 @@ export default function HeroSection() {
             />
             <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-start px-8 md:px-16">
                 <h1 className="mb-4 text-2xl font-bold text-white sm:text-3xl md:text-4xl lg:text-5xl">
-                    Tingkatkan keahlian Anda bersama para mentor berpengalaman!
+                    {t('course.hero.headline')}
                 </h1>
                 <p className="md:text-md mb-6 text-sm text-white sm:text-sm lg:text-lg">
-                    Ikuti kelas online kami dan persiapkan diri untuk bersaing di dunia kerja yang semakin kompetitif.
+                    {t('course.hero.subheadline')}
                 </p>
                 <a
                     href="#course"
                     className="bg-primary hover:bg-tertiary hover:text-primary group mt-4 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
                 >
-                    <span>Lihat Kelas Online</span>
+                    <span>{t('course.hero.btnCourses')}</span>
                     <svg
                         className="h-4 w-4 transition-transform group-hover:translate-x-1"
                         fill="none"

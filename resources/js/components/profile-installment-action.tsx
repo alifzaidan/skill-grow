@@ -3,7 +3,8 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import { Link } from '@inertiajs/react';
 import { format, parseISO } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { id, enUS } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import {
     CreditCard,
     Clock,
@@ -49,6 +50,8 @@ export default function ProfileInstallmentAction({
     variant = 'card',
     className = '',
 }: ProfileInstallmentActionProps) {
+    const { t, i18n } = useTranslation();
+    const dateLocale = i18n.language === 'en' ? enUS : id;
     const [isPaying, setIsPaying] = useState(false);
 
     // Deteksi apakah produk ini menggunakan skema cicilan
@@ -114,7 +117,7 @@ export default function ProfileInstallmentAction({
     // Eksekusi pembayaran cicilan berikutnya
     async function handlePay() {
         if (!parentInvoiceId) {
-            toast.error('Data invoice cicilan tidak ditemukan.');
+            toast.error(t('profile.installmentAction.toastNoInvoice'));
             return;
         }
 
@@ -122,16 +125,16 @@ export default function ProfileInstallmentAction({
         try {
             const res = await axios.post(`/installment/${parentInvoiceId}/pay`);
             if (res.data?.success && res.data?.payment_url) {
-                toast.success('Mengarahkan ke halaman pembayaran...');
+                toast.success(t('profile.installmentAction.toastRedirecting'));
                 window.location.href = res.data.payment_url;
             } else {
-                toast.error(res.data?.message || 'Gagal memproses pembayaran cicilan.');
+                toast.error(res.data?.message || t('profile.installmentAction.toastFailPay'));
                 setIsPaying(false);
             }
         } catch (error: any) {
             toast.error(
                 error.response?.data?.message ||
-                'Terjadi kesalahan saat memproses pembayaran cicilan.'
+                t('profile.installmentAction.toastErrorGeneral')
             );
             setIsPaying(false);
         }
@@ -147,14 +150,14 @@ export default function ProfileInstallmentAction({
                     <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                         <span className="font-semibold">
-                            Cicilan Lunas ({total}/{total} Termin)
+                            {t('profile.installmentAction.bannerFullyPaid', { paid: total, total })}
                         </span>
                     </div>
                     <Link
                         href="/profile/installments"
                         className="font-medium text-green-700 underline hover:text-green-800 dark:text-green-300"
                     >
-                        Riwayat
+                        {t('profile.installmentAction.historyLink')}
                     </Link>
                 </div>
             );
@@ -170,14 +173,14 @@ export default function ProfileInstallmentAction({
                             <CheckCircle2 className="h-4 w-4" />
                         </div>
                         <div>
-                            <p className="font-semibold text-sm">Cicilan Lunas</p>
+                            <p className="font-semibold text-sm">{t('profile.installmentAction.cardFullyPaidTitle')}</p>
                             <p className="text-muted-foreground text-[11px] text-green-700 dark:text-green-300">
-                                Seluruh {total} termin pembayaran telah lunas.
+                                {t('profile.installmentAction.cardFullyPaidDesc', { total })}
                             </p>
                         </div>
                     </div>
                     <Badge variant="outline" className="border-green-300 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-900/40 dark:text-green-300">
-                        Lunas
+                        {t('profile.installmentAction.badgePaid')}
                     </Badge>
                 </div>
             </div>
@@ -193,7 +196,7 @@ export default function ProfileInstallmentAction({
     if (nextTerm?.due_date) {
         try {
             dueDateFormatted = format(parseISO(nextTerm.due_date), 'dd MMMM yyyy', {
-                locale: id,
+                locale: dateLocale,
             });
         } catch {
             dueDateFormatted = nextTerm.due_date;
@@ -219,15 +222,16 @@ export default function ProfileInstallmentAction({
                     <div>
                         <p className="font-semibold text-sm">
                             {isSuspendedOrOverdue
-                                ? '⚠️ Akses Ditangguhkan — Tagihan Cicilan Terlewat'
-                                : 'Pembayaran Cicilan Aktif'}
+                                ? t('profile.installmentAction.bannerSuspended')
+                                : t('profile.installmentAction.bannerActive')}
                         </p>
                         <p className="mt-0.5 opacity-90">
-                            {paid} dari {total} termin lunas ({progressPercent}%).{' '}
+                            {t('profile.installmentAction.bannerProgress', { paid, total, percent: progressPercent })}{' '}
                             {nextTerm && (
                                 <span>
-                                    Tagihan berikutnya: <strong>Termin ke-{nextTerm.term_number}</strong> ({rupiahFormatter.format(nextTerm.amount)})
-                                    {dueDateFormatted && ` • Jatuh tempo: ${dueDateFormatted}`}
+                                    {t('profile.installmentAction.nextBill')}{' '}
+                                    <strong>{t('profile.installmentAction.termNumber', { term: nextTerm.term_number })}</strong> ({rupiahFormatter.format(nextTerm.amount)})
+                                    {dueDateFormatted && ` • ${t('profile.installmentAction.dueOn', { date: dueDateFormatted })}`}
                                 </span>
                             )}
                         </p>
@@ -248,22 +252,22 @@ export default function ProfileInstallmentAction({
                         {isPaying ? (
                             <>
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                Memproses...
+                                {t('profile.installmentAction.processing')}
                             </>
                         ) : (
                             <>
                                 <CreditCard className="h-3.5 w-3.5" />
                                 {nextTerm?.is_overdue
-                                    ? 'Batas Waktu Terlewat'
+                                    ? t('profile.installmentAction.overdueBtn')
                                     : nextTerm?.term_number === total
-                                      ? 'Lunasi Cicilan'
-                                      : `Bayar Termin ke-${nextTerm?.term_number || paid + 1}`}
+                                      ? t('profile.installmentAction.payOffBtn')
+                                      : t('profile.installmentAction.payTermBtn', { term: nextTerm?.term_number || paid + 1 })}
                             </>
                         )}
                     </Button>
                     <Button asChild size="sm" variant="outline" className="border-current">
                         <Link href="/profile/installments">
-                            Riwayat
+                            {t('profile.installmentAction.historyLink')}
                         </Link>
                     </Button>
                 </div>
@@ -299,11 +303,11 @@ export default function ProfileInstallmentAction({
                     <div>
                         <h4 className="font-semibold text-sm text-foreground">
                             {isSuspendedOrOverdue
-                                ? 'Akses Cicilan Ditangguhkan'
-                                : 'Status Pembayaran Cicilan'}
+                                ? t('profile.installmentAction.cardSuspendedTitle')
+                                : t('profile.installmentAction.cardActiveTitle')}
                         </h4>
                         <p className="text-xs text-muted-foreground">
-                            {paid} dari {total} termin telah dibayar
+                            {t('profile.installmentAction.cardPaidOfTotal', { paid, total })}
                         </p>
                     </div>
                 </div>
@@ -316,7 +320,7 @@ export default function ProfileInstallmentAction({
                             : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400'
                     }`}
                 >
-                    {progressPercent}% Lunas
+                    {t('profile.installmentAction.cardPercentPaid', { percent: progressPercent })}
                 </Badge>
             </div>
 
@@ -343,7 +347,7 @@ export default function ProfileInstallmentAction({
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-muted-foreground font-medium">
-                            Tagihan Termin ke-{nextTerm.term_number}
+                            {t('profile.installmentAction.cardNextBillTitle', { term: nextTerm.term_number })}
                         </span>
                         <span className="font-bold text-sm text-foreground">
                             {rupiahFormatter.format(nextTerm.amount)}
@@ -352,7 +356,7 @@ export default function ProfileInstallmentAction({
 
                     {dueDateFormatted && (
                         <div className="flex items-center justify-between text-[11px] pt-1 border-t border-border/50">
-                            <span className="text-muted-foreground">Jatuh Tempo</span>
+                            <span className="text-muted-foreground">{t('profile.installmentAction.cardDueDate')}</span>
                             <span
                                 className={`font-medium ${
                                     nextTerm.is_overdue
@@ -360,7 +364,9 @@ export default function ProfileInstallmentAction({
                                         : 'text-foreground'
                                 }`}
                             >
-                                {nextTerm.is_overdue ? `Terlewat (${dueDateFormatted})` : dueDateFormatted}
+                                {nextTerm.is_overdue
+                                    ? t('profile.installmentAction.cardOverdueTag', { date: dueDateFormatted })
+                                    : dueDateFormatted}
                             </span>
                         </div>
                     )}
@@ -372,7 +378,7 @@ export default function ProfileInstallmentAction({
                 <div className="mb-3.5 rounded-lg bg-red-50 border border-red-200 p-2.5 text-xs text-red-800 dark:bg-red-950/30 dark:border-red-900 dark:text-red-300 flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                     <span>
-                        Batas waktu pembayaran telah melewati jatuh tempo. Hubungi admin via WhatsApp untuk penyelesaian cicilan.
+                        {t('profile.installmentAction.cardOverdueWarning')}
                     </span>
                 </div>
             )}
@@ -394,16 +400,19 @@ export default function ProfileInstallmentAction({
                     {isPaying ? (
                         <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Memproses Pembayaran...
+                            {t('profile.installmentAction.cardPayProcessing')}
                         </>
                     ) : (
                         <>
                             <CreditCard className="h-4 w-4" />
                             {nextTerm?.is_overdue
-                                ? `Cicilan ke-${nextTerm.term_number} — Batas Waktu Terlewat`
+                                ? t('profile.installmentAction.cardPayOverdue', { term: nextTerm.term_number })
                                 : nextTerm?.term_number === total
-                                  ? `Lunasi Cicilan (${rupiahFormatter.format(nextTerm.amount)})`
-                                  : `Bayar Cicilan ke-${nextTerm?.term_number || paid + 1} (${nextTerm ? rupiahFormatter.format(nextTerm.amount) : ''})`}
+                                  ? t('profile.installmentAction.cardPayOff', { amount: rupiahFormatter.format(nextTerm.amount) })
+                                  : t('profile.installmentAction.cardPayTerm', {
+                                        term: nextTerm?.term_number || paid + 1,
+                                        amount: nextTerm ? rupiahFormatter.format(nextTerm.amount) : '',
+                                    })}
                         </>
                     )}
                 </Button>
@@ -415,7 +424,7 @@ export default function ProfileInstallmentAction({
                     className="w-full text-xs text-muted-foreground hover:text-foreground"
                 >
                     <Link href="/profile/installments" className="flex items-center justify-center gap-1.5">
-                        <span>Lihat Riwayat & Jadwal Cicilan</span>
+                        <span>{t('profile.installmentAction.cardViewHistory')}</span>
                         <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
                 </Button>

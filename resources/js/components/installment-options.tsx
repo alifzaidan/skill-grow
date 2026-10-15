@@ -68,6 +68,20 @@ export default function InstallmentOptions({
     const ADMIN_FEE = 5000;
 
     const hasActiveInstallment = !!activeInstallment && activeInstallment.terms?.length > 0;
+    const isTermOverdueCheck = (dueDateStr?: string | null) => {
+        if (!dueDateStr) return false;
+        try {
+            const d = typeof dueDateStr === 'string' ? parseISO(dueDateStr) : new Date(dueDateStr);
+            if (isNaN(d.getTime())) return false;
+            const endOfDay = new Date(d);
+            endOfDay.setHours(23, 59, 59, 999);
+            return new Date() > endOfDay;
+        } catch {
+            return false;
+        }
+    };
+
+    const isAnyTermOverdue = !hasActiveInstallment && terms.some((t) => isTermOverdueCheck(t.due_date));
     const isFullyPaid = hasActiveInstallment && activeInstallment.is_fully_paid;
     const nextTerm = hasActiveInstallment ? activeInstallment.next_term : null;
 
@@ -300,6 +314,18 @@ export default function InstallmentOptions({
     // TAMPILAN AWAL (BELUM ADA CICILAN - BAYAR DP)
     return (
         <div className="space-y-4">
+            {/* Banner Overdue / Cicilan Ditutup */}
+            {isAnyTermOverdue && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3.5 text-xs text-destructive dark:text-red-400 flex items-start gap-2.5">
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                        <p className="font-semibold">Pendaftaran Cicilan Ditutup</p>
+                        <p className="mt-0.5 opacity-90 leading-relaxed">
+                            Batas waktu pembayaran termin telah terlewat. Anda tidak dapat lagi mendaftar menggunakan opsi cicilan untuk program ini. Silakan gunakan opsi pembayaran penuh jika pendaftaran masih dibuka.
+                        </p>
+                    </div>
+                </div>
+            )}
             {/* Summary DP & Total */}
             <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-card border border-border p-3.5 shadow-sm">
@@ -380,6 +406,7 @@ export default function InstallmentOptions({
             {onTermsAcceptedChange && (
                 <div className="flex items-center gap-3 pt-1">
                     <Checkbox
+                        disabled={isAnyTermOverdue}
                         id="installment-terms-checkbox"
                         checked={termsAccepted}
                         onCheckedChange={(checked) => onTermsAcceptedChange(checked === true)}
@@ -404,11 +431,11 @@ export default function InstallmentOptions({
                 className="w-full gap-2"
                 size="lg"
                 onClick={handlePayInstallment}
-                disabled={isLoading || (termsAccepted !== undefined && !termsAccepted)}
+                disabled={isLoading || (termsAccepted !== undefined && !termsAccepted) || isAnyTermOverdue}
                 id="btn-pay-installment"
             >
                 <CreditCard className="h-4 w-4" />
-                {isLoading ? 'Memproses...' : `Bayar DP ${rupiahFormatter.format(dpAmount)} (Termasuk Biaya Admin)`}
+                {isAnyTermOverdue ? 'Opsi Cicilan Ditutup (Batas Waktu Terlewat)' : isLoading ? 'Memproses...' : `Bayar DP ${rupiahFormatter.format(dpAmount)} (Termasuk Biaya Admin)`}
             </Button>
         </div>
     );

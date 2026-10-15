@@ -8,6 +8,7 @@ import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { CheckCircle, Clock, Lock } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CertificationProgram {
     id: string;
@@ -45,8 +46,10 @@ interface Props {
 }
 
 export default function CertificationProgramIndex({ myCertificationPrograms }: Props) {
+    const { t, i18n } = useTranslation();
     const [search, setSearch] = useState('');
     const [visibleCount, setVisibleCount] = useState(6);
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
 
     const allItems = myCertificationPrograms.flatMap((invoice) =>
         (invoice.certificationProgramItems || [])
@@ -81,15 +84,20 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
 
     return (
         <UserLayout>
-            <Head title="Sertifikasi Program Saya" />
+            <Head title={t('profile.certifications.headTitle')} />
             <ProfileLayout>
-                <Heading title="Sertifikasi Program Saya" description="Lihat riwayat sertifikasi program Anda di sini" />
+                <Heading title={t('profile.certifications.title')} description={t('profile.certifications.description')} />
                 <div className="mb-4 flex justify-between gap-2">
-                    <Input type="search" placeholder="Cari nama program..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <Input
+                        type="search"
+                        placeholder={t('profile.certifications.searchPlaceholder')}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                 </div>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredItems.length === 0 ? (
-                        <div className="col-span-full py-8 text-center text-gray-500">Belum ada sertifikasi program yang dibeli.</div>
+                        <div className="col-span-full py-8 text-center text-gray-500">{t('profile.certifications.empty')}</div>
                     ) : (
                         filteredItems.slice(0, visibleCount).map((item, idx) => (
                             <Link key={idx} href={route('profile.certification-program.detail', { program: item.slug })}>
@@ -97,7 +105,7 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                                     <Spotlight className="from-blue-600/30 via-indigo-400/20 to-teal-400/30 dark:from-blue-900/30 dark:via-indigo-800/20 dark:to-teal-800/30" />
                                     <div className="absolute top-2 left-2 z-10">
                                         <Badge variant={item.is_scholarship ? 'secondary' : 'default'} className="text-xs">
-                                            {item.is_scholarship ? 'Beasiswa' : 'Reguler'}
+                                            {item.is_scholarship ? t('profile.certifications.badgeScholarship') : t('profile.certifications.badgeRegular')}
                                         </Badge>
                                     </div>
 
@@ -113,33 +121,37 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                                         {item.is_access_suspended ? (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-red-50 p-2 dark:bg-red-900/20">
                                                 <Lock className="h-4 w-4 text-red-600 dark:text-red-400" />
-                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">Akses Dibekukan</span>
+                                                <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                                                    {t('profile.certifications.alertSuspended')}
+                                                </span>
                                             </div>
                                         ) : item.is_installment && item.invoice_status === 'installment_pending' ? (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20">
-                                                <Clock className="h-4 w-4 text-amber-600 dark:amber-400" />
+                                                <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                                 <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                                                    Cicilan Aktif ({item.paid_terms}/{item.total_terms})
+                                                    {t('profile.certifications.alertInstallment', { paid: item.paid_terms, total: item.total_terms })}
                                                 </span>
                                             </div>
                                         ) : (
                                             <div className="mb-3 flex items-center gap-2 rounded-lg bg-green-50 p-2 dark:bg-green-900/20">
                                                 <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">Sudah Dibayar</span>
+                                                <span className="text-xs font-medium text-green-700 dark:text-green-300">
+                                                    {t('profile.certifications.alertPaid')}
+                                                </span>
                                             </div>
                                         )}
 
                                         <div className="mt-2 flex justify-between text-sm">
                                             <span className="text-gray-600 dark:text-gray-400">
                                                 {item.paid_at
-                                                    ? new Date(item.paid_at).toLocaleDateString('id-ID', {
+                                                    ? new Date(item.paid_at).toLocaleDateString(dateLocale, {
                                                           day: 'numeric',
                                                           month: 'short',
                                                           year: 'numeric',
                                                       })
                                                     : '-'}
                                             </span>
-                                            <span className="font-semibold">Rp {item.price.toLocaleString('id-ID')}</span>
+                                            <span className="font-semibold">Rp {item.price.toLocaleString(dateLocale)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -150,7 +162,7 @@ export default function CertificationProgramIndex({ myCertificationPrograms }: P
                 {visibleCount < filteredItems.length && (
                     <div className="mb-8 flex justify-center">
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak
+                            {t('profile.certifications.btnLoadMore')}
                         </Button>
                     </div>
                 )}

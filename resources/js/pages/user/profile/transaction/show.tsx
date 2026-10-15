@@ -16,6 +16,7 @@ import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 import { AlertTriangle, Calendar, CheckCircle, Clock, CreditCard, ExternalLink, FileText, Home, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 interface CourseItem {
@@ -131,6 +132,8 @@ interface Props {
 }
 
 export default function TransactionShow({ invoice }: Props) {
+    const { t, i18n } = useTranslation();
+    const dateLocale = i18n.language === 'en' ? 'en-US' : 'id-ID';
     const [cancelLoading, setCancelLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -182,7 +185,7 @@ export default function TransactionShow({ invoice }: Props) {
                 thumbnail: course.thumbnail,
                 profileRoute: 'profile.course.detail',
                 publicRoute: 'course.detail',
-                badge: 'Kelas Online',
+                badge: t('profile.dashboard.typeCourse'),
             };
         } else if (bootcampItems && bootcampItems.length > 0) {
             const bootcamp = bootcampItems[0].bootcamp;
@@ -194,7 +197,7 @@ export default function TransactionShow({ invoice }: Props) {
                 thumbnail: bootcamp.thumbnail,
                 profileRoute: 'profile.bootcamp.detail',
                 publicRoute: 'bootcamp.detail',
-                badge: 'Bootcamp',
+                badge: t('profile.dashboard.typeBootcamp'),
             };
         } else if (webinarItems && webinarItems.length > 0) {
             const webinar = webinarItems[0].webinar;
@@ -206,7 +209,7 @@ export default function TransactionShow({ invoice }: Props) {
                 thumbnail: webinar.thumbnail,
                 profileRoute: 'profile.webinar.detail',
                 publicRoute: 'webinar.detail',
-                badge: 'Webinar',
+                badge: t('profile.dashboard.typeWebinar'),
             };
         } else if (certItems && certItems.length > 0) {
             const certItem = certItems[0];
@@ -220,7 +223,7 @@ export default function TransactionShow({ invoice }: Props) {
                     thumbnail: certificationProgram.thumbnail,
                     profileRoute: 'profile.certification-program.detail',
                     publicRoute: 'certification-programs.detail',
-                    badge: 'Sertifikasi Program',
+                    badge: t('profile.dashboard.typeCertification'),
                 };
             }
         } else if (bundleItems && bundleItems.length > 0) {
@@ -248,16 +251,16 @@ export default function TransactionShow({ invoice }: Props) {
         try {
             const res = await axios.post(route('invoice.cancel', { id: invoice.id }));
             if (res.data?.success) {
-                toast.success('Pesanan berhasil dibatalkan dan invoice telah dinonaktifkan.');
+                toast.success(t('profile.transactionShow.toastCancelSuccess'));
                 window.location.reload();
             } else {
-                toast.error(res.data?.message || 'Gagal membatalkan pesanan.');
+                toast.error(res.data?.message || t('profile.transactionShow.toastCancelFailed'));
             }
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
-                toast.error(err.response?.data?.message || 'Terjadi kesalahan saat membatalkan pesanan.');
+                toast.error(err.response?.data?.message || t('profile.transactionShow.toastCancelError'));
             } else {
-                toast.error('Terjadi kesalahan saat membatalkan pesanan.');
+                toast.error(t('profile.transactionShow.toastCancelError'));
             }
         } finally {
             setCancelLoading(false);
@@ -294,27 +297,27 @@ export default function TransactionShow({ invoice }: Props) {
     const getStatusText = () => {
         if (isInstallment) {
             if (isFullyPaid) {
-                return 'Cicilan Lunas';
+                return t('profile.transactionShow.statusInstallmentPaid');
             }
             if (isSuspended) {
-                return 'Akses Dibekukan (Jatuh Tempo Terlewati)';
+                return t('profile.transactionShow.statusSuspended');
             }
             if (isTerm1Paid) {
-                return `Cicilan Aktif (${paidTerms.length}/${terms.length || 2} Termin)`;
+                return t('profile.transactionShow.statusActiveInstallment', { paid: paidTerms.length, total: terms.length || 2 });
             }
-            return 'Menunggu Pembayaran DP (Termin 1)';
+            return t('profile.transactionShow.statusWaitingDp');
         }
 
         switch (invoice.status) {
             case 'paid':
             case 'completed':
-                return 'Pembayaran Berhasil';
+                return t('profile.transactionShow.statusPaid');
             case 'pending':
-                return isExpired ? 'Pembayaran Kedaluwarsa' : 'Menunggu Pembayaran';
+                return isExpired ? t('profile.transactionShow.statusExpired') : t('profile.transactionShow.statusPending');
             case 'failed':
-                return 'Pembayaran Dibatalkan';
+                return t('profile.transactionShow.statusCancelled');
             default:
-                return 'Status Tidak Diketahui';
+                return t('profile.transactionShow.statusUnknown');
         }
     };
 
@@ -369,7 +372,7 @@ export default function TransactionShow({ invoice }: Props) {
 
     return (
         <UserLayout>
-            <Head title={`Invoice ${invoice.invoice_code}`} />
+            <Head title={t('profile.transactionShow.headTitle', { code: invoice.invoice_code })} />
 
             <div className="min-h-screen bg-gray-50 py-4 md:py-8 dark:bg-gray-900">
                 <div className="mx-auto max-w-7xl px-4">
@@ -379,7 +382,9 @@ export default function TransactionShow({ invoice }: Props) {
                             {getStatusIcon()}
                             <div>
                                 <h1 className={`text-xl font-bold md:text-2xl ${getStatusColor()}`}>{getStatusText()}</h1>
-                                <p className="mt-1 text-sm text-blue-100 md:text-base">Invoice #{invoice.invoice_code}</p>
+                                <p className="mt-1 text-sm text-blue-100 md:text-base">
+                                    {t('profile.transactionShow.invoiceNumber', { code: invoice.invoice_code })}
+                                </p>
                             </div>
                         </div>
 
@@ -387,7 +392,9 @@ export default function TransactionShow({ invoice }: Props) {
                             {/* Product Info */}
                             {productInfo && (
                                 <div className="mb-6 rounded-lg border bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
-                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Produk yang Dibeli</h3>
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+                                        {t('profile.transactionShow.purchasedProduct')}
+                                    </h3>
                                     <div className="flex items-start gap-4">
                                         <img
                                             src={productInfo.thumbnail ? `/storage/${productInfo.thumbnail}` : '/assets/images/placeholder.png'}
@@ -397,15 +404,7 @@ export default function TransactionShow({ invoice }: Props) {
                                         <div className="flex-1">
                                             <h4 className="font-semibold text-gray-900 dark:text-white">{productInfo.name}</h4>
                                             <p className="text-sm text-gray-600 capitalize dark:text-gray-400">
-                                                {productInfo.badge
-                                                    ? productInfo.badge
-                                                    : productInfo.type === 'course'
-                                                      ? 'Kelas Online'
-                                                      : productInfo.type === 'bootcamp'
-                                                        ? 'Bootcamp'
-                                                        : productInfo.type === 'webinar'
-                                                          ? 'Webinar'
-                                                          : 'Paket Bundling'}
+                                                {productInfo.badge}
                                             </p>
                                             <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                                                 {canAccessProduct && productInfo.profileRoute ? (
@@ -420,7 +419,7 @@ export default function TransactionShow({ invoice }: Props) {
                                                             }
                                                         >
                                                             <ExternalLink className="mr-2 h-4 w-4" />
-                                                            Buka di Profile
+                                                            {t('profile.transactionShow.openInProfile')}
                                                         </Link>
                                                     </Button>
                                                 ) : (
@@ -435,7 +434,7 @@ export default function TransactionShow({ invoice }: Props) {
                                                             }
                                                         >
                                                             <ExternalLink className="mr-2 h-4 w-4" />
-                                                            Lihat Detail Produk
+                                                            {t('profile.transactionShow.viewProductDetail')}
                                                         </Link>
                                                     </Button>
                                                 )}
@@ -449,15 +448,15 @@ export default function TransactionShow({ invoice }: Props) {
                             {isInstallment && terms.length > 0 && (
                                 <div className="mb-6 rounded-lg border bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
                                     <div className="mb-4 flex items-center justify-between">
-                                        <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <h3 className="flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
                                             <Calendar className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                                            Jadwal & Status Cicilan
+                                            {t('profile.transactionShow.installmentSchedule')}
                                         </h3>
                                         <Link
                                             href={route('profile.installments')}
                                             className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
                                         >
-                                            Halaman Cicilan &rarr;
+                                            {t('profile.transactionShow.installmentPageLink')}
                                         </Link>
                                     </div>
                                     <div className="space-y-3">
@@ -467,14 +466,14 @@ export default function TransactionShow({ invoice }: Props) {
                                             const termNumber = term.installment_number ?? term.term_number ?? 1;
                                             const dueDate = term.installment_due_date ?? term.due_date;
                                             const dueDateFormatted = dueDate
-                                                ? new Date(dueDate).toLocaleDateString('id-ID', {
+                                                ? new Date(dueDate).toLocaleDateString(dateLocale, {
                                                       day: 'numeric',
                                                       month: 'short',
                                                       year: 'numeric',
                                                   })
                                                 : '-';
                                             const paidDateFormatted = term.paid_at
-                                                ? new Date(term.paid_at).toLocaleDateString('id-ID', {
+                                                ? new Date(term.paid_at).toLocaleDateString(dateLocale, {
                                                       day: 'numeric',
                                                       month: 'short',
                                                       year: 'numeric',
@@ -485,7 +484,7 @@ export default function TransactionShow({ invoice }: Props) {
                                             return (
                                                 <div
                                                     key={term.id}
-                                                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border transition ${
+                                                    className={`flex flex-col justify-between gap-3 rounded-lg border p-4 transition sm:flex-row sm:items-center ${
                                                         isPaid
                                                             ? 'border-green-200 bg-green-50/60 dark:border-green-800/40 dark:bg-green-950/20'
                                                             : isOverdue
@@ -496,45 +495,45 @@ export default function TransactionShow({ invoice }: Props) {
                                                     <div>
                                                         <div className="flex items-center gap-2">
                                                             <span className="font-semibold text-gray-900 dark:text-white">
-                                                                Termin {termNumber} {termNumber === 1 ? '(DP)' : ''}
+                                                                {t('profile.transactionShow.termNumber', { term: termNumber })} {termNumber === 1 ? t('profile.transactionShow.termDp') : ''}
                                                             </span>
                                                             {isPaid ? (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">
                                                                     <CheckCircle size={12} />
-                                                                    Lunas
+                                                                    {t('profile.transactionShow.termStatusPaid')}
                                                                 </span>
                                                             ) : isOverdue ? (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
                                                                     <AlertTriangle size={12} />
-                                                                    Jatuh Tempo
+                                                                    {t('profile.transactionShow.termStatusOverdue')}
                                                                 </span>
                                                             ) : (
                                                                 <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300">
                                                                     <Clock size={12} />
-                                                                    Belum Lunas
+                                                                    {t('profile.transactionShow.termStatusPending')}
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                                             {isPaid && paidDateFormatted
-                                                                ? `Dibayar pada ${paidDateFormatted}`
-                                                                : `Jatuh tempo: ${dueDateFormatted}`}
+                                                                ? t('profile.transactionShow.paidOn', { date: paidDateFormatted })
+                                                                : t('profile.transactionShow.dueOn', { date: dueDateFormatted })}
                                                         </p>
                                                     </div>
 
                                                     <div className="flex items-center gap-3">
                                                         <span className="font-bold text-gray-900 dark:text-white">
-                                                            Rp {Number(term.amount).toLocaleString('id-ID')}
+                                                            Rp {Number(term.amount).toLocaleString(dateLocale)}
                                                         </span>
                                                         {!isPaid && (
                                                             <Button asChild size="sm" variant={isOverdue ? 'destructive' : 'default'}>
                                                                 {termInvoiceUrl ? (
                                                                     <a href={termInvoiceUrl} target="_blank" rel="noopener noreferrer">
-                                                                        Bayar
+                                                                        {t('profile.transactionShow.btnPay')}
                                                                     </a>
                                                                 ) : (
                                                                     <Link href={route('profile.installments')}>
-                                                                        Bayar
+                                                                        {t('profile.transactionShow.btnPay')}
                                                                     </Link>
                                                                 )}
                                                             </Button>
@@ -552,7 +551,7 @@ export default function TransactionShow({ invoice }: Props) {
                                 <Alert className="mb-6 border-red-200 bg-red-50 dark:border-red-800/40 dark:bg-red-950/20">
                                     <AlertTriangle className="h-4 w-4 text-red-600" />
                                     <AlertDescription className="text-red-800 dark:text-red-300">
-                                        <strong>Akses Belajar Sedang Dibekukan:</strong> Termin cicilan Anda telah melewati tanggal jatuh tempo. Silakan segera lunasi termin yang tertagih untuk membuka dan memulihkan kembali akses belajar Anda.
+                                        <strong>{t('profile.transactionShow.alertSuspendedBold')}</strong> {t('profile.transactionShow.alertSuspendedText')}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -561,7 +560,7 @@ export default function TransactionShow({ invoice }: Props) {
                                 <Alert className="mb-6 border-indigo-200 bg-indigo-50 dark:border-indigo-800/40 dark:bg-indigo-950/20">
                                     <Clock className="h-4 w-4 text-indigo-600" />
                                     <AlertDescription className="text-indigo-800 dark:text-indigo-300">
-                                        <strong>Skema Cicilan Aktif:</strong> Akses program Anda telah aktif. Pastikan untuk melunasi termin berikutnya sebelum tanggal jatuh tempo agar proses belajar tidak terganggu.
+                                        <strong>{t('profile.transactionShow.alertActiveInstallmentBold')}</strong> {t('profile.transactionShow.alertActiveInstallmentText')}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -570,7 +569,7 @@ export default function TransactionShow({ invoice }: Props) {
                                 <Alert className="mb-6 border-yellow-200 bg-yellow-50 dark:border-yellow-800/40 dark:bg-yellow-950/20">
                                     <Clock className="h-4 w-4 text-yellow-600" />
                                     <AlertDescription className="text-yellow-800 dark:text-yellow-300">
-                                        <strong>Segera Selesaikan Pembayaran DP (Termin 1)!</strong> Setelah pembayaran Termin 1 berhasil, akses materi dan jadwal pembayaran termin cicilan berikutnya akan langsung aktif secara otomatis.
+                                        <strong>{t('profile.transactionShow.alertDpNoticeBold')}</strong> {t('profile.transactionShow.alertDpNoticeText')}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -581,7 +580,7 @@ export default function TransactionShow({ invoice }: Props) {
                                     <AlertDescription>
                                         <div className="flex items-center justify-between">
                                             <span>
-                                                Pembayaran akan kedaluwarsa dalam {hoursLeft} jam {minutesLeft} menit.
+                                                {t('profile.transactionShow.alertExpiring', { hours: hoursLeft, minutes: minutesLeft })}
                                             </span>
                                         </div>
                                     </AlertDescription>
@@ -592,7 +591,7 @@ export default function TransactionShow({ invoice }: Props) {
                                 <Alert className="mb-6 border-red-200 bg-red-50">
                                     <XCircle className="h-4 w-4" />
                                     <AlertDescription>
-                                        Invoice ini sudah kedaluwarsa dan tidak dapat dibayar lagi. Silakan buat pesanan baru.
+                                        {t('profile.transactionShow.alertExpired')}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -601,7 +600,7 @@ export default function TransactionShow({ invoice }: Props) {
                                 <Alert className="mb-6 border-red-200 bg-red-50">
                                     <XCircle className="h-4 w-4" />
                                     <AlertDescription>
-                                        Invoice ini telah dibatalkan dan tidak dapat dibayar lagi. Silakan buat pesanan baru jika masih ingin membeli.
+                                        {t('profile.transactionShow.alertCancelled')}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -609,70 +608,74 @@ export default function TransactionShow({ invoice }: Props) {
                             {/* Payment Details & Information */}
                             <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div>
-                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Detail Pembayaran</h3>
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+                                        {t('profile.transactionShow.paymentDetailsTitle')}
+                                    </h3>
                                     <div className="space-y-2 text-sm">
                                         {invoice.discount_amount > 0 && (
                                             <>
                                                 <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">Harga Asli:</span>
+                                                    <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.originalPrice')}</span>
                                                     <span className="medium">
-                                                        Rp {(invoice.discount_amount + invoice.nett_amount)?.toLocaleString('id-ID')}
+                                                        Rp {(invoice.discount_amount + invoice.nett_amount)?.toLocaleString(dateLocale)}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">Diskon:</span>
+                                                    <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.discount')}</span>
                                                     <span className="text-gray-500 line-through">
-                                                        Rp {invoice.discount_amount?.toLocaleString('id-ID') || '0'}
+                                                        Rp {invoice.discount_amount?.toLocaleString(dateLocale) || '0'}
                                                     </span>
                                                 </div>
                                             </>
                                         )}
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
-                                            <span className="font-medium">Rp {invoice.nett_amount?.toLocaleString('id-ID') || '0'}</span>
+                                            <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.subtotal')}</span>
+                                            <span className="font-medium">Rp {invoice.nett_amount?.toLocaleString(dateLocale) || '0'}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">Biaya Transaksi:</span>
+                                            <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.fee')}</span>
                                             <span className="font-medium">
-                                                Rp {((invoice.amount || 0) - (invoice.nett_amount || 0)).toLocaleString('id-ID')}
+                                                Rp {((invoice.amount || 0) - (invoice.nett_amount || 0)).toLocaleString(dateLocale)}
                                             </span>
                                         </div>
                                         <div className="flex justify-between border-t pt-2 text-lg font-semibold">
-                                            <span>Total:</span>
-                                            <span>Rp {invoice.amount?.toLocaleString('id-ID') || '0'}</span>
+                                            <span>{t('profile.transactionShow.total')}</span>
+                                            <span>Rp {invoice.amount?.toLocaleString(dateLocale) || '0'}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Informasi Pembayaran</h3>
+                                    <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+                                        {t('profile.transactionShow.paymentInfoTitle')}
+                                    </h3>
                                     <div className="space-y-2 text-sm">
                                         <div className="flex justify-between">
-                                            <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                                            <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.statusLabel')}</span>
                                             <span className={`font-medium ${getStatusBadgeClass()}`}>{getStatusText()}</span>
                                         </div>
                                         {invoice.payment_method && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Metode:</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.methodLabel')}</span>
                                                 <span className="font-medium">{invoice.payment_method}</span>
                                             </div>
                                         )}
                                         {invoice.payment_channel && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Channel:</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.channelLabel')}</span>
                                                 <span className="font-medium">{invoice.payment_channel}</span>
                                             </div>
                                         )}
                                         {invoice.paid_at && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Dibayar pada:</span>
-                                                <span className="font-medium">{new Date(invoice.paid_at).toLocaleString('id-ID')}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.paidAtLabel')}</span>
+                                                <span className="font-medium">{new Date(invoice.paid_at).toLocaleString(dateLocale)}</span>
                                             </div>
                                         )}
                                         {invoice.expires_at && invoice.status === 'pending' && (
                                             <div className="flex justify-between">
-                                                <span className="text-gray-600 dark:text-gray-400">Kedaluwarsa:</span>
-                                                <span className="font-medium">{new Date(invoice.expires_at).toLocaleString('id-ID')}</span>
+                                                <span className="text-gray-600 dark:text-gray-400">{t('profile.transactionShow.expiresAtLabel')}</span>
+                                                <span className="font-medium">{new Date(invoice.expires_at).toLocaleString(dateLocale)}</span>
                                             </div>
                                         )}
                                     </div>
@@ -697,16 +700,16 @@ export default function TransactionShow({ invoice }: Props) {
                                             }
                                         >
                                             <ExternalLink className="mr-2 h-4 w-4" />
-                                            Akses {productInfo.badge || 'Produk'}
+                                            {t('profile.transactionShow.btnAccessProduct', { name: productInfo.badge || 'Produk' })}
                                         </Link>
                                     </Button>
                                 )}
 
                                 {isInstallment && (
-                                    <Button asChild variant="outline" size="lg" className="w-full sm:w-auto border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/30">
+                                    <Button asChild variant="outline" size="lg" className="w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 sm:w-auto dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/30">
                                         <Link href={route('profile.installments')}>
                                             <CreditCard className="mr-2 h-4 w-4" />
-                                            Kelola & Jadwal Cicilan
+                                            {t('profile.transactionShow.btnManageInstallments')}
                                         </Link>
                                     </Button>
                                 )}
@@ -715,7 +718,7 @@ export default function TransactionShow({ invoice }: Props) {
                                     <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
                                         <a href={route('invoice.pdf', { id: invoice.id })} target="_blank" rel="noopener noreferrer">
                                             <FileText className="mr-2 h-4 w-4" />
-                                            Unduh Invoice
+                                            {t('profile.transactionShow.btnDownloadInvoice')}
                                         </a>
                                     </Button>
                                 )}
@@ -724,7 +727,7 @@ export default function TransactionShow({ invoice }: Props) {
                                     <>
                                         <Button asChild size="lg" className="w-full sm:w-auto">
                                             <a href={invoice.invoice_url} target="_blank" rel="noopener noreferrer">
-                                                {isInstallment ? 'Bayar Termin 1 (DP)' : 'Lanjutkan Pembayaran'}
+                                                {isInstallment ? t('profile.transactionShow.btnPayTerm1') : t('profile.transactionShow.btnContinuePayment')}
                                             </a>
                                         </Button>
 
@@ -736,24 +739,23 @@ export default function TransactionShow({ invoice }: Props) {
                                                     className="w-full border-red-600 text-red-600 hover:bg-red-50 sm:w-auto"
                                                     disabled={cancelLoading}
                                                 >
-                                                    {cancelLoading ? 'Membatalkan...' : 'Batalkan Pesanan'}
+                                                    {cancelLoading ? t('profile.transactionShow.btnCancelling') : t('profile.transactionShow.btnCancelOrder')}
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Batalkan Pesanan?</AlertDialogTitle>
+                                                    <AlertDialogTitle>{t('profile.transactionShow.cancelDialogTitle')}</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Apakah Anda yakin ingin membatalkan pesanan ini? Invoice akan dinonaktifkan dan tidak dapat
-                                                        dibayar lagi. Tindakan ini tidak dapat dibatalkan.
+                                                        {t('profile.transactionShow.cancelDialogDesc')}
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Tidak, Pertahankan</AlertDialogCancel>
+                                                    <AlertDialogCancel>{t('profile.transactionShow.cancelDialogKeep')}</AlertDialogCancel>
                                                     <AlertDialogAction
                                                         onClick={handleCancelConfirm}
                                                         className="border-red-600 bg-red-600 hover:bg-red-700"
                                                     >
-                                                        Ya, Batalkan Pesanan
+                                                        {t('profile.transactionShow.cancelDialogConfirm')}
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
@@ -762,14 +764,14 @@ export default function TransactionShow({ invoice }: Props) {
                                 )}
 
                                 <Button asChild className="w-full sm:w-auto" variant="outline" size="lg">
-                                    <Link href={route('profile.transactions')}>Lihat Riwayat Transaksi</Link>
+                                    <Link href={route('profile.transactions')}>{t('profile.transactionShow.btnViewTransactionHistory')}</Link>
                                 </Button>
 
                                 {(invoice.status === 'failed' || (!isInstallment && isExpired)) && (
                                     <>
                                         <Button asChild size="lg" className="w-full sm:w-auto">
                                             <Link href={route('home')}>
-                                                <Home className="mr-2 h-4 w-4" /> Kembali ke Beranda
+                                                <Home className="mr-2 h-4 w-4" /> {t('profile.transactionShow.btnBackHome')}
                                             </Link>
                                         </Button>
                                         {productInfo && (
@@ -784,7 +786,7 @@ export default function TransactionShow({ invoice }: Props) {
                                                     }
                                                 >
                                                     <ExternalLink className="mr-2 h-4 w-4" />
-                                                    Lihat Detail Produk
+                                                    {t('profile.transactionShow.viewProductDetail')}
                                                 </Link>
                                             </Button>
                                         )}

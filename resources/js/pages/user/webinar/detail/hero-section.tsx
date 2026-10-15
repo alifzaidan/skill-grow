@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
 import { Link } from '@inertiajs/react';
 import { Calendar, Clock, Hash, MapPin, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Webinar {
     title: string;
@@ -22,6 +23,7 @@ interface Webinar {
 
 export default function HeroSection({ webinar }: { webinar: Webinar }) {
     const getInitials = useInitials();
+    const { t, i18n } = useTranslation('user');
 
     return (
         <section className="to-background from-background via-tertiary dark:via-background dark:to-background relative bg-gradient-to-b py-12 text-gray-900 dark:text-white">
@@ -40,8 +42,7 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                             <h1 className="mb-4 text-4xl leading-tight font-bold italic sm:text-5xl">{webinar.title}</h1>
 
                             <p className="mb-6 text-lg text-gray-600 dark:text-gray-400">
-                                {webinar.description ||
-                                    'Ikuti webinar kami untuk mendapatkan wawasan mendalam tentang topik terkini. Daftar sekarang dan jangan lewatkan kesempatan untuk belajar dari para ahli di bidangnya.'}
+                                {webinar.description || t('webinar.detail.heroDefaultDesc')}
                             </p>
 
                             {/* Mentor Card in Hero */}
@@ -58,7 +59,7 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="relative z-10 flex-1">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Dibawakan oleh</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('webinar.detail.presentedBy')}</p>
                                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{webinar.user.name}</h3>
                                         <p className="mb-1 text-sm text-gray-600 dark:text-gray-400">{webinar.user.bio}</p>
                                         <div className="flex items-center gap-1">
@@ -72,11 +73,11 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
 
                             <div className="flex flex-wrap gap-4">
                                 <a href="#register">
-                                    <Button size="lg">Daftar Sekarang</Button>
+                                    <Button size="lg">{t('webinar.detail.btnRegisterNow')}</Button>
                                 </a>
                                 <a href="https://wa.me/+6285167541152" target="_blank" rel="noopener noreferrer">
                                     <Button variant="outline" size="lg">
-                                        Hubungi Kami
+                                        {t('webinar.detail.btnContactUs')}
                                     </Button>
                                 </a>
                             </div>
@@ -94,23 +95,23 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <MapPin size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Lokasi</p>
-                                    <p className="text-sm font-semibold">Online</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('webinar.detail.location')}</p>
+                                    <p className="text-sm font-semibold">{t('webinar.detail.online')}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Hash size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Batch</p>
-                                    <p className="text-sm font-semibold">Batch {webinar.batch || '1'}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('webinar.detail.batchLabel')}</p>
+                                    <p className="text-sm font-semibold">{t('webinar.detail.batch', { batch: webinar.batch || '1' })}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Calendar size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Tanggal</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('webinar.detail.date')}</p>
                                     <p className="text-sm font-semibold">
-                                        {new Date(webinar.start_time).toLocaleDateString('id-ID', {
+                                        {new Date(webinar.start_time).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                             day: 'numeric',
                                             month: 'short',
                                         })}
@@ -120,9 +121,9 @@ export default function HeroSection({ webinar }: { webinar: Webinar }) {
                             <div className="flex items-center gap-2 rounded-lg bg-white p-3 shadow-md dark:bg-zinc-800">
                                 <Clock size={20} className="text-primary dark:text-secondary" />
                                 <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Waktu</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('webinar.detail.time')}</p>
                                     <p className="text-sm font-semibold">
-                                        {new Date(webinar.start_time).toLocaleTimeString('id-ID', {
+                                        {new Date(webinar.start_time).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'id-ID', {
                                             hour: '2-digit',
                                             minute: '2-digit',
                                         })}

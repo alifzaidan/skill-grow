@@ -1,6 +1,7 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AboutSection from './about-section';
 import BenefitsSection from './benefits-section';
 import HeroSection from './hero-section';
@@ -85,9 +86,11 @@ export default function Bootcamp({
         }
     }, [referralInfo]);
 
+    const { t } = useTranslation('user');
+
     return (
         <UserLayout>
-            <Head title={`${bootcamp.title} - Bootcamp`} />
+            <Head title={t('bootcamp.detail.headTitle', { title: bootcamp.title })} />
 
             <HeroSection bootcamp={bootcamp} />
             <BenefitsSection bootcamp={bootcamp} />

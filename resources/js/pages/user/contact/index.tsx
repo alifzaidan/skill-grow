@@ -1,15 +1,18 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { Instagram, Mail, Phone } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Contact() {
+    const { t } = useTranslation('user');
+
     return (
         <UserLayout>
-            <Head title="Contact" />
+            <Head title={t('contact.headTitle', 'Kontak')} />
             <section className="mt-10 flex min-h-[80vh] w-full flex-col items-center justify-center px-2 md:px-4">
                 <div className="w-full max-w-7xl rounded-2xl border border-gray-100 bg-white/90 p-4 px-4 shadow-2xl md:p-10">
                     <h1 className="mb-10 bg-black bg-clip-text text-center text-3xl font-extrabold text-transparent drop-shadow-lg md:text-4xl">
-                        Hubungi Kami
+                        {t('contact.title', 'Hubungi Kami')}
                     </h1>
                     <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-3">
                         <div className="to-black-50 flex cursor-pointer flex-col items-center rounded-xl border bg-gradient-to-br from-yellow-100 p-6 text-center shadow-md">
@@ -22,7 +25,7 @@ export default function Contact() {
                                 <Mail className="h-14 w-14" />
                                 <span className="text-lg font-semibold">Email</span>
                             </a>
-                            <p className="mt-2 text-gray-600">Hubungi kami melalui Email</p>
+                            <p className="mt-2 text-gray-600">{t('contact.emailDesc', 'Hubungi kami melalui Email')}</p>
                         </div>
                         <div className="to-black-50 flex cursor-pointer flex-col items-center rounded-xl border bg-gradient-to-br from-yellow-100 p-6 text-center shadow-md">
                             <a
@@ -34,7 +37,7 @@ export default function Contact() {
                                 <Phone className="h-14 w-14" />
                                 <span className="text-lg font-semibold">WhatsApp</span>
                             </a>
-                            <p className="mt-2 text-gray-600">Hubungi kami melalui WhatsApp</p>
+                            <p className="mt-2 text-gray-600">{t('contact.waDesc', 'Hubungi kami melalui WhatsApp')}</p>
                         </div>
                         <div className="to-black-50 flex cursor-pointer flex-col items-center rounded-xl border bg-gradient-to-br from-yellow-100 p-6 text-center shadow-md">
                             <a
@@ -46,7 +49,7 @@ export default function Contact() {
                                 <Instagram className="h-14 w-14" />
                                 <span className="text-lg font-semibold">Instagram</span>
                             </a>
-                            <p className="mt-2 text-gray-600">Hubungi kami melalui Instagram</p>
+                            <p className="mt-2 text-gray-600">{t('contact.igDesc', 'Hubungi kami melalui Instagram')}</p>
                         </div>
                     </div>
                     <div className="flex w-full justify-center">

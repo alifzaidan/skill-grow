@@ -1,12 +1,16 @@
 
+import { useTranslation } from 'react-i18next';
+
 export default function CareerSection() {
+    const { t } = useTranslation('user');
+
     return (
         <section className="py-16">
-            <div className="container  mx-auto max-w-7xl px-4  md:px-8 lg:px-20">
+            <div className="container mx-auto max-w-7xl px-4 md:px-8 lg:px-20">
                 <div className="text-center mb-16">
                     <div className="w-fit mx-auto relative mb-6">
                         <span className="relative z-10 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold block text-center">
-                            Skill Grow: Empowering Your<br />Career Growth for the Future Ahead
+                            {t('aboutPage.career.titlePart1', 'Skill Grow: Empowering Your')}<br />{t('aboutPage.career.titlePart2', 'Career Growth for the Future Ahead')}
                         </span>
                         <span className="absolute left-0 right-0 -bottom-1 h-3 md:h-4 bg-primary z-0 rounded"></span>
                     </div>
@@ -21,9 +25,9 @@ export default function CareerSection() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Kurikulum Relevan dan Terupdate</h3>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">{t('aboutPage.career.f1Title')}</h3>
                                 <p className="text-gray-600 leading-relaxed text-base">
-                                    Materi pelatihan disesuaikan dengan trend industri terbaru, sehingga peserta mendapatkan keterampilan yang dibutuhkan saat ini.
+                                    {t('aboutPage.career.f1Desc')}
                                 </p>
                             </div>
                         </div>
@@ -35,9 +39,9 @@ export default function CareerSection() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Fokus pada Skill Praktis</h3>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">{t('aboutPage.career.f2Title')}</h3>
                                 <p className="text-gray-600 leading-relaxed text-base">
-                                    Tidak hanya membahas materi teoretis, Skill Grow memungkinkan penekanan pada keterampilan langsung yang bisa diterapkan di dunia kerja.
+                                    {t('aboutPage.career.f2Desc')}
                                 </p>
                             </div>
                         </div>
@@ -49,9 +53,9 @@ export default function CareerSection() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Instruktur Berpengalaman dan Berkompeten</h3>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">{t('aboutPage.career.f3Title')}</h3>
                                 <p className="text-gray-600 leading-relaxed text-base">
-                                    Dibimbing oleh instruktur profesional atau praktisi industri yang benar-benar memahami dunia kerja nyata saat ini.
+                                    {t('aboutPage.career.f3Desc')}
                                 </p>
                             </div>
                         </div>
@@ -65,9 +69,9 @@ export default function CareerSection() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Akses Fleksibel dan Online Learning</h3>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">{t('aboutPage.career.f4Title')}</h3>
                                 <p className="text-gray-600 leading-relaxed text-base">
-                                    Jika berbasis online, peserta bisa belajar kapan saja dan di mana saja tanpa harus menghadiri kelas secara langsung.
+                                    {t('aboutPage.career.f4Desc')}
                                 </p>
                             </div>
                         </div>
@@ -79,9 +83,9 @@ export default function CareerSection() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Sertifikasi yang Diakui</h3>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">{t('aboutPage.career.f5Title')}</h3>
                                 <p className="text-gray-600 leading-relaxed text-base">
-                                    Menerbitkan sertifikat yang diakui perusahaan atau industri, meningkatkan nilai tambah peserta dalam mencari pekerjaan.
+                                    {t('aboutPage.career.f5Desc')}
                                 </p>
                             </div>
                         </div>
@@ -93,9 +97,9 @@ export default function CareerSection() {
                                 </svg>
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-800 mb-2">Komunitas dan Networking</h3>
+                                <h3 className="text-lg font-bold text-gray-800 mb-2">{t('aboutPage.career.f6Title')}</h3>
                                 <p className="text-gray-600 leading-relaxed text-base">
-                                    Adanya forum, grup diskusi, atau komunitas alumni yang bisa membantu peserta dalam mengembangkan jaringan profesional.
+                                    {t('aboutPage.career.f6Desc')}
                                 </p>
                             </div>
                         </div>

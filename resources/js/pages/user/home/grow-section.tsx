@@ -1,6 +1,8 @@
 import { InfiniteSlider } from '@/components/ui/infinite-slider';
+import { useTranslation } from 'react-i18next';
 
 export default function GrowSection() {
+    const { t } = useTranslation('home');
     const companies = [
         'PT Bious Inovasi Indonesia',
         'PT Berau Karya Bersama',
@@ -49,15 +51,15 @@ export default function GrowSection() {
 
     return (
         <section className="mt-10 mb-10 mx-auto w-full px-2 sm:px-4 max-w-full sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl">
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-center font-bold">Grow Your Skills,</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-center font-bold">{t('grow.titlePart1', 'Grow Your Skills,')}</h1>
             <div className="w-full sm:w-fit mx-auto relative">
                 <span className="relative z-10 text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center block">
-                    Shape Your Future!
+                    {t('grow.titlePart2', 'Shape Your Future!')}
                 </span>
                 <span className="absolute left-2 right-2 -bottom-1 h-4 bg-primary z-0 rounded"></span>
             </div>
             <p className="text-center text-sm sm:text-sm md:text-md lg:text-base text-gray-600 mt-4 sm:mt-6 w-full sm:w-[90%] md:w-[700px] mx-auto">
-                Bangga berkontribusi dalam perjalanan pengembangan karir ribuan peserta yang berasal dari berbagai bidang perusahaan
+                {t('grow.description', 'Bangga berkontribusi dalam perjalanan pengembangan karir ribuan peserta yang berasal dari berbagai bidang perusahaan')}
             </p>
             <div className="mt-6">
                 <InfiniteSlider gap={8} speed={60} className="sm:gap-8 md:gap-12 lg:gap-16">

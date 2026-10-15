@@ -1,5 +1,6 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 import AboutSection from './about-section';
 import CtaSection from './cta-section';
 import GrowSection from './grow-section';
@@ -9,9 +10,11 @@ import StudyFlowSection from './study-flow-section';
 import TestimonySection from './testimony-section';
 
 export default function Home() {
+    const { t } = useTranslation('common');
+
     return (
         <UserLayout>
-            <Head title="Beranda" />
+            <Head title={t('nav.home', 'Beranda')} />
             <AboutSection />
             <ProgramSection />
             <PopularClassSection />
@@ -19,8 +22,6 @@ export default function Home() {
             <StudyFlowSection />
             <TestimonySection />
             <CtaSection />
-
-            {/* {typeof window !== 'undefined' && window.innerWidth >= 1024 && <FakeNotifications products={allProducts} />} */}
 
             <a
                 href="https://wa.me/+6285167541152?text=Halo%20Admin%20Skillgrow,%20saya%20ingin%20bertanya%20tentang%20kelas%20online."

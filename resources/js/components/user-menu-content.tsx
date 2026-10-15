@@ -4,12 +4,14 @@ import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { SharedData, type User } from '@/types';
 import { Link, router, usePage } from '@inertiajs/react';
 import { AppWindow, LogOut, Settings, UserIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface UserMenuContentProps {
     user: User;
 }
 
 export function UserMenuContent({ user }: UserMenuContentProps) {
+    const { t } = useTranslation('common');
     const cleanup = useMobileNavigation();
 
     const handleLogout = () => {
@@ -36,7 +38,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     <DropdownMenuItem asChild>
                         <Link className="block w-full hover:cursor-pointer" href={route('profile.index')} as="button" prefetch onClick={cleanup}>
                             <UserIcon className="mr-2" />
-                            Profil
+                            {t('nav.profile', 'Profil')}
                         </Link>
                     </DropdownMenuItem>
                 )}
@@ -44,14 +46,14 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
                     <DropdownMenuItem asChild>
                         <Link className="block w-full hover:cursor-pointer" href={route('home')} as="button" prefetch onClick={cleanup}>
                             <AppWindow className="mr-2" />
-                            User Page
+                            {t('nav.userPage', 'User Page')}
                         </Link>
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem asChild>
                     <Link className="block w-full hover:cursor-pointer" href={route('profile.edit')} as="button" prefetch onClick={cleanup}>
                         <Settings className="mr-2" />
-                        Pengaturan
+                        {t('nav.settings', 'Pengaturan')}
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
@@ -59,7 +61,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuItem asChild>
                 <Link className="block w-full hover:cursor-pointer" method="post" href={route('logout')} as="button" onClick={handleLogout}>
                     <LogOut className="mr-2" />
-                    Keluar
+                    {t('nav.logout', 'Keluar')}
                 </Link>
             </DropdownMenuItem>
         </>

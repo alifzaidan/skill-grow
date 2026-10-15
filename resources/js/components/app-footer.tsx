@@ -1,6 +1,9 @@
 import { Link } from '@inertiajs/react';
+import { useTranslation } from 'react-i18next';
 
 export default function AppFooter() {
+    const { t } = useTranslation('common');
+
     return (
         <footer className="border-t border-gray-200 bg-white py-8">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -41,53 +44,53 @@ export default function AppFooter() {
                         <ul className="space-y-2">
                             <li>
                                 <Link href="/" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Home
+                                    {t('nav.home', 'Home')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/about" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Tentang Kami
+                                    {t('nav.about', 'Tentang Kami')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/course" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Kelas Online
+                                    {t('nav.course', 'Kelas Online')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/webinar" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Webinar
+                                    {t('nav.webinar', 'Webinar')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/bootcamp" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Bootcamp
+                                    {t('nav.bootcamp', 'Bootcamp')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/blog" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Blog
+                                    {t('footer.links.article', 'Blog')}
                                 </Link>
                             </li>
                         </ul>
                     </div>
 
                     <div>
-                        <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-900 uppercase">Lainnya</h3>
+                        <h3 className="mb-4 text-sm font-semibold tracking-wider text-gray-900 uppercase">{t('footer.others', 'Lainnya')}</h3>
                         <ul className="space-y-2">
                             <li>
                                 <Link href="/contact" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Kontak
+                                    {t('footer.contact', 'Kontak')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/terms-and-conditions" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Syarat & Ketentuan
+                                    {t('footer.links.terms', 'Syarat & Ketentuan')}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/privacy-policy" className="hover:text-primary text-sm text-gray-600 transition-colors">
-                                    Kebijakan Privasi
+                                    {t('footer.links.privacy', 'Kebijakan Privasi')}
                                 </Link>
                             </li>
                         </ul>

@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { Link } from '@inertiajs/react';
 import { Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Webinar {
     user?: {
@@ -14,6 +15,7 @@ interface Webinar {
 
 export default function MentorSection({ webinar }: { webinar: Webinar }) {
     const getInitials = useInitials();
+    const { t } = useTranslation('user');
 
     if (!webinar.user) {
         return null;
@@ -24,7 +26,7 @@ export default function MentorSection({ webinar }: { webinar: Webinar }) {
     return (
         <section className="mx-auto mt-8 w-full max-w-5xl px-4">
             <p className="text-primary border-primary bg-background mb-4 w-fit rounded-full border bg-gradient-to-t from-[#D9E5FF] to-white px-4 py-1 text-sm font-medium shadow-xs">
-                Pemateri Webinar
+                {t('webinar.detail.webinarSpeaker')}
             </p>
             <Link
                 href={`/mentor/${mentor.id}`}

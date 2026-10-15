@@ -1,17 +1,19 @@
+import { useTranslation } from 'react-i18next';
+
 export default function FeatureSection() {
+    const { t } = useTranslation('user');
+
     return (
         <section className="mx-auto mt-16 mb-10 max-w-7xl px-4">
             <div className="relative mx-auto mb-6 w-fit">
                 <span className="relative z-10 block text-center text-xl font-bold sm:text-2xl md:text-3xl lg:text-4xl">
-                    Belajar Tak Harus Rumit, Bersama Skillgrow
+                    {t('certificationProgram.dashboard.features.headline')}
                 </span>
                 <span className="bg-primary absolute right-0 -bottom-1 left-0 z-0 h-3 rounded md:h-4"></span>
             </div>
 
             <p className="mx-auto mt-6 max-w-5xl text-center text-sm text-gray-600 md:text-base">
-                Skill Grow hadir sebagai partner terbaik untuk upgrade skill di bidang Business & Management, Digital Marketing, dan Information &
-                Technology. Dapatkan pelatihan berkualitas, materi relevan industri, dan bimbingan dari para ahli untuk mendorong kariermu ke level
-                berikutnya.
+                {t('certificationProgram.dashboard.features.desc')}
             </p>
             <div className="mx-2 mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 <img

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { TransitionPanel } from '@/components/ui/transition-panel';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Link } from '@inertiajs/react';
 import { Star, User } from 'lucide-react';
@@ -31,6 +32,7 @@ function getYoutubeId(url: string) {
 }
 
 export default function VideoSection({ course }: { course: Course }) {
+    const { t, i18n } = useTranslation('user');
     const [activeIndex, setActiveIndex] = useState(0);
 
     const items =
@@ -91,8 +93,8 @@ export default function VideoSection({ course }: { course: Course }) {
                                 {course.short_description || 'Deskripsi singkat kelas ini.'}
                             </p>
                             <div className="mb-2 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                <span className="font-medium">Rilis:</span>
-                                <span>{new Date(course.created_at).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</span>
+                                <span className="font-medium">{t('course.detail.releaseDateLabel')}</span>
+                                <span>{new Date(course.created_at).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', { month: 'long', year: 'numeric' })}</span>
                             </div>
                             <div className="mb-2 flex items-center gap-2 text-xs">
                                 <span
@@ -104,9 +106,9 @@ export default function VideoSection({ course }: { course: Course }) {
                                               : 'rounded bg-red-100 px-2 py-1 font-semibold text-red-700 dark:bg-zinc-800 dark:text-red-300'
                                     }
                                 >
-                                    {course.level === 'beginner' && 'Level Beginner'}
-                                    {course.level === 'intermediate' && 'Level Intermediate'}
-                                    {course.level === 'advanced' && 'Level Advanced'}
+                                    {course.level === 'beginner' && t('course.detail.levelBeginner')}
+                                    {course.level === 'intermediate' && t('course.detail.levelIntermediate')}
+                                    {course.level === 'advanced' && t('course.detail.levelAdvanced')}
                                 </span>
                             </div>
                             <div className="mb-2 flex items-center gap-2 text-xs">
@@ -117,7 +119,7 @@ export default function VideoSection({ course }: { course: Course }) {
                                             : 'rounded bg-red-100 px-2 py-1 font-semibold text-red-700 dark:bg-zinc-800 dark:text-red-300'
                                     }
                                 >
-                                    {courseCertificate === 'yes' ? 'Sertifikat Tersedia' : 'Sertifikat Tidak Tersedia'}
+                                    {courseCertificate === 'yes' ? t('course.detail.certAvailable') : t('course.detail.certNotAvailable')}
                                 </span>
                             </div>
                             <div className="mb-6 flex items-center gap-2 text-xs">
@@ -128,7 +130,7 @@ export default function VideoSection({ course }: { course: Course }) {
                                             : 'rounded bg-red-100 px-2 py-1 font-semibold text-red-700 dark:bg-zinc-800 dark:text-red-300'
                                     }
                                 >
-                                    {courseConsultation === 'yes' ? 'Konsultasi Tersedia' : 'Konsultasi Tidak Tersedia'}
+                                    {courseConsultation === 'yes' ? t('course.detail.consultAvailable') : t('course.detail.consultNotAvailable')}
                                 </span>
                             </div>
                             <Link
@@ -159,7 +161,7 @@ export default function VideoSection({ course }: { course: Course }) {
                                 </div>
                             </Link>
                             <a href="#register" className="mt-auto w-full">
-                                <Button className="w-full">Gabung Sekarang</Button>
+                                <Button className="w-full">{t('course.detail.joinNow')}</Button>
                             </a>
                         </div>
                     </div>

@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
 import { Link } from '@inertiajs/react';
 import { BadgeCheck, Star } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Mentor {
     id: string;
@@ -51,6 +52,7 @@ function parseList(items?: string | null): string[] {
 }
 
 export default function KeyPointsSection({ program }: { program: CertificationProgram }) {
+    const { t } = useTranslation('user');
     const getInitials = useInitials();
     const benefitList = parseList(program.benefits);
     const termsList = parseList(program.terms_conditions);
@@ -64,7 +66,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                         {benefitList.length > 0 && (
                             <div>
-                                <div className="mb-4 text-lg font-semibold text-black">Manfaat Program</div>
+                                <div className="mb-4 text-lg font-semibold text-black">{t('certificationProgram.detail.benefitsTitle')}</div>
                                 <div className="space-y-4">
                                     {benefitList.map((benefit, idx) => (
                                         <div
@@ -81,7 +83,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
 
                         {termsList.length > 0 && (
                             <div>
-                                <div className="mb-4 text-lg font-semibold text-black">Syarat & Ketentuan</div>
+                                <div className="mb-4 text-lg font-semibold text-black">{t('certificationProgram.detail.termsTitle')}</div>
                                 <div className="space-y-4">
                                     {termsList.map((term, idx) => (
                                         <div
@@ -102,7 +104,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {/* Scholarship Flow */}
             {program.type === 'scholarship' && flowList.length > 0 && (
                 <section className="mx-auto w-full max-w-7xl px-4 mt-8">
-                    <div className="mb-4 text-lg font-semibold text-black">Alur Beasiswa</div>
+                    <div className="mb-4 text-lg font-semibold text-black">{t('certificationProgram.detail.flowTitle')}</div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         {flowList.map((flow, idx) => (
                             <div
@@ -122,7 +124,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {/* Description */}
             {program.description && (
                 <section className="mx-auto w-full max-w-7xl px-4 mt-8">
-                    <div className="mb-4 text-lg font-semibold text-black">Tentang Program</div>
+                    <div className="mb-4 text-lg font-semibold text-black">{t('certificationProgram.detail.aboutTitle')}</div>
                     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-md dark:border-zinc-700 dark:bg-zinc-800">
                         <div className="prose prose-lg dark:prose-invert max-w-none text-gray-700 dark:text-gray-300" dangerouslySetInnerHTML={{ __html: program.description }} />
                     </div>
@@ -132,7 +134,7 @@ export default function KeyPointsSection({ program }: { program: CertificationPr
             {/* Mentors */}
             {program.mentors && program.mentors.length > 0 && (
                 <section className="mx-auto mt-8 w-full max-w-7xl px-4">
-                    <div className="mb-4 text-lg font-semibold text-black">Mentor Program</div>
+                    <div className="mb-4 text-lg font-semibold text-black">{t('certificationProgram.detail.mentorTitle')}</div>
                     <div className="space-y-4">
                         {program.mentors.map((mentor) => (
                             <Link

@@ -13,6 +13,7 @@ import { Magnetic } from '@/components/ui/magnetic';
 import { Link } from '@inertiajs/react';
 import { GalleryVerticalEnd, Star } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 type Category = {
     id: string;
@@ -38,6 +39,7 @@ interface CourseProps {
 }
 
 export default function CoursesSection({ categories, courses, myCourseIds }: CourseProps) {
+    const { t } = useTranslation('user');
     const [level, setLevel] = useState('all');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [search, setSearch] = useState('');
@@ -82,28 +84,27 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
         <section className="mx-auto w-full max-w-7xl px-4" id="course">
             <div className="bg-primary my-10 rounded-lg p-8 shadow-lg">
                 <h2 className="mx-auto mb-4 max-w-4xl text-center text-xl font-bold sm:text-2xl md:text-3xl lg:text-4xl">
-                    Temukan Kelas yang Sesuai dengan Minat dan Tujuan Kariermu
+                    {t('course.catalog.bannerTitle')}
                 </h2>
                 <p className="mx-auto max-w-4xl text-center text-sm text-gray-600 md:text-base">
-                    Di Skill Grow, kamu bisa pilih kelas online yang paling cocok buat kamu. Belajar jadi lebih seru karena sesuai dengan apa yang
-                    kamu suka!
+                    {t('course.catalog.bannerDesc')}
                 </p>
             </div>
 
             <div className="mb-4 flex justify-between gap-2">
-                <Input type="search" placeholder="Cari kelas..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input type="search" placeholder={t('course.catalog.searchPlaceholder')} value={search} onChange={(e) => setSearch(e.target.value)} />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline">Filter Tingkat Kesulitan</Button>
+                        <Button variant="outline">{t('course.catalog.filterDifficulty')}</Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56">
-                        <DropdownMenuLabel>Pilih Tingkat Kesulitan</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t('course.catalog.selectDifficulty')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuRadioGroup value={level} onValueChange={setLevel}>
-                            <DropdownMenuRadioItem value="all">Semua</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="beginner">Beginner</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="intermediate">Intermediate</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="advanced">Advanced</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="all">{t('course.catalog.allLevels')}</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="beginner">{t('course.catalog.beginner')}</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="intermediate">{t('course.catalog.intermediate')}</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="advanced">{t('course.catalog.advanced')}</DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -127,7 +128,7 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
                                 : 'hover:bg-accent dark:hover:bg-primary/10 bg-background border-gray-300 text-gray-800 dark:border-zinc-100/20 dark:bg-zinc-800 dark:text-zinc-100'
                         } `}
                     >
-                        Semua Kategori
+                        {t('course.catalog.allCategories')}
                     </button>
                     {categories.map((category) => (
                         <button
@@ -148,8 +149,8 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
             <div className="mb-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleCourses.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center gap-4 py-12">
-                        <img src="/assets/images/not-found.webp" alt="Kelas Belum Tersedia" className="w-48" />
-                        <div className="text-center text-gray-500">Belum ada kelas yang tersedia saat ini.</div>
+                        <img src="/assets/images/not-found.webp" alt={t('course.catalog.emptyAlt')} className="w-48" />
+                        <div className="text-center text-gray-500">{t('course.catalog.empty')}</div>
                     </div>
                 ) : (
                     visibleCourses.map((course) => {
@@ -176,7 +177,11 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
                                                       : 'bg-red-100 text-red-700'
                                             }`}
                                         >
-                                            {course.level.charAt(0).toUpperCase() + course.level.slice(1)}
+                                            {course.level === 'beginner'
+                                                ? t('course.catalog.beginner')
+                                                : course.level === 'intermediate'
+                                                  ? t('course.catalog.intermediate')
+                                                  : t('course.catalog.advanced')}
                                         </span>
                                         <span className="bg-primary rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
                                             {course.category.name}
@@ -184,7 +189,7 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
                                     </div>
                                     {hasAccess && (
                                         <span className="bg-primary absolute top-3 right-3 rounded-full px-3 py-1 text-xs font-semibold text-white shadow">
-                                            Sudah Diambil
+                                            {t('course.catalog.alreadyTaken')}
                                         </span>
                                     )}
                                 </div>
@@ -196,9 +201,9 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
                                     <div className="mt-auto flex items-center justify-between">
                                         <div>
                                             {hasAccess ? (
-                                                <span className="text-primary text-sm font-semibold">Akses Dimiliki</span>
+                                                <span className="text-primary text-sm font-semibold">{t('course.catalog.hasAccess')}</span>
                                             ) : course.price === 0 ? (
-                                                <span className="font-bold text-green-600 dark:text-green-400">Gratis</span>
+                                                <span className="font-bold text-green-600 dark:text-green-400">{t('course.catalog.free')}</span>
                                             ) : (
                                                 <div>
                                                     {course.strikethrough_price > 0 && (
@@ -228,7 +233,7 @@ export default function CoursesSection({ categories, courses, myCourseIds }: Cou
                 <div className="mb-8 flex justify-center">
                     <Magnetic>
                         <Button type="button" className="mt-8 hover:cursor-pointer" onClick={() => setVisibleCount((prev) => prev + 6)}>
-                            Lihat Lebih Banyak <GalleryVerticalEnd />
+                            {t('course.catalog.loadMore')} <GalleryVerticalEnd />
                         </Button>
                     </Magnetic>
                 </div>

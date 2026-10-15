@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import UserLayout from '@/layouts/user-layout';
 import { Head, Link } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface UnavailableItem {
     title?: string;
@@ -24,8 +25,9 @@ export default function UnavailablePage({
     backUrl?: string;
     backLabel?: string;
 }) {
-    const pageTitle = title || 'Tidak Tersedia';
-    const itemTitle = item?.title ? `"${item.title}"` : 'Halaman ini';
+    const { t } = useTranslation('user');
+    const pageTitle = title || t('unavailable.title', 'Tidak Tersedia');
+    const itemTitle = item?.title ? `"${item.title}"` : t('unavailable.thisPage', 'Halaman ini');
 
     return (
         <UserLayout>
@@ -43,8 +45,7 @@ export default function UnavailablePage({
                         {pageTitle}
                     </h1>
                     <p className="mb-8 max-w-xl text-center text-sm text-gray-300">
-                        {itemTitle} saat ini belum bisa diakses. Jika Anda merasa ini adalah kesalahan, silakan hubungi admin untuk bantuan lebih
-                        lanjut.
+                        {itemTitle} {t('unavailable.currentlyNotAccessible', 'saat ini belum bisa diakses.')} {t('unavailable.errorHint', 'Jika Anda merasa ini adalah kesalahan, silakan hubungi admin untuk bantuan lebih lanjut.')}
                     </p>
 
                     <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-white/90 p-8 text-center shadow-xl backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/85">
@@ -52,23 +53,23 @@ export default function UnavailablePage({
                             <AlertTriangle size={40} className="text-yellow-500" />
                         </div>
                         <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                            {message || 'Halaman tidak tersedia untuk saat ini.'}
+                            {message || t('unavailable.defaultMessage', 'Halaman tidak tersedia untuk saat ini.')}
                         </h2>
                         <p className="mb-6 text-xs text-gray-600 dark:text-gray-400">
-                            Silakan kembali ke halaman sebelumnya atau hubungi admin untuk informasi lebih lanjut.
+                            {t('unavailable.errorHint', 'Silakan kembali ke halaman sebelumnya atau hubungi admin untuk informasi lebih lanjut.')}
                         </p>
 
                         <div className="flex w-full flex-col gap-3 sm:flex-row">
                             <Button asChild variant="outline" className="flex-1 border-gray-300 dark:border-zinc-700">
                                 {backUrl ? (
-                                    <Link href={backUrl}>{backLabel || 'Kembali'}</Link>
+                                    <Link href={backUrl}>{backLabel || t('unavailable.back', 'Kembali')}</Link>
                                 ) : (
-                                    <Link href="/">{backLabel || 'Kembali ke Beranda'}</Link>
+                                    <Link href="/">{backLabel || t('unavailable.back', 'Kembali ke Beranda')}</Link>
                                 )}
                             </Button>
                             <Button asChild className="flex-1">
                                 <a href={adminWhatsappUrl} target="_blank" rel="noopener noreferrer">
-                                    Hubungi Admin
+                                    {t('unavailable.contactAdmin', 'Hubungi Admin')}
                                 </a>
                             </Button>
                         </div>

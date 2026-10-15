@@ -1,6 +1,7 @@
 import UserLayout from '@/layouts/user-layout';
 import { Head } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AboutSection from './about-section';
 import RegisterSection from './register-section';
 import RelatedProduct from './related-product';
@@ -69,6 +70,8 @@ export default function DetailCourse({
     myCourseIds: string[];
     referralInfo: ReferralInfo;
 }) {
+    const { t } = useTranslation('user');
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const refFromUrl = urlParams.get('ref');
@@ -82,7 +85,7 @@ export default function DetailCourse({
 
     return (
         <UserLayout>
-            <Head title={`${course.title} - Kelas Online`} />
+            <Head title={`${course.title} - ${t('course.title')}`} />
 
             <VideoSection course={course} />
             <AboutSection course={course} />

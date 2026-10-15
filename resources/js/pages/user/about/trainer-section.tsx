@@ -1,14 +1,18 @@
+import { useTranslation } from 'react-i18next';
+
 export default function TrainerSection() {
+    const { t } = useTranslation('user');
+
     return (
         <section className="bg-gray-50 py-16">
             <div className="container mx-auto max-w-7xl px-4 md:px-8 lg:px-20">
                 <div className="mb-16 text-center">
                     <div className="relative mx-auto mb-6 w-fit">
-                        <span className="relative z-10 block text-center text-2xl font-bold sm:text-3xl md:text-4xl">Say Hi 👋 to Our Trainer</span>
+                        <span className="relative z-10 block text-center text-2xl font-bold sm:text-3xl md:text-4xl">{t('aboutPage.trainers.title', 'Say Hi 👋 to Our Trainer')}</span>
                         <span className="bg-secondary absolute right-0 -bottom-1 left-0 z-0 h-3 rounded md:h-4"></span>
                     </div>
                     <div className="mx-auto max-w-4xl text-base leading-relaxed text-gray-600 md:text-lg">
-                        <p>Tim instruktur berpengalaman kami siap membimbing Anda dalam perjalanan pembelajaran dan pengembangan karir.</p>
+                        <p>{t('aboutPage.trainers.desc')}</p>
                     </div>
                 </div>
                 <div className="space-y-8">
